@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Exceptions\**\*Exception.cs" Link="TB.Exceptions/%(RecursiveDir)/%(FileName)%(Extension)" />
+		<Compile Include="..\Telegram.Bot\src\Telegram.Bot\Polling\**\*" Link="TB.Polling/%(RecursiveDir)/%(FileName)%(Extension)" />
+		<Compile Include="..\Telegram.Bot\src\Telegram.Bot\Types\**\*" Link="TB.Types/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Requests\Getting Updates\GetUpdatesRequest.cs" Link="TB.Various\GetUpdatesRequest.cs" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClientExtensions.Polling.cs" Link="TB.Various\TelegramBotClientExtensions.Polling.cs" />
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Chat.cs" />
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Enums\MessageEntityType.cs" />
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\MessageEntity.cs" />
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Update.cs" />
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\User.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
+    <!--<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />-->
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+    <!--<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />-->
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WTelegramClient\src\WTelegramClient.csproj" />
+  </ItemGroup>
+</Project>
