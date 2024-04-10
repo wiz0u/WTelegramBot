@@ -42,7 +42,7 @@ public partial class TelegramBotClient
 						ChatType = ubiq.peer_type switch
 						{
 							InlineQueryPeerType.SameBotPM => ChatType.Sender,
-							InlineQueryPeerType.PM => ChatType.Private,
+							InlineQueryPeerType.PM or InlineQueryPeerType.BotPM => ChatType.Private,
 							InlineQueryPeerType.Chat => ChatType.Group,
 							InlineQueryPeerType.Megagroup => ChatType.Supergroup,
 							InlineQueryPeerType.Broadcast => ChatType.Channel,
@@ -105,7 +105,8 @@ public partial class TelegramBotClient
 					Date = uchp.date,
 					OldChatMember = uchp.prev_participant.ChatMember(await UserOrResolve((uchp.prev_participant ?? uchp.new_participant)!.UserId)),
 					NewChatMember = uchp.new_participant.ChatMember(await UserOrResolve((uchp.new_participant ?? uchp.prev_participant)!.UserId)),
-					InviteLink = await MakeChatInviteLink(uchp.invite)
+					InviteLink = await MakeChatInviteLink(uchp.invite),
+					ViaChatFolderInviteLink = uchp.flags.HasFlag(UpdateChannelParticipant.Flags.via_chatlist)
 				}, update);
 			case UpdateChatParticipant ucp:
 				if (NotAllowed(ucp.actor_id == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
@@ -157,6 +158,7 @@ public partial class TelegramBotClient
 						From = await UserOrResolve(ubcir.user_id),
 						Date = ubcir.date,
 						Bio = ubcir.about,
+						UserChatId = ubcir.user_id,
 						InviteLink = await MakeChatInviteLink(ubcir.invite)
 					},
 					RawUpdate = update
@@ -298,7 +300,7 @@ public partial class TelegramBotClient
 		var updates = await updatesTask;
 		updates.UserOrChat(_collector);
 		if (updates is UpdateShortSentMessage sent)
-			return FillTextAndMedia(new Message
+			return await FillTextAndMedia(new Message
 			{
 				MessageId = sent.id,
 				From = await UserOrResolve(BotId),
@@ -352,6 +354,7 @@ public partial class TelegramBotClient
 					ReplyToMessage = replyToMessage,
 					AuthorSignature = message.post_author,
 					ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
+					MessageThreadId = message.reply_to is MessageReplyHeader { reply_to_top_id: > 0 } mrh ? mrh.reply_to_top_id : null,
 				};
 				if (message.fwd_from is MessageFwdHeader fwd)
 				{
@@ -368,7 +371,7 @@ public partial class TelegramBotClient
 				if (message.edit_date != default) msg.EditDate = message.edit_date;
 				if (message.flags.HasFlag(TL.Message.Flags.noforwards)) msg.HasProtectedContent = true;
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
-				return FillTextAndMedia(msg, message.message, message.entities, message.media);
+				return await FillTextAndMedia(msg, message.message, message.entities, message.media);
 			case TL.MessageService msgSvc:
 				msg = new Message
 				{
@@ -413,7 +416,7 @@ public partial class TelegramBotClient
 		}
 	}
 
-	private static Message FillTextAndMedia(Message msg, string? text, MessageEntity[] entities, MessageMedia media)
+	private async Task<Message> FillTextAndMedia(Message msg, string? text, MessageEntity[] entities, MessageMedia media)
 	{
 		switch (media)
 		{
@@ -423,6 +426,7 @@ public partial class TelegramBotClient
 				msg.Entities = entities;
 				return msg;
 			case MessageMediaDocument { document: TL.Document document } mmd:
+				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.spoiler)) msg.HasMediaSpoiler = true;
 				var thumb = document.LargestThumbSize;
 				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.voice))
 				{
@@ -442,7 +446,7 @@ public partial class TelegramBotClient
 						FileSize = document.size,
 						Length = video?.w ?? 0,
 						Duration = (int)(video?.duration + 0.5 ?? 0.0),
-						Thumb = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
+						 Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
 				}
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
@@ -454,7 +458,7 @@ public partial class TelegramBotClient
 						Width = video?.w ?? 0,
 						Height = video?.h ?? 0,
 						Duration = (int)(video?.duration + 0.5 ?? 0.0),
-						Thumb = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
+						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
 						FileName = document.Filename,
 						MimeType = document.mime_type
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
@@ -469,19 +473,19 @@ public partial class TelegramBotClient
 						Title = audio?.title,
 						FileName = document.Filename,
 						MimeType = document.mime_type,
-						Thumb = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
+						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
 				}
 				else if (document.GetAttribute<DocumentAttributeSticker>() is { } sticker)
 				{
-					msg.Sticker = MakeSticker(document, sticker, null!);
+					msg.Sticker = await MakeSticker(document, sticker);
 				}
 				else
 				{
 					msg.Document = new Types.Document
 					{
 						FileSize = document.size,
-						Thumb = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
+						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
 						FileName = document.Filename,
 						MimeType = document.mime_type
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
@@ -489,7 +493,8 @@ public partial class TelegramBotClient
 						msg.Animation = MakeAnimation(msg.Document, document.GetAttribute<DocumentAttributeVideo>());
 				}
 				break;
-			case MessageMediaPhoto { photo: TL.Photo photo }:
+			case MessageMediaPhoto { photo: TL.Photo photo } mmp:
+				if (mmp.flags.HasFlag(MessageMediaPhoto.Flags.spoiler)) msg.HasMediaSpoiler = true;
 				msg.Photo = photo.PhotoSizes();
 				break;
 			case MessageMediaVenue mmv:
@@ -554,13 +559,14 @@ public partial class TelegramBotClient
 					var msgDoc = new Types.Document
 					{
 						FileSize = doc.size,
-						Thumb = thumb?.PhotoSize(doc.ToFileLocation(thumb), doc.dc_id),
+						Thumbnail = thumb?.PhotoSize(doc.ToFileLocation(thumb), doc.dc_id),
 						FileName = doc.Filename,
 						MimeType = doc.mime_type
 					}.SetFileIds(doc.ToFileLocation(), doc.dc_id);
 					msg.Game.Animation = MakeAnimation(msgDoc, doc.GetAttribute<DocumentAttributeVideo>());
 				}
 				return msg;
+			//TODO ForumTopics
 			default:
 				System.Diagnostics.Debugger.Break();
 				break;
@@ -599,6 +605,32 @@ public partial class TelegramBotClient
 				TelegramPaymentChargeId = mapsm.charge.id,
 				ProviderPaymentChargeId = mapsm.charge.provider_charge_id
 			},
+			MessageActionRequestedPeer marp when marp.peers?.Length > 0 => marp.peers[0] is PeerUser pu
+				? msg.UserShared = new UserShared { RequestId = marp.button_id, UserId = pu.user_id }
+				: msg.ChatShared = new ChatShared { RequestId = marp.button_id, ChatId = marp.peers[0].ID },
+			MessageActionRequestedPeerSentMe marpsm when marpsm.peers?.Length > 0 => marpsm.peers[0] is RequestedPeerUser rpu
+				? msg.UserShared = new UserShared { RequestId = marpsm.button_id, UserId = rpu.user_id }
+				: msg.ChatShared = new ChatShared { RequestId = marpsm.button_id, ChatId = marpsm.peers[0].ID },
+			MessageActionBotAllowed maba => maba switch
+			{
+				{ domain: not null } => msg.ConnectedWebsite = maba.domain,
+				{ app: not null } => msg.WriteAccessAllowed = new WriteAccessAllowed { WebAppName = maba.app.short_name },
+				_ => null
+			},
+			MessageActionSecureValuesSentMe masvsm => msg.PassportData = masvsm.PassportData(),
+			MessageActionGeoProximityReached magpr => msg.ProximityAlertTriggered = new ProximityAlertTriggered
+			{
+				Traveler = (await UserFromPeer(magpr.from_id))!,
+				Watcher = (await UserFromPeer(magpr.to_id))!,
+				Distance = magpr.distance
+			},
+			MessageActionGroupCallScheduled magcs => msg.VideoChatScheduled = new VideoChatScheduled { StartDate = magcs.schedule_date },
+			MessageActionGroupCall magc => magc.flags.HasFlag(MessageActionGroupCall.Flags.has_duration)
+				? msg.VideoChatEnded = new VideoChatEnded { Duration = magc.duration }
+				: msg.VideoChatStarted = new VideoChatStarted(),
+			MessageActionInviteToGroupCall maitgc => msg.VideoChatParticipantsInvited = new VideoChatParticipantsInvited {
+				Users = await Task.WhenAll(maitgc.users.Select(UserOrResolve)) },
+			MessageActionWebViewDataSentMe mawvdsm => msg.WebAppData = new WebAppData { ButtonText = mawvdsm.text, Data = mawvdsm.data },
 			_ => null,
 		};
 	}
@@ -609,7 +641,7 @@ public partial class TelegramBotClient
 		Width = video?.w ?? 0,
 		Height = video?.h ?? 0,
 		Duration = (int)(video?.duration + 0.5 ?? 0.0),
-		Thumb = msgDoc.Thumb,
+		Thumbnail = msgDoc.Thumbnail,
 		FileName = msgDoc.FileName,
 		MimeType = msgDoc.MimeType,
 		FileId = msgDoc.FileId,

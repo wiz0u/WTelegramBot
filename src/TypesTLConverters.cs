@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TL;
-using Telegram.Bot.Types.Payments;
-using Telegram.Bot.Exceptions;
 
 namespace Telegram.Bot.Types;
 
@@ -26,16 +25,24 @@ public static class TypesTLConverters
 		=> (entity as MessageEntityMentionName)?.user_id ?? (entity as InputMessageEntityMentionName)?.user_id.UserId;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityMentionName"/> only, the mentioned user
+	/// Optional. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
 	/// </summary>
 	public static User? User(this MessageEntity entity, TelegramBotClient botClient)
 		=> entity.UserId() is long userId ? botClient.FindUser(userId) ?? new User { Id = userId, FirstName = "" } : null;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityPre"/> only, the programming language of the entity text
+	/// Optional. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text
 	/// </summary>
 	public static string? Language(this MessageEntity entity)
 		=> (entity as MessageEntityPre)?.language;
+
+	/// <summary>
+	/// Optional. For <see cref="MessageEntityType.CustomEmoji"/> only, unique identifier of the custom emoji.
+	/// Use <see cref="Requests.GetCustomEmojiStickersRequest"/> to get full information about the sticker
+	/// </summary>
+	public static string? CustomEmojiId(this MessageEntity entity)
+		=> (entity as MessageEntityCustomEmoji)?.document_id.ToString();
+
 
 	[return: NotNullIfNotNull(nameof(user))]
 	public static User? User(this TL.User? user)
@@ -44,12 +51,13 @@ public static class TypesTLConverters
 		var result = new User
 		{
 			Id = user.id,
-			IsBot = user.IsBot, //IsPremium = user.flags.HasFlag(User.Flags.premium),
+			IsBot = user.IsBot,
 			FirstName = user.first_name,
 			LastName = user.last_name,
 			Username = user.MainUsername,
 			LanguageCode = user.lang_code,
-			//AddedToAttachmentMenu = user.flags.HasFlag(User.Flags.attach_menu_enabled),
+			IsPremium = user.flags.HasFlag(TL.User.Flags.premium),
+			AddedToAttachmentMenu = user.flags.HasFlag(TL.User.Flags.attach_menu_enabled),
 			AccessHash = user.access_hash
 		};
 		if (user.IsBot)
@@ -71,6 +79,7 @@ public static class TypesTLConverters
 			Type = channel == null ? ChatType.Group : channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
 			Title = chat.Title,
 			Username = channel?.MainUsername,
+			IsForum = channel?.flags.HasFlag(Channel.Flags.forum),
 			AccessHash = channel?.access_hash ?? 0
 		};
 	}
@@ -98,7 +107,6 @@ public static class TypesTLConverters
 	};
 
 
-#pragma warning disable CS0618 // Type or member is obsolete
 	internal static ChatMember ChatMember(this ChatParticipantBase? participant, User user)
 		=> participant switch
 		{
@@ -108,12 +116,15 @@ public static class TypesTLConverters
 				User = user,
 				CanManageChat = true,
 				CanChangeInfo = true,
+				//CanPostMessages, CanEditMessages: set only for channels
 				CanDeleteMessages = true,
 				CanInviteUsers = true,
 				CanRestrictMembers = true,
 				CanPinMessages = true,
+				//CanManageTopics: set only for supergroups
+				CanPromoteMembers = false,
 				CanManageVideoChats = true,
-				CanManageVoiceChats = true
+				IsAnonymous = false,
 			},
 			ChatParticipant => new ChatMemberMember { User = user },
 			_ => new ChatMemberLeft { User = user }
@@ -134,14 +145,13 @@ public static class TypesTLConverters
 				CanPostMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_messages),
 				CanEditMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_messages),
 				CanDeleteMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_messages),
-				CanManageVoiceChats = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_call),
 				CanManageVideoChats = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_call),
 				CanRestrictMembers = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.ban_users),
 				CanPromoteMembers = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.add_admins),
 				CanChangeInfo = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.change_info),
 				CanInviteUsers = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.invite_users),
 				CanPinMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.pin_messages),
-				//CanManageTopics = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics),
+				CanManageTopics = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics),
 			},
 			ChannelParticipantBanned cpb =>
 				cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.view_messages)
@@ -149,20 +159,25 @@ public static class TypesTLConverters
 				: new ChatMemberRestricted
 				{
 					User = user,
+					IsMember = !cpb.flags.HasFlag(ChannelParticipantBanned.Flags.left),
 					UntilDate = UntilDate(cpb.banned_rights.until_date),
 					CanChangeInfo = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.change_info),
 					CanInviteUsers = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.invite_users),
 					CanPinMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages),
 					CanSendMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_messages),
-					CanSendMediaMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_media),
+					CanSendAudios = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_audios),
+					CanSendDocuments = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_docs),
+					CanSendPhotos = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_photos),
+					CanSendVideos = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_videos),
+					CanSendVideoNotes = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_roundvideos),
+					CanSendVoiceNotes = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_voices),
 					CanSendPolls = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_polls),
 					CanSendOtherMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games),
 					CanAddWebPagePreviews = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.embed_links),
-					//CanManageTopics = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
+					CanManageTopics = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
 				},
 			_ /*ChannelParticipantLeft*/ => new ChatMemberLeft { User = user, },
 		};
-#pragma warning restore CS0618 // Type or member is obsolete
 
 	private static DateTime? UntilDate(DateTime until_date) => until_date == DateTime.MaxValue ? null : until_date;
 
@@ -170,25 +185,46 @@ public static class TypesTLConverters
 	internal static ChatPermissions? ChatPermissions(this ChatBannedRights? banned_rights) => banned_rights == null ? null : new ChatPermissions
 	{
 		CanSendMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_messages),
-		CanSendMediaMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_media),
+		CanSendAudios = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_audios),
+		CanSendDocuments = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_docs),
+		CanSendPhotos = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_photos),
+		CanSendVideos = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_videos),
+		CanSendVideoNotes = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_roundvideos),
+		CanSendVoiceNotes = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_voices),
 		CanSendPolls = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_polls),
 		CanSendOtherMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games),
 		CanAddWebPagePreviews = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.embed_links),
 		CanChangeInfo = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.change_info),
 		CanInviteUsers = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.invite_users),
-		CanPinMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages)
+		CanPinMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages),
+		CanManageTopics = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics)
 	};
 
-	internal static ChatBannedRights ToChatBannedRights(this ChatPermissions permissions) => new()
+	internal static void LegacyMode(this ChatPermissions permissions)
 	{
-		flags = (permissions.CanSendMessages == false ? ChatBannedRights.Flags.send_messages : 0)
-			| (permissions.CanSendMediaMessages == false ? ChatBannedRights.Flags.send_media : 0)
-			| (permissions.CanSendPolls == false ? ChatBannedRights.Flags.send_polls : 0)
-			| (permissions.CanSendOtherMessages == false ? ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games : 0)
-			| (permissions.CanAddWebPagePreviews == false ? ChatBannedRights.Flags.embed_links : 0)
-			| (permissions.CanChangeInfo == false ? ChatBannedRights.Flags.change_info : 0)
-			| (permissions.CanInviteUsers == false ? ChatBannedRights.Flags.invite_users : 0)
-			| (permissions.CanPinMessages == false ? ChatBannedRights.Flags.pin_messages : 0)
+		if (permissions.CanSendPolls == true) permissions.CanSendMessages = true;
+		if (permissions.CanSendOtherMessages == true || permissions.CanAddWebPagePreviews == true)
+			permissions.CanSendAudios = permissions.CanSendDocuments = permissions.CanSendPhotos = permissions.CanSendVideos =
+				permissions.CanSendVideoNotes = permissions.CanSendVoiceNotes = permissions.CanSendMessages = true;
+	}
+
+	internal static ChatBannedRights ToChatBannedRights(this ChatPermissions permissions, DateTime? untilDate = default) => new()
+	{
+		until_date = untilDate ?? default,
+		flags = (permissions.CanSendMessages == true ? 0 : ChatBannedRights.Flags.send_messages)
+			| (permissions.CanSendAudios == true ? 0 : ChatBannedRights.Flags.send_audios)
+			| (permissions.CanSendDocuments == true ? 0 : ChatBannedRights.Flags.send_docs)
+			| (permissions.CanSendPhotos == true ? 0 : ChatBannedRights.Flags.send_photos)
+			| (permissions.CanSendVideos == true ? 0 : ChatBannedRights.Flags.send_videos)
+			| (permissions.CanSendVideoNotes == true ? 0 : ChatBannedRights.Flags.send_roundvideos)
+			| (permissions.CanSendVoiceNotes == true ? 0 : ChatBannedRights.Flags.send_voices)
+			| (permissions.CanSendPolls == true ? 0 : ChatBannedRights.Flags.send_polls)
+			| (permissions.CanSendOtherMessages == true ? 0 : ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games | ChatBannedRights.Flags.send_inline)
+			| (permissions.CanAddWebPagePreviews == true ? 0 : ChatBannedRights.Flags.embed_links)
+			| (permissions.CanChangeInfo == true ? 0 : ChatBannedRights.Flags.change_info)
+			| (permissions.CanInviteUsers == true ? 0 : ChatBannedRights.Flags.invite_users)
+			| (permissions.CanPinMessages == true ? 0 : ChatBannedRights.Flags.pin_messages)
+			| (permissions.CanManageTopics == true ? 0 : ChatBannedRights.Flags.manage_topics)
 	};
 
 	[return: NotNullIfNotNull(nameof(location))]
@@ -331,6 +367,7 @@ public static class TypesTLConverters
 		return (InputBotInlineMessageIDBase)reader.ReadTLObject();
 	}
 
+	private static string ToBase64(this byte[] bytes) => ToBase64(bytes.AsSpan());
 	private static string ToBase64(this Span<byte> bytes)
 		=> Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
@@ -372,32 +409,34 @@ public static class TypesTLConverters
 		=> rights == null ? new() : new()
 		{
 			flags = (rights.IsAnonymous == true ? TL.ChatAdminRights.Flags.anonymous : 0)
+			| (rights.CanManageChat == true ? TL.ChatAdminRights.Flags.other : 0)
+			| (rights.CanDeleteMessages == true ? TL.ChatAdminRights.Flags.delete_messages : 0)
+			| (rights.CanManageVideoChats == true ? TL.ChatAdminRights.Flags.manage_call : 0)
+			| (rights.CanRestrictMembers == true ? TL.ChatAdminRights.Flags.ban_users : 0)
+			| (rights.CanPromoteMembers == true ? TL.ChatAdminRights.Flags.add_admins : 0)
 			| (rights.CanChangeInfo == true ? TL.ChatAdminRights.Flags.change_info : 0)
+			| (rights.CanInviteUsers == true ? TL.ChatAdminRights.Flags.invite_users : 0)
 			| (rights.CanPostMessages == true ? TL.ChatAdminRights.Flags.post_messages : 0)
 			| (rights.CanEditMessages == true ? TL.ChatAdminRights.Flags.edit_messages : 0)
-			| (rights.CanDeleteMessages == true ? TL.ChatAdminRights.Flags.delete_messages : 0)
-			| (rights.CanRestrictMembers == true ? TL.ChatAdminRights.Flags.ban_users : 0)
-			| (rights.CanInviteUsers == true ? TL.ChatAdminRights.Flags.invite_users : 0)
 			| (rights.CanPinMessages == true ? TL.ChatAdminRights.Flags.pin_messages : 0)
-			| (rights.CanPromoteMembers == true ? TL.ChatAdminRights.Flags.add_admins : 0)
-			| (rights.CanManageVideoChats == true ? TL.ChatAdminRights.Flags.manage_call : 0)
-			| (rights.CanManageChat == true ? TL.ChatAdminRights.Flags.other : 0)
-			//| (rights.CanManageVideoChats == true ? TL.ChatAdminRights.Flags.manage_topics : 0)
+			| (rights.CanManageTopics == true ? TL.ChatAdminRights.Flags.manage_topics : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
 		=> rights == null ? new() : new()
 		{
-			CanManageChat = rights.flags != 0,
-			CanPostMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_messages),
-			CanEditMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_messages),
+			IsAnonymous = rights.flags.HasFlag(TL.ChatAdminRights.Flags.anonymous),
+			CanManageChat = rights.flags.HasFlag(TL.ChatAdminRights.Flags.other),
 			CanDeleteMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_messages),
 			CanManageVideoChats = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_call),
 			CanRestrictMembers = rights.flags.HasFlag(TL.ChatAdminRights.Flags.ban_users),
 			CanPromoteMembers = rights.flags.HasFlag(TL.ChatAdminRights.Flags.add_admins),
 			CanChangeInfo = rights.flags.HasFlag(TL.ChatAdminRights.Flags.change_info),
 			CanInviteUsers = rights.flags.HasFlag(TL.ChatAdminRights.Flags.invite_users),
-			CanPinMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.pin_messages)
+			CanPostMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_messages),
+			CanEditMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_messages),
+			CanPinMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.pin_messages),
+			CanManageTopics = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics)
 		};
 
 	[return: NotNullIfNotNull(nameof(maskPosition))]
@@ -414,7 +453,7 @@ public static class TypesTLConverters
 		=> new() { Command = bc.command, Description = bc.description };
 
 	[return: NotNullIfNotNull(nameof(pa))]
-	internal static ShippingAddress? ShippingAddress(this PostAddress? pa) => pa == null ? null : new ShippingAddress
+	internal static Payments.ShippingAddress? ShippingAddress(this PostAddress? pa) => pa == null ? null : new()
 	{
 		CountryCode = pa.country_iso2,
 		State = pa.state,
@@ -425,11 +464,60 @@ public static class TypesTLConverters
 	};
 
 	[return: NotNullIfNotNull(nameof(pri))]
-	internal static OrderInfo? OrderInfo(this PaymentRequestedInfo? pri) => pri == null ? null : new OrderInfo
+	internal static Payments.OrderInfo? OrderInfo(this PaymentRequestedInfo? pri) => pri == null ? null : new()
 	{
 		Name = pri.name,
 		PhoneNumber = pri.phone,
 		Email = pri.email,
 		ShippingAddress = pri.shipping_address.ShippingAddress()
 	};
+
+	public static InlineQueryPeerType[] InlineQueryPeerTypes(this SwitchInlineQueryChosenChat swiqcc)
+	{
+		var result = new List<InlineQueryPeerType>();
+		if (swiqcc.AllowUserChats == true) result.Add(InlineQueryPeerType.PM);
+		if (swiqcc.AllowBotChats == true) result.Add(InlineQueryPeerType.BotPM);
+		if (swiqcc.AllowGroupChats == true) { result.Add(InlineQueryPeerType.Chat); result.Add(InlineQueryPeerType.Megagroup); }
+		if (swiqcc.AllowChannelChats == true) result.Add(InlineQueryPeerType.Broadcast);
+		return [.. result];
+	}
+
+	public static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
+	{
+		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
+		Credentials = new Passport.EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
+	};
+
+	public static Passport.EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
+	{
+		Type = sv.type switch
+		{
+			SecureValueType.PersonalDetails => Passport.EncryptedPassportElementType.PersonalDetails,
+			SecureValueType.Passport => Passport.EncryptedPassportElementType.Passport,
+			SecureValueType.DriverLicense => Passport.EncryptedPassportElementType.DriverLicence,
+			SecureValueType.IdentityCard => Passport.EncryptedPassportElementType.IdentityCard,
+			SecureValueType.InternalPassport => Passport.EncryptedPassportElementType.InternalPassport,
+			SecureValueType.Address => Passport.EncryptedPassportElementType.Address,
+			SecureValueType.UtilityBill => Passport.EncryptedPassportElementType.UtilityBill,
+			SecureValueType.BankStatement => Passport.EncryptedPassportElementType.BankStatement,
+			SecureValueType.RentalAgreement => Passport.EncryptedPassportElementType.RentalAgreement,
+			SecureValueType.PassportRegistration => Passport.EncryptedPassportElementType.PassportRegistration,
+			SecureValueType.TemporaryRegistration => Passport.EncryptedPassportElementType.TemporaryRegistration,
+			SecureValueType.Phone => Passport.EncryptedPassportElementType.PhoneNumber,
+			SecureValueType.Email => Passport.EncryptedPassportElementType.Email,
+			_ => 0,
+		},
+		Data = sv.data?.data.ToBase64(),
+		PhoneNumber = sv.plain_data is SecurePlainPhone spp ? spp.phone : null,
+		Email = sv.plain_data is SecurePlainEmail spe ? spe.email : null,
+		Files = sv.files?.Select(PassportFile).ToArray(),
+		FrontSide = sv.front_side?.PassportFile(),
+		ReverseSide = sv.reverse_side?.PassportFile(),
+		Selfie = sv.selfie?.PassportFile(),
+		Translation = sv.translation?.Select(PassportFile).ToArray(),
+		Hash = sv.hash.ToBase64()
+	};
+
+	private static Passport.PassportFile PassportFile(this SecureFile file)
+		=> new Passport.PassportFile { FileSize = file.size, FileDate = file.date }.SetFileIds(file.ToFileLocation(), file.dc_id);
 }

@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-
 namespace Telegram.Bot.Types.Enums;
 
 /// <summary>
@@ -23,7 +21,7 @@ public static class MessageEntityType
     public const string BotCommand = "BotCommand";
 
     /// <summary>
-    /// An url
+    /// An URL
     /// </summary>
     public const string Url = "Url";
 
@@ -53,7 +51,7 @@ public static class MessageEntityType
     public const string Pre = "Pre";
 
     /// <summary>
-    /// Clickable text urls
+    /// Clickable text URLs
     /// </summary>
     public const string TextLink = "TextUrl";
 
@@ -86,4 +84,9 @@ public static class MessageEntityType
     /// Spoiler message
     /// </summary>
     public const string Spoiler = "Spoiler";
+
+    /// <summary>
+    /// Inline custom emoji stickers
+    /// </summary>
+    public const string CustomEmoji = "CustomEmoji";
 }

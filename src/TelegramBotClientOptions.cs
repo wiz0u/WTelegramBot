@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Globalization;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -76,21 +76,21 @@ public class TelegramBotClientOptions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static long? GetIdFromToken(string token)
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
             var span = token.AsSpan();
             var index = span.IndexOf(':');
 
             if (index is < 1 or > 16) { return null; }
 
             var botIdSpan = span[..index];
-            if (!long.TryParse(botIdSpan, out var botId)) { return null; }
+            if (!long.TryParse(botIdSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out var botId)) { return null; }
 #else
-                var index = token.IndexOf(value: ':');
+            var index = token.IndexOf(value: ':');
 
-                if (index is < 1 or > 16) { return null; }
+            if (index is < 1 or > 16) { return null; }
 
-                var botIdSpan = token.Substring(startIndex: 0, length: index);
-                if (!long.TryParse(botIdSpan, out var botId)) { return null; }
+            var botIdSpan = token.Substring(startIndex: 0, length: index);
+            if (!long.TryParse(botIdSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out var botId)) { return null; }
 #endif
 
             return botId;

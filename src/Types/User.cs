@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Diagnostics.CodeAnalysis;
-
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object represents a Telegram user or bot.
@@ -17,7 +13,7 @@ public class User
     public long Id { get; set; }
 
     /// <summary>
-    /// True, if this user is a bot
+    /// <see langword="true"/>, if this user is a bot
     /// </summary>
     [JsonProperty(Required = Required.Always)]
     public bool IsBot { get; set; }
@@ -48,19 +44,31 @@ public class User
     public string? LanguageCode { get; set; }
 
     /// <summary>
-    /// Optional. True, if the bot can be invited to groups. Returned only in <see cref="Requests.GetMeRequest"/>
+    /// Optional. <see langword="true"/>, if this user is a Telegram Premium user
+    /// </summary>
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public bool? IsPremium { get; set; }
+
+    /// <summary>
+    /// Optional. <see langword="true"/>, if this user added the bot to the attachment menu
+    /// </summary>
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public bool? AddedToAttachmentMenu { get; set; }
+
+    /// <summary>
+    /// Optional. <see langword="true"/>, if the bot can be invited to groups. Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool? CanJoinGroups { get; set; }
 
     /// <summary>
-    /// Optional. True, if privacy mode is disabled for the bot. Returned only in <see cref="Requests.GetMeRequest"/>
+    /// Optional. <see langword="true"/>, if privacy mode is disabled for the bot. Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool? CanReadAllGroupMessages { get; set; }
 
     /// <summary>
-    /// Optional. True, if the bot supports inline queries. Returned only in <see cref="Requests.GetMeRequest"/>
+    /// Optional. <see langword="true"/>, if the bot supports inline queries. Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public bool? SupportsInlineQueries { get; set; }
@@ -72,8 +80,8 @@ public class User
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
 	internal long AccessHash { get; set; }
-    [return: NotNullIfNotNull(nameof(user))]
+    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
 	public static implicit operator TL.InputPeerUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
-    [return: NotNullIfNotNull(nameof(user))]
+    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
 	public static implicit operator TL.InputUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
 }

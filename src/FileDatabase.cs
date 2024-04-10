@@ -39,7 +39,7 @@ namespace Telegram.Bot
 			{
 				_cache[key] = value;
 				var filePath = Path.Combine(_folder, key + ".json");
-				using var fs = File.Create(filePath);
+				using var fs = System.IO.File.Create(filePath);
 				JsonSerializer.Serialize(fs, value);
 			}
 		}
@@ -47,7 +47,7 @@ namespace Telegram.Bot
 		public bool ContainsKey(long key)
 		{
 			if (_cache.ContainsKey(key)) return true;
-			return File.Exists(Path.Combine(_folder, key + ".json"));
+			return System.IO.File.Exists(Path.Combine(_folder, key + ".json"));
 		}
 
 #pragma warning disable CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
@@ -57,7 +57,7 @@ namespace Telegram.Bot
 			try
 			{
 				var filePath = Path.Combine(_folder, key + ".json");
-				using var fs = File.OpenRead(filePath);
+				using var fs = System.IO.File.OpenRead(filePath);
 				_cache[key] = value = (T)JsonSerializer.Deserialize(fs, typeof(T))!;
 				return true;
 			}

@@ -22,13 +22,28 @@ namespace System.Runtime.CompilerServices
 {
 	[EditorBrowsable(EditorBrowsableState.Never)]
 	internal class IsExternalInit { }
+
+#if !NETCOREAPP3_1_OR_GREATER
+	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+	internal sealed class CallerArgumentExpressionAttribute : Attribute
+	{
+		public CallerArgumentExpressionAttribute(string parameterName)
+		{
+			ParameterName = parameterName;
+		}
+
+		// ReSharper disable once UnusedAutoPropertyAccessor.Global
+		public string ParameterName { get; }
+	}
+#endif
 }
 
 #pragma warning disable CS9113
 
 // These stubs are just to make the compiler happy with existing Telegram.Bot code, as we are not using Newtonsoft.Json in this package
 
-namespace Newtonsoft.Json
+namespace Newtonsoft.Json.Converters { }
+namespace Telegram.Bot.Types
 {
 	class JsonConstructorAttribute : Attribute;
 	class JsonConverterAttribute(Type converterType) : Attribute;
@@ -44,14 +59,15 @@ namespace Newtonsoft.Json
 	enum DefaultValueHandling { Include, Ignore, Populate, IgnoreAndPopulate }
 	enum MemberSerialization { OptOut, OptIn, Fields }
 	enum NullValueHandling { Include, Ignore }
-	namespace Serialization { class SnakeCaseNamingStrategy; }
-	namespace Converters { class UnixDateTimeConverter; }
+	class SnakeCaseNamingStrategy;
+	class UnixDateTimeConverter;
 }
 namespace Telegram.Bot.Converters
 {
 	class BanTimeUnixDateTimeConverter;
 	class ChatIdConverter;
 	class ChatMemberConverter;
+	class ColorConverter;
 	class InputFileConverter;
 	class InputMediaConverter;
 	class MenuButtonConverter;
@@ -70,6 +86,8 @@ namespace Telegram.Bot.Types.Enums
 	class MessageTypeConverter;
 	class ParseModeConverter;
 	class PollTypeConverter;
+	class StickerFormatConverter;
+	class StickerTypeConverter;
 	class UpdateTypeConverter;
 }
 namespace Telegram.Bot.Types.Passport { class EncryptedPassportElementTypeConverter; }

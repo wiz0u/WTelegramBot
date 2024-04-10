@@ -1,16 +1,19 @@
-﻿global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
+﻿global using Telegram.Bot.Types;
+global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
 global using Chat = Telegram.Bot.Types.Chat;
+global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using Message = Telegram.Bot.Types.Message;
+global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
+global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
 global using Update = Telegram.Bot.Types.Update;
 global using User = Telegram.Bot.Types.User;
 global using MessageEntity = TL.MessageEntity;
 using JetBrains.Annotations;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Requests;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TL;
 
@@ -53,8 +56,10 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
     private readonly FileDatabase<User> _users = new(Path.Combine("database", "users"));
     private readonly BotCollectorPeer _collector;
     private SemaphoreSlim _pendingCounter = new(0);
+	protected Dictionary<long, string> StickerSetNames = [];        // cache id -> name
+	protected Dictionary<string, string> StickerSetMimeType = [];   // cache name -> mimeType
 
-    const int DefaultAllowedUpdates = 0b1111_1101_1111_1111_1111; /// all <see cref="UpdateType"/> except ChatMember=13
+	const int DefaultAllowedUpdates = 0b1111_1101_1111_1111_1111; /// all <see cref="UpdateType"/> except ChatMember=13
     private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
     class State //TODO: save/restore this
     {
@@ -81,15 +86,24 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
         _state = new() { AllowedUpdates = DefaultAllowedUpdates, PendingUpdates = [] };
         Client = new WTelegram.Client(_options.WTCConfig);
         Manager = Client.WithUpdateManager(OnUpdate, $"Updates-{BotId}.state", _collector);
-        _initTask = Client.LoginBotIfNeeded(_options.Token);
+        _initTask = DoLogin(_options.Token);
         _initTask.Wait(5000);
     }
 
-    /// <summary>
-    /// Create a new <see cref="TelegramBotClient"/> instance.
-    /// </summary>
-    /// <param name="token"></param>
-    public TelegramBotClient(
+	private async Task<TL.User> DoLogin(string token)
+	{
+		try
+		{
+            return await Client.LoginBotIfNeeded(_options.Token);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
+
+	/// <summary>
+	/// Create a new <see cref="TelegramBotClient"/> instance.
+	/// </summary>
+	/// <param name="token"></param>
+	public TelegramBotClient(
         string token, int apiId, string apiHash,
         string? sessionPathname = null) :
         this(new TelegramBotClientOptions(token, apiId, apiHash, sessionPathname))
@@ -239,10 +253,10 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
     }
 
     /// <summary>
-	/// Test the API token
-	/// </summary>
-	/// <returns><c>true</c> if token is valid</returns>
-	public async Task<bool> TestApiAsync(CancellationToken cancellationToken = default)
+    /// Test the API token
+    /// </summary>
+    /// <returns><see langword="true"/> if token is valid</returns>
+    public async Task<bool> TestApiAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -250,7 +264,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
             return true;
         }
         catch (ApiRequestException e)
-            when (e.ErrorCode == 401)
+            when (e.ErrorCode is 400 or 401)
         {
             return false;
         }
@@ -266,3 +280,4 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
         await GetInfoAndDownloadFileAsync(slash < 0 ? filePath : filePath[..slash], destination, cancellationToken);
     }
 }
+//TODO clean SLN before release

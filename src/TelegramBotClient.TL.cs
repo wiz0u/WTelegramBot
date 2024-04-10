@@ -1,9 +1,7 @@
 ﻿using System.Text;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
-using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using TL;
 using KeyboardButton = Telegram.Bot.Types.ReplyMarkups.KeyboardButton;
@@ -24,9 +22,10 @@ public partial class TelegramBotClient
 		ReplyKeyboardMarkup rkm => new TL.ReplyKeyboardMarkup
 		{
 			flags = (rkm.Selective == true ? TL.ReplyKeyboardMarkup.Flags.selective : 0)
-				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0)
+				| (rkm.IsPersistent == true ? TL.ReplyKeyboardMarkup.Flags.persistent : 0)
 				| (rkm.ResizeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.resize : 0)
-				| (rkm.OneTimeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.single_use : 0),
+				| (rkm.OneTimeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.single_use : 0)
+				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0),
 			placeholder = rkm.InputFieldPlaceholder,
 			rows = rkm.Keyboard.Select(row => new KeyboardButtonRow { buttons = row.Select(MakeKeyboardButton).ToArray() }).ToArray()
 		},
@@ -40,16 +39,45 @@ public partial class TelegramBotClient
 
 	private static KeyboardButtonBase MakeKeyboardButton(KeyboardButton btn)
 	{
+		if (btn.RequestUser is { } ru) return new KeyboardButtonRequestPeer { text = btn.Text, button_id = ru.RequestId, max_quantity = 1,
+			peer_type = new RequestPeerTypeUser { bot = ru.UserIsBot == true, premium = ru.UserIsPremium == true,
+				flags = (ru.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (ru.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium) } };
+		if (btn.RequestChat is { } rc) return new KeyboardButtonRequestPeer { text = btn.Text, button_id = rc.RequestId, max_quantity = 1,
+			peer_type = MakeRequestPeerType(rc) };
 		if (btn.RequestContact == true) return new KeyboardButtonRequestPhone { text = btn.Text };
 		if (btn.RequestLocation == true) return new KeyboardButtonRequestGeoLocation { text = btn.Text };
-		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll
-		{
-			text = btn.Text,
-			quiz = btn.RequestPoll.Type is "quiz",
-			flags = btn.RequestPoll.Type is "quiz" or "regular" ? KeyboardButtonRequestPoll.Flags.has_quiz : 0
-		};
+		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll { text = btn.Text, quiz = btn.RequestPoll.Type is "quiz",
+			flags = btn.RequestPoll.Type is "quiz" or "regular" ? KeyboardButtonRequestPoll.Flags.has_quiz : 0 };
 		if (btn.WebApp != null) return new KeyboardButtonSimpleWebView { text = btn.Text, url = btn.WebApp.Url };
 		return new TL.KeyboardButton { text = btn.Text };
+	}
+
+	private static RequestPeerType MakeRequestPeerType(KeyboardButtonRequestChat rc)
+	{
+		if (rc.ChatIsChannel)
+		{
+			var rptb = new RequestPeerTypeBroadcast { };
+			return FillFields(rc, rptb, ref rptb.flags, ref rptb.has_username, ref rptb.user_admin_rights, ref rptb.bot_admin_rights);
+		}
+		else
+		{
+			var rptc = new RequestPeerTypeChat { forum = rc.ChatIsForum == true,
+				flags = (rc.ChatIsForum != null ? RequestPeerTypeChat.Flags.has_forum : 0) | (rc.BotIsMember == true ? RequestPeerTypeChat.Flags.bot_participant : 0) };
+			return FillFields(rc, rptc, ref rptc.flags, ref rptc.has_username, ref rptc.user_admin_rights, ref rptc.bot_admin_rights);
+		}
+		static T FillFields<T, F>(KeyboardButtonRequestChat rc, T obj, ref F flags, ref bool has_username, ref ChatAdminRights? user_admin_rights, ref ChatAdminRights? bot_admin_rights)
+			where T : RequestPeerType where F : Enum, IConvertible
+		{
+			has_username = rc.ChatHasUsername == true;
+			user_admin_rights = rc.UserAdministratorRights?.ChatAdminRights();
+			bot_admin_rights = rc.BotAdministratorRights?.ChatAdminRights();
+			var more_flags = (rc.ChatHasUsername != null ? RequestPeerTypeChat.Flags.has_has_username : 0)
+				| (rc.UserAdministratorRights != null ? RequestPeerTypeChat.Flags.has_user_admin_rights : 0)
+				| (rc.BotAdministratorRights != null ? RequestPeerTypeChat.Flags.has_bot_admin_rights : 0)
+				| (rc.ChatIsCreated == true ? RequestPeerTypeChat.Flags.creator : 0);
+			flags = (F)(object)(flags.ToUInt32(null) | (uint)more_flags);
+			return obj;
+		}
 	}
 
 	private async Task<KeyboardButtonBase> MakeKeyboardButton(InlineKeyboardButton btn)
@@ -59,7 +87,8 @@ public partial class TelegramBotClient
 		if (btn.CallbackGame != null) return new KeyboardButtonGame { text = btn.Text };
 		if (btn.Pay == true) return new KeyboardButtonBuy { text = btn.Text };
 		if (btn.SwitchInlineQuery != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery };
-		if (btn.SwitchInlineQueryCurrentChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery, flags = KeyboardButtonSwitchInline.Flags.same_peer };
+		if (btn.SwitchInlineQueryCurrentChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryCurrentChat, flags = KeyboardButtonSwitchInline.Flags.same_peer };
+		if (btn.SwitchInlineQueryChosenChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryChosenChat.Query, peer_types = btn.SwitchInlineQueryChosenChat.InlineQueryPeerTypes(), flags = KeyboardButtonSwitchInline.Flags.has_peer_types };
 		if (btn.LoginUrl != null) return new InputKeyboardButtonUrlAuth
 		{
 			text = btn.Text,
@@ -149,10 +178,10 @@ public partial class TelegramBotClient
 	{
 		switch (photo.FileType)
 		{
-			case FileType.Id when photo is InputTelegramFile itf:
-				if (itf.FileId!.ParseFileId().location is InputPhotoFileLocation ipfl)
-					return new InputChatPhoto { id = new InputPhoto { id = ipfl.id, access_hash = ipfl.access_hash, file_reference = ipfl.file_reference } };
-				break;
+			//case FileType.Id:
+			//	if (((InputFileId)photo).Id.ParseFileId().location is InputPhotoFileLocation ipfl)
+			//		return new InputChatPhoto { id = new InputPhoto { id = ipfl.id, access_hash = ipfl.access_hash, file_reference = ipfl.file_reference } };
+			//	break;
 			case FileType.Stream:
 				var inputFile = await Client.UploadFileAsync(photo.Content, photo.FileName);
 				return new InputChatUploadedPhoto { file = inputFile, flags = InputChatUploadedPhoto.Flags.has_file };
@@ -166,16 +195,17 @@ public partial class TelegramBotClient
 		return new InputPhoto { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
-	public async Task<TL.InputMedia> InputMediaPhoto(InputOnlineFile file, bool? hasSpoiler = false)
+	public async Task<TL.InputMedia> InputMediaPhoto(InputFile file, bool? hasSpoiler = false)
 	{
 		switch (file.FileType)
 		{
 			case FileType.Id:
-				return new TL.InputMediaPhoto { id = InputPhoto(file.FileId!), flags = hasSpoiler == true ? TL.InputMediaPhoto.Flags.spoiler : 0 };
+				return new TL.InputMediaPhoto { id = InputPhoto(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaPhoto.Flags.spoiler : 0 };
 			case FileType.Url:
-				return new InputMediaPhotoExternal { url = file.Url, flags = hasSpoiler == true ? InputMediaPhotoExternal.Flags.spoiler : 0 };
+				return new InputMediaPhotoExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaPhotoExternal.Flags.spoiler : 0 };
 			default: //case FileType.Stream:
-				var uploadedFile = await Client.UploadFileAsync(file.Content, file.FileName);
+				var stream = (InputFileStream)file;
+				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName);
 				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler == true ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
 		}
 	}
@@ -186,71 +216,127 @@ public partial class TelegramBotClient
 		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
-	public async Task<TL.InputMedia> InputMediaDocument(InputFileStream file, bool? hasSpoiler = false, string? mimeType = null)
+	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, bool? hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
 	{
 		switch (file.FileType)
 		{
 			case FileType.Id:
-				return new TL.InputMediaDocument { id = InputDocument(((InputTelegramFile)file).FileId!), flags = hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0 };
+				return new TL.InputMediaDocument { id = InputDocument(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0 };
 			case FileType.Url:
-				return new InputMediaDocumentExternal { url = ((InputOnlineFile)file).Url, flags = hasSpoiler == true ? InputMediaDocumentExternal.Flags.spoiler : 0 };
+				return new InputMediaDocumentExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaDocumentExternal.Flags.spoiler : 0 };
 			default: //case FileType.Stream:
-				var uploadedFile = await Client.UploadFileAsync(file.Content, file.FileName);
+				var stream = (InputFileStream)file;
+				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName ?? defaultFilename);
 				if (mimeType == null)
 				{
-					string? fileExt = Path.GetExtension(file.FileName);
-					fileExt ??= Path.GetExtension((file.Content as FileStream)?.Name);
+					string? fileExt = Path.GetExtension(stream.FileName); // ?? defaultFilename (if we want to behave exactly like Telegram.Bot)
+					fileExt ??= Path.GetExtension((stream.Content as FileStream)?.Name);
 					mimeType = string.IsNullOrEmpty(fileExt) ? null : Helpers.GetMimeType(fileExt);
 				}
 				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
 		}
 	}
 
-	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputFileStream file, string emojis, MaskPosition? maskPosition, string? mimeType = null)
+	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker, string? mimeType)
 	{
 		var peer = InputPeerUser(userId);
-		var media = await InputMediaDocument(file, mimeType: mimeType);
-		var messageMedia = await Client.Messages_UploadMedia(peer, media);
-		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
-			throw new ApiRequestException("Unexpected UploadMedia result");
+		var media = await InputMediaDocument(sticker.Sticker, mimeType: mimeType);
+		var document = await UploadMediaDocument(peer, media);
+		string keywords = sticker.KeyWords == null ? "" : string.Join(',', sticker.KeyWords);
 		return new InputStickerSetItem
 		{
-			document = doc,
-			emoji = emojis,
-			mask_coords = maskPosition.MaskCoord(),
-			flags = maskPosition != null ? TL.InputStickerSetItem.Flags.has_mask_coords : 0
+			document = document,
+			emoji = string.Concat(sticker.EmojiList),
+			mask_coords = sticker.MaskPosition.MaskCoord(),
+			keywords = keywords,
+			flags = (sticker.MaskPosition != null ? TL.InputStickerSetItem.Flags.has_mask_coords : 0)
+				| (keywords != "" ? TL.InputStickerSetItem.Flags.has_keywords : 0),
 		};
 	}
 
-	private static Sticker MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker, Messages_StickerSet? mss)
+	private async Task<TL.InputDocument> UploadMediaDocument(InputPeerUser peer, TL.InputMedia media)
 	{
+		if (media is TL.InputMediaDocument imd) return imd.id; // already on Telegram, no need to upload
+		var messageMedia = await Client.Messages_UploadMedia(peer, media);
+		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
+			throw new ApiRequestException("Unexpected UploadMedia result");
+		return doc;
+	}
+
+	private string CacheStickerSet(Messages_StickerSet mss, string? mimeType = null)
+	{
+		mimeType ??= mss.documents.OfType<TL.Document>().FirstOrDefault(doc => !string.IsNullOrEmpty(doc.mime_type)).mime_type;
+		lock (StickerSetNames)
+			StickerSetNames[mss.set.id] = mss.set.short_name;
+		lock (StickerSetMimeType)
+			return StickerSetMimeType[mss.set.short_name] = mimeType;
+	}
+
+	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker)
+	{
+		string? setName = null;
+		switch (sticker?.stickerset)
+		{
+			case InputStickerSetID issi:
+				lock (StickerSetNames)
+					if (StickerSetNames.TryGetValue(issi.id, out setName)) break;
+				try
+				{
+					var mss = await Client.Messages_GetStickerSet(issi);
+					CacheStickerSet(mss);
+					setName = mss.set.short_name;
+				}
+				catch (Exception) { }
+				break;
+			case InputStickerSetShortName issn: setName = issn.short_name; break;
+			default: Manager.Log(3, $"MakeSticker called with unexpected {sticker?.stickerset} stickerset"); break;
+		}
+		var customEmoji = doc.GetAttribute<DocumentAttributeCustomEmoji>();
 		var result = new Sticker
 		{
 			FileSize = doc.size,
 			IsAnimated = doc.mime_type == "application/x-tgsticker",
 			IsVideo = doc.mime_type == "video/webm",
-			Thumb = doc.LargestThumbSize?.PhotoSize(doc.ToFileLocation(doc.LargestThumbSize), doc.dc_id),
-			Emoji = sticker?.alt ?? mss?.packs.FirstOrDefault(sp => sp.documents.Contains(doc.id))?.emoticon,
-			SetName = mss?.set.short_name,
+			Type = customEmoji != null ? StickerType.CustomEmoji :
+				sticker?.flags.HasFlag(DocumentAttributeSticker.Flags.mask) == true ? StickerType.Mask : StickerType.Regular,
+			Thumbnail = doc.LargestThumbSize?.PhotoSize(doc.ToFileLocation(doc.LargestThumbSize), doc.dc_id),
+			Emoji = sticker?.alt ?? customEmoji?.alt, // ?? mss?.packs.FirstOrDefault(sp => sp.documents.Contains(doc.id))?.emoticon,
+			SetName = setName,
 			MaskPosition = sticker?.mask_coords == null ? null : new MaskPosition
 			{
 				Point = (MaskPositionPoint)(sticker.mask_coords.n + 1),
 				XShift = (float)sticker.mask_coords.x,
 				YShift = (float)sticker.mask_coords.y,
 				Scale = (float)sticker.mask_coords.zoom
-			}
+			},
+			NeedsRepainting = customEmoji?.flags.HasFlag(DocumentAttributeCustomEmoji.Flags.text_color),
+			CustomEmojiId = customEmoji != null ? doc.id.ToString() : null
 		}.SetFileIds(doc.ToFileLocation(), doc.dc_id);
+		if (doc.video_thumbs?.OfType<VideoSize>().FirstOrDefault(vs => vs.type == "f") != null)
+		{
+			var premiumLocation = doc.ToFileLocation();
+			premiumLocation.thumb_size = "f";
+			result.PremiumAnimation = new Types.File { FileSize = doc.size }.SetFileIds(premiumLocation, doc.dc_id, "f");
+			result.PremiumAnimation.FilePath = result.PremiumAnimation.FileId + "/Sticker_" + result.PremiumAnimation.FileUniqueId;
+		}
 		if (doc.GetAttribute<DocumentAttributeImageSize>() is { } imageSize) { result.Width = imageSize.w; result.Height = imageSize.h; }
 		else if (doc.GetAttribute<DocumentAttributeVideo>() is { } video) { result.Width = video.w; result.Height = video.h; }
-		else if (result.IsAnimated) { result.Width = result.Height = doc.GetAttribute<DocumentAttributeCustomEmoji>() is null ? 512 : 100; }
+		else if (result.IsAnimated) { result.Width = result.Height = customEmoji is null ? 512 : 100; }
 		return result;
 	}
 
-	private async Task SetDocThumb(InputMediaUploadedDocument doc, InputMedia? thumb)
+	private async Task SetDocThumb(InputMediaUploadedDocument doc, InputFile? thumb)
 	{
-		if (thumb?.FileType != FileType.Stream) return;
-		doc.thumb = await Client.UploadFileAsync(thumb.Content, thumb.FileName);
-		doc.flags |= InputMediaUploadedDocument.Flags.has_thumb;
+		switch (thumb)
+		{
+			case null: break;
+			case InputFileStream stream:
+				doc.thumb = await Client.UploadFileAsync(stream.Content, stream.FileName);
+				doc.flags |= InputMediaUploadedDocument.Flags.has_thumb;
+				break;
+			default: throw new ApiRequestException("Only InputFileStream is not supported for thumbnails", 400);
+		}
+		
 	}
 
 	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, float? horizontalAccuracy, int? heading, int? proximityAlertRadius, int livePeriod = 0)
@@ -321,31 +407,31 @@ public partial class TelegramBotClient
 		return await (result switch
 		{
 			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, null, null,
-				r.ThumbUrl, "image/jpeg", r.ThumbWidth, r.ThumbHeight,
+				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
 				r.Url, "text/html", url: r.HideUrl == true ? null : r.Url),
 			InlineQueryResultAudio r => MakeIbir(r, r.Title, r.Performer, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				null, null, 0, 0,
 				r.AudioUrl, "audio/mpeg", new DocumentAttributeAudio { duration = r.AudioDuration ?? 0, title = r.Title, performer = r.Performer, flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }),
 			InlineQueryResultContact r => MakeIbir(r, r.LastName == null ? r.FirstName : $"{r.FirstName} {r.LastName}", r.PhoneNumber, r.InputMessageContent, null, null, null,
-				r.ThumbUrl, "image/jpeg", r.ThumbWidth, r.ThumbHeight),
+				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
 			InlineQueryResultDocument r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
-				r.ThumbUrl, "image/jpeg", r.ThumbWidth, r.ThumbHeight,
+				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
 				r.DocumentUrl, r.MimeType, null, "file"),
 			InlineQueryResultGif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
-				r.ThumbUrl, r.ThumbMimeType, 0, 0,
+				r.ThumbnailUrl, r.ThumbnailMimeType, 0, 0,
 				r.GifUrl, "image/gif", r.GifWidth + r.GifHeight > 0 ? new DocumentAttributeImageSize { w = r.GifWidth ?? 0, h = r.GifHeight ?? 0 } : null),
 			InlineQueryResultLocation r => MakeIbir(r, r.Title, $"{r.Latitude} {r.Longitude}", r.InputMessageContent, null, null, null,
-				r.ThumbUrl, "image/jpeg", r.ThumbWidth, r.ThumbHeight, type: "geo"),
+				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight, type: "geo"),
 			InlineQueryResultMpeg4Gif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
-				r.ThumbUrl, r.ThumbMimeType ?? "image/jpeg", 0, 0,
+				r.ThumbnailUrl, r.ThumbnailMimeType ?? "image/jpeg", 0, 0,
 				r.Mpeg4Url, "video/mp4", r.Mpeg4Width + r.Mpeg4Height > 0 ? new DocumentAttributeVideo { w = r.Mpeg4Width ?? 0, h = r.Mpeg4Height ?? 0, duration = r.Mpeg4Duration ?? 0 } : null, "gif"),
 			InlineQueryResultPhoto r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
-				r.ThumbUrl, "image/jpeg", 0, 0,
+				r.ThumbnailUrl, "image/jpeg", 0, 0,
 				r.PhotoUrl, "image/jpeg", r.PhotoWidth + r.PhotoHeight > 0 ? new DocumentAttributeImageSize { w = r.PhotoWidth ?? 0, h = r.PhotoHeight ?? 0 } : null),
 			InlineQueryResultVenue r => MakeIbir(r, r.Title, r.Address, r.InputMessageContent, null, null, null,
-				r.ThumbUrl, "image/jpeg", r.ThumbWidth, r.ThumbHeight),
+				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
 			InlineQueryResultVideo r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
-				r.ThumbUrl, "image/jpeg", 0, 0,
+				r.ThumbnailUrl, "image/jpeg", 0, 0,
 				r.VideoUrl, r.MimeType, r.VideoWidth + r.VideoHeight > 0 ? new DocumentAttributeVideo { w = r.VideoWidth ?? 0, h = r.VideoHeight ?? 0, duration = r.VideoDuration ?? 0 } : null),
 			InlineQueryResultVoice r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				null, null, 0, 0,
@@ -506,4 +592,48 @@ public partial class TelegramBotClient
 		};
 		return new ApiRequestException(msg, rpcEx.Code, ex);
 	}
+
+	private static string MimeType(StickerFormat stickerFormat) => stickerFormat switch
+	{
+		StickerFormat.Animated => "application/x-tgsticker",
+		StickerFormat.Video => "video/webm",
+		_ => "image/webp"
+	};
+
+	private static InputMediaInvoice InputMediaInvoice(string title, string description, string payload, string providerToken,
+        string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
+        string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
+        bool? needName, bool? needPhoneNumber, bool? needEmail, bool? needShippingAddress,
+        bool? sendPhoneNumberToProvider, bool? sendEmailToProvider, bool? isFlexible) => new()
+		{
+			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0),
+			title = title,
+			description = description,
+			photo = photoUrl == null ? null : new InputWebDocument
+			{
+				url = photoUrl,
+				mime_type = "image/jpeg",
+				size = photoSize ?? 0,
+				attributes = photoWidth > 0 && photoHeight > 0 ? [new TL.DocumentAttributeImageSize { w = photoWidth.Value, h = photoHeight.Value }] : null
+			},
+			invoice = new TL.Invoice
+			{
+				flags = (maxTipAmount.HasValue ? TL.Invoice.Flags.has_max_tip_amount : 0)
+					| (needName == true ? TL.Invoice.Flags.name_requested : 0)
+					| (needPhoneNumber == true ? TL.Invoice.Flags.phone_requested : 0)
+					| (needEmail == true ? TL.Invoice.Flags.email_requested : 0)
+					| (needShippingAddress == true ? TL.Invoice.Flags.shipping_address_requested : 0)
+					| (sendPhoneNumberToProvider == true ? TL.Invoice.Flags.phone_to_provider : 0)
+					| (sendEmailToProvider == true ? TL.Invoice.Flags.email_to_provider : 0)
+					| (isFlexible == true ? TL.Invoice.Flags.flexible : 0),
+				currency = currency,
+				prices = prices.LabeledPrices(),
+				max_tip_amount = maxTipAmount ?? 0,
+				suggested_tip_amounts = suggestedTipAmounts?.Select(sta => (long)sta).ToArray(),
+			},
+			payload = System.Text.Encoding.UTF8.GetBytes(payload),
+			provider = providerToken,
+			provider_data = new DataJSON { data = providerData ?? "null" },
+			start_param = startParameter,
+		};
 }
