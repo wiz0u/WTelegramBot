@@ -312,9 +312,9 @@ public partial class TelegramBotClient
 		{
 			switch (update)
 			{
-				case UpdateNewMessage { message: TL.Message message }: return (await MakeMessage(message, replyToMessage))!;
-				case UpdateNewScheduledMessage { message: TL.Message schedMsg }: return (await MakeMessage(schedMsg, replyToMessage))!;
-				case UpdateEditMessage { message: TL.Message editMsg }: return (await MakeMessage(editMsg, replyToMessage))!;
+				case UpdateNewMessage { message: { } message }: return (await MakeMessage(message, replyToMessage))!;
+				case UpdateNewScheduledMessage { message: { } schedMsg }: return (await MakeMessage(schedMsg, replyToMessage))!;
+				case UpdateEditMessage { message: { } editMsg }: return (await MakeMessage(editMsg, replyToMessage))!;
 			}
 		}
 		throw new ApiRequestException("Failed to retrieve sent message");
@@ -344,6 +344,7 @@ public partial class TelegramBotClient
 		switch (msgBase)
 		{
 			case TL.Message message:
+				var reply_to = message.reply_to as MessageReplyHeader;
 				var msg = new Message
 				{
 					MessageId = message.id,
@@ -354,8 +355,10 @@ public partial class TelegramBotClient
 					ReplyToMessage = replyToMessage,
 					AuthorSignature = message.post_author,
 					ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
-					MessageThreadId = message.reply_to is MessageReplyHeader { reply_to_top_id: > 0 } mrh ? mrh.reply_to_top_id : null,
+					IsTopicMessage = reply_to?.flags.HasFlag(MessageReplyHeader.Flags.forum_topic),
 				};
+				if (msg.IsTopicMessage == true)
+					msg.MessageThreadId = reply_to.reply_to_top_id > 0 ? reply_to.reply_to_top_id : reply_to.reply_to_msg_id;
 				if (message.fwd_from is MessageFwdHeader fwd)
 				{
 					msg.ForwardFrom = await UserFromPeer(fwd.from_id);
@@ -631,6 +634,14 @@ public partial class TelegramBotClient
 			MessageActionInviteToGroupCall maitgc => msg.VideoChatParticipantsInvited = new VideoChatParticipantsInvited {
 				Users = await Task.WhenAll(maitgc.users.Select(UserOrResolve)) },
 			MessageActionWebViewDataSentMe mawvdsm => msg.WebAppData = new WebAppData { ButtonText = mawvdsm.text, Data = mawvdsm.data },
+			MessageActionTopicCreate matc => msg.ForumTopicCreated = new ForumTopicCreated { Name = matc.title, IconColor = matc.icon_color,
+				IconCustomEmojiId = matc.flags.HasFlag(MessageActionTopicCreate.Flags.has_icon_emoji_id) ? matc.icon_emoji_id.ToString() : null },
+			MessageActionTopicEdit mate => mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_closed) ?
+					mate.closed ? msg.ForumTopicClosed = new() : msg.ForumTopicReopened = new()
+				: mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_hidden)
+					? mate.hidden ? msg.GeneralForumTopicHidden = new() : msg.GeneralForumTopicUnhidden = new()
+					: msg.ForumTopicEdited = new ForumTopicEdited { Name = mate.title, IconCustomEmojiId = mate.icon_emoji_id != 0
+						? mate.icon_emoji_id.ToString() : mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_icon_emoji_id) ? "" : null },
 			_ => null,
 		};
 	}

@@ -1,7 +1,5 @@
-﻿#define UNIMPLEMENTED_YET
-using Telegram.Bot.Exceptions;
+﻿using Telegram.Bot.Exceptions;
 using Telegram.Bot.Requests;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.Payments;
@@ -59,24 +57,13 @@ public partial class TelegramBotClient
     /// </list>
     /// </remarks>
     /// <returns>An Array of <see cref="Update"/> objects is returned.</returns>
-    public async Task<Update[]> GetUpdatesAsync(
+    public Task<Update[]> GetUpdatesAsync(
         int? offset = default,
         int? limit = default,
         int? timeout = default,
         IEnumerable<UpdateType>? allowedUpdates = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await MakeRequestAsync(
-                request: new GetUpdatesRequest
-                {
-                    Offset = offset,
-                    Limit = limit,
-                    Timeout = timeout,
-                    AllowedUpdates = allowedUpdates
-                },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
+    ) => GetUpdatesAsync(offset ?? 0, limit ?? 100, timeout ?? 0, allowedUpdates, cancellationToken);
 
     /// <summary>
     /// Use this method to specify a URL and receive incoming updates via an outgoing webhook.
@@ -2916,7 +2903,6 @@ public partial class TelegramBotClient
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
-#if !UNIMPLEMENTED_YET
     /// <summary>
     /// Use this method to get custom emoji stickers, which can be used as a forum topic icon by any user.
     /// </summary>
@@ -2927,209 +2913,233 @@ public partial class TelegramBotClient
     /// <returns>Returns an Array of <see cref="Sticker"/> objects.</returns>
     public async Task<Sticker[]> GetForumTopicIconStickersAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new GetForumTopicIconStickersRequest(), cancellationToken)
-            .ConfigureAwait(false);
+    )
+    {
+        try
+        {
+			var mss = await Client.Messages_GetStickerSet(new InputStickerSetEmojiDefaultTopicIcons());
+			CacheStickerSet(mss);
+			var stickers = await Task.WhenAll(mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())));
+            return stickers;
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for
-    /// this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights.
-    /// Returns information about the created topic as a <see cref="ForumTopic"/> object.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="name">Topic name, 1-128 characters</param>
-    /// <param name="iconColor">
-    /// Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E),
-    /// 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)
-    /// </param>
-    /// <param name="iconCustomEmojiId">
-    /// Unique identifier of the custom emoji shown as the topic icon. Use <see cref="GetForumTopicIconStickersAsync"/>
-    /// to get all allowed custom emoji identifiers
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    /// <returns>
-    /// Returns information about the created topic as a <see cref="ForumTopic"/> object.
-    /// </returns>
-    public async Task<ForumTopic> CreateForumTopicAsync(
+	/// <summary>
+	/// Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for
+	/// this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights.
+	/// Returns information about the created topic as a <see cref="ForumTopic"/> object.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="name">Topic name, 1-128 characters</param>
+	/// <param name="iconColor">
+	/// Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E),
+	/// 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)
+	/// </param>
+	/// <param name="iconCustomEmojiId">
+	/// Unique identifier of the custom emoji shown as the topic icon. Use <see cref="GetForumTopicIconStickersAsync"/>
+	/// to get all allowed custom emoji identifiers
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	/// <returns>
+	/// Returns information about the created topic as a <see cref="ForumTopic"/> object.
+	/// </returns>
+	public async Task<ForumTopic> CreateForumTopicAsync(
         ChatId chatId,
         string name,
         Color? iconColor = default,
         string? iconCustomEmojiId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(
-                new CreateForumTopicRequest(chatId, name)
-                {
-                    IconColor = iconColor,
-                    IconCustomEmojiId = iconCustomEmojiId,
-                },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+            var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, WTelegram.Helpers.RandomLong(), iconColor?.ToInt(),
+                icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
+            var ftc = msg.ForumTopicCreated ?? throw new ApiRequestException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
+            return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = new Color(ftc.IconColor), IconCustomEmojiId = ftc.IconCustomEmojiId };
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator
-    /// in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-    /// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="name">
-    /// New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept
-    /// </param>
-    /// <param name="iconCustomEmojiId">
-    /// New unique identifier of the custom emoji shown as the topic icon. Use
-    /// <see cref="GetForumTopicIconStickersRequest"/> to get all allowed custom emoji identifiers. Pass an empty
-    /// string to remove the icon. If not specified, the current icon will be kept
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task EditForumTopicAsync(
+	/// <summary>
+	/// Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator
+	/// in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+	/// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="name">
+	/// New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept
+	/// </param>
+	/// <param name="iconCustomEmojiId">
+	/// New unique identifier of the custom emoji shown as the topic icon. Use
+	/// <see cref="GetForumTopicIconStickersRequest"/> to get all allowed custom emoji identifiers. Pass an empty
+	/// string to remove the icon. If not specified, the current icon will be kept
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task EditForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
         string? name = default,
         string? iconCustomEmojiId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(
-                new EditForumTopicRequest(chatId, messageThreadId)
-                {
-                    Name = name,
-                    IconCustomEmojiId = iconCustomEmojiId,
-                },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+            await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null : 
+                iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat
-    /// for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights,
-    /// unless it is the creator of the topic. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task CloseForumTopicAsync(
+	/// <summary>
+	/// Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat
+	/// for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights,
+	/// unless it is the creator of the topic. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task CloseForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new CloseForumTopicRequest(chatId, messageThreadId), cancellationToken)
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: true);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
-    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-    /// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task ReopenForumTopicAsync(
+	/// <summary>
+	/// Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
+	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+	/// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task ReopenForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new ReopenForumTopicRequest(chatId, messageThreadId), cancellationToken)
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: false);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
-    /// an administrator in the chat for this to work and must have the
-    /// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. Returns <see langword="true"/>
-    /// on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task DeleteForumTopicAsync(
+	/// <summary>
+	/// Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
+	/// an administrator in the chat for this to work and must have the
+	/// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. Returns <see langword="true"/>
+	/// on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task DeleteForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new DeleteForumTopicRequest(chatId, messageThreadId), cancellationToken)
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Channels_DeleteTopicHistory(channel, messageThreadId);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the
-    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/> administrator
-    /// right in the supergroup. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task UnpinAllForumTopicMessagesAsync(
+	/// <summary>
+	/// Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the
+	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/> administrator
+	/// right in the supergroup. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task UnpinAllForumTopicMessagesAsync(
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new UnpinAllForumTopicMessagesRequest(chatId, messageThreadId), cancellationToken)
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Messages_UnpinAllMessages(channel, messageThreadId);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an
-    /// administrator in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/>
-    /// administrator rights. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="name">New topic name, 1-128 characters</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task EditGeneralForumTopicAsync(
+	/// <summary>
+	/// Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an
+	/// administrator in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/>
+	/// administrator rights. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="name">New topic name, 1-128 characters</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public Task EditGeneralForumTopicAsync(
         ChatId chatId,
         string name,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new EditGeneralForumTopicRequest(chatId, name), cancellationToken)
-            .ConfigureAwait(false);
+    ) => EditForumTopicAsync(chatId, 1, name, cancellationToken: cancellationToken);
 
     /// <summary>
     /// Use this method to close an open 'General' topic in a forum supergroup chat. The bot must be an administrator
@@ -3144,115 +3154,118 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    public async Task CloseGeneralForumTopicAsync(
+    public Task CloseGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new CloseGeneralForumTopicRequest(chatId), cancellationToken)
-            .ConfigureAwait(false);
+    ) => CloseForumTopicAsync(chatId, 1, cancellationToken);
 
-    /// <summary>
-    /// Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an
-    /// administrator in the chat for this to work and must have the
-    /// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. The topic will be automatically
-    /// unhidden if it was hidden. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task ReopenGeneralForumTopicAsync(
+	/// <summary>
+	/// Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an
+	/// administrator in the chat for this to work and must have the
+	/// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. The topic will be automatically
+	/// unhidden if it was hidden. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public Task ReopenGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new ReopenGeneralForumTopicRequest(chatId), cancellationToken)
-            .ConfigureAwait(false);
+    ) => ReopenForumTopicAsync(chatId, 1, cancellationToken);
 
-    /// <summary>
-    /// Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
-    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-    /// rights. The topic will be automatically closed if it was open. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task HideGeneralForumTopicAsync(
+	/// <summary>
+	/// Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
+	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+	/// rights. The topic will be automatically closed if it was open. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task HideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new HideGeneralForumTopicRequest(chatId), cancellationToken)
-            .ConfigureAwait(false);
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Channels_EditForumTopic(channel, 1, hidden: true);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to uhhide the 'General' topic in a forum supergroup chat. The bot must be an administrator
-    /// in the chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/>
-    /// administrator rights. Returns <see langword="true"/> on success.
-    /// </summary>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="chatId">
-    /// Unique identifier for the target chat or username of the target channel
-    /// (in the format <c>@channelusername</c>)
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task UnhideGeneralForumTopicAsync(
+	/// <summary>
+	/// Use this method to uhhide the 'General' topic in a forum supergroup chat. The bot must be an administrator
+	/// in the chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/>
+	/// administrator rights. Returns <see langword="true"/> on success.
+	/// </summary>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="chatId">
+	/// Unique identifier for the target chat or username of the target channel
+	/// (in the format <c>@channelusername</c>)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task UnhideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull()
-            .MakeRequestAsync(new UnhideGeneralForumTopicRequest(chatId), cancellationToken)
-            .ConfigureAwait(false);
-#endif
+    )
+	{
+		try
+		{
+			var channel = await InputChannel(chatId);
+			await Client.Channels_EditForumTopic(channel, 1, hidden: false);
+		}
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+	}
 
-    /// <summary>
-    /// Use this method to send answers to callback queries sent from
-    /// <see cref="InlineKeyboardMarkup">inline keyboards</see>. The answer will be displayed
-    /// to the user as a notification at the top of the chat screen or as an alert
-    /// </summary>
-    /// <remarks>
-    /// Alternatively, the user can be redirected to the specified Game URL.For this option to work, you must
-    /// first create a game for your bot via <c>@Botfather</c> and accept the terms. Otherwise, you may use
-    /// links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
-    /// </remarks>
-    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="callbackQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="text">
-    /// Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters
-    /// </param>
-    /// <param name="showAlert">
-    /// If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat
-    /// screen. Defaults to <see langword="false"/>
-    /// </param>
-    /// <param name="url">
-    /// URL that will be opened by the user's client. If you have created a
-    /// <a href="https://core.telegram.org/bots/api#game">Game</a> and accepted the conditions via
-    /// <c>@Botfather</c>, specify the URL that opens your game — note that this will only work if the query
-    /// comes from a callback_game button
-    /// <para>
-    /// Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
-    /// </para>
-    /// </param>
-    /// <param name="cacheTime">
-    /// The maximum amount of time in seconds that the result of the callback query may be cached client-side.
-    /// Telegram apps will support caching starting in version 3.14
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-    /// </param>
-    public async Task AnswerCallbackQueryAsync(
+	/// <summary>
+	/// Use this method to send answers to callback queries sent from
+	/// <see cref="InlineKeyboardMarkup">inline keyboards</see>. The answer will be displayed
+	/// to the user as a notification at the top of the chat screen or as an alert
+	/// </summary>
+	/// <remarks>
+	/// Alternatively, the user can be redirected to the specified Game URL.For this option to work, you must
+	/// first create a game for your bot via <c>@Botfather</c> and accept the terms. Otherwise, you may use
+	/// links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
+	/// </remarks>
+	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+	/// <param name="callbackQueryId">Unique identifier for the query to be answered</param>
+	/// <param name="text">
+	/// Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters
+	/// </param>
+	/// <param name="showAlert">
+	/// If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat
+	/// screen. Defaults to <see langword="false"/>
+	/// </param>
+	/// <param name="url">
+	/// URL that will be opened by the user's client. If you have created a
+	/// <a href="https://core.telegram.org/bots/api#game">Game</a> and accepted the conditions via
+	/// <c>@Botfather</c>, specify the URL that opens your game — note that this will only work if the query
+	/// comes from a callback_game button
+	/// <para>
+	/// Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
+	/// </para>
+	/// </param>
+	/// <param name="cacheTime">
+	/// The maximum amount of time in seconds that the result of the callback query may be cached client-side.
+	/// Telegram apps will support caching starting in version 3.14
+	/// </param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	public async Task AnswerCallbackQueryAsync(
         string callbackQueryId,
         string? text = default,
         bool? showAlert = default,

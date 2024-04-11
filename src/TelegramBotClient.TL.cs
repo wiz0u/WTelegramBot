@@ -124,7 +124,7 @@ public partial class TelegramBotClient
 				flags = messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id : 0
 			};
 		else if (messageThreadId > 0)
-			return new InputReplyToMessage { top_msg_id = messageThreadId.Value, flags = InputReplyToMessage.Flags.has_top_msg_id };
+			return new InputReplyToMessage { reply_to_msg_id = messageThreadId.Value };
 		return null;
 	}
 
@@ -274,8 +274,9 @@ public partial class TelegramBotClient
 
 	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker)
 	{
+		var customEmoji = doc.GetAttribute<DocumentAttributeCustomEmoji>();
 		string? setName = null;
-		switch (sticker?.stickerset)
+		switch (sticker?.stickerset ?? customEmoji?.stickerset)
 		{
 			case InputStickerSetID issi:
 				lock (StickerSetNames)
@@ -291,7 +292,6 @@ public partial class TelegramBotClient
 			case InputStickerSetShortName issn: setName = issn.short_name; break;
 			default: Manager.Log(3, $"MakeSticker called with unexpected {sticker?.stickerset} stickerset"); break;
 		}
-		var customEmoji = doc.GetAttribute<DocumentAttributeCustomEmoji>();
 		var result = new Sticker
 		{
 			FileSize = doc.size,

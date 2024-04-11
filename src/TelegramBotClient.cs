@@ -3,6 +3,7 @@ global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
 global using Chat = Telegram.Bot.Types.Chat;
+global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using Message = Telegram.Bot.Types.Message;
@@ -111,51 +112,68 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 
     public async Task Login() => await _initTask;
 
-    /// <inheritdoc />
-    public virtual async Task<Update[]> MakeRequestAsync(
-        GetUpdatesRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null) { throw new ArgumentNullException(nameof(request)); }
+	public void Dispose()
+	{
+		Client.Dispose();
+		SaveState();
+		GC.SuppressFinalize(this);
+	}
 
-        if (request.AllowedUpdates != null)
+	public void SaveState()
+	{
+		Manager.SaveState($"Updates-{BotId}.state");
+	}
+
+	/// <inheritdoc />
+	public virtual Task<Update[]> MakeRequestAsync(
+		GetUpdatesRequest request,
+		CancellationToken cancellationToken = default)
+	{
+		if (request is null) { throw new ArgumentNullException(nameof(request)); }
+		return GetUpdatesAsync(request.Offset ?? 0, request.Limit ?? 100, request.Timeout ?? 0, request.AllowedUpdates, cancellationToken);
+	}
+
+	/// <summary>Use this method to receive incoming updates using <a href="https://en.wikipedia.org/wiki/Push_technology#Long_polling">long polling</a></summary>
+	/// <param name="offset">Identifier of the first update to be returned, typically the Id of the last update you handled <u>plus one</u>. Negative values are offset from the end of the pending updates queue</param>
+	/// <param name="limit">Limits the number of updates to be retrieved (1-100)</param>
+	/// <param name="timeout">Timeout in seconds for long polling. 0 to return immediately</param>
+	/// <param name="allowedUpdates">A list of the <see cref="UpdateType"/> you want your bot to receive. Specify an empty list to receive
+	/// all update types except <see cref="UpdateType.ChatMember"/>. If null, the previous setting will be used.</param>
+	/// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+	/// <remarks>In order to avoid getting duplicate updates, recalculate <paramref name="offset"/> after each server response</remarks>
+	/// <returns>An Array of <see cref="Update"/> objects is returned.</returns>
+	public async Task<Update[]> GetUpdatesAsync(int offset = 0, int limit = 100, int timeout = 0, IEnumerable<UpdateType>? allowedUpdates = null, CancellationToken cancellationToken = default)
+	{
+		if (allowedUpdates != null)
         {
-            var bitset = request.AllowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
+			var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
             _state.AllowedUpdates = bitset != 0 ? bitset : DefaultAllowedUpdates;
         }
-        if (!await _pendingCounter.WaitAsync((request.Timeout ?? 0) * 1000, cancellationToken))
-            return [];
-        Update[] result;
-        var limit = request.Limit ?? 0;
-        if (limit is < 1 or > 100) limit = 100;
-        lock (_state.PendingUpdates)
-        {
-            if (limit >= _state.PendingUpdates.Count && !(request.Offset < 0))
-            {
-                result = [.. _state.PendingUpdates];
-                _state.PendingUpdates.Clear();
-            }
-            else
-            {
-                var index = request.Offset < 0 ? Math.Max(0, _state.PendingUpdates.Count + request.Offset.Value) : 0;
-                result = [.. _state.PendingUpdates.GetRange(index, Math.Min(limit, _state.PendingUpdates.Count - index))];
-                _state.PendingUpdates.RemoveRange(0, index + result.Length);
-                if (_state.PendingUpdates.Count != 0) _pendingCounter.Release();
-            }
-        }
-        return result;
-    }
-
-    public void Dispose()
-    {
-        Client.Dispose();
-        SaveState();
-        GC.SuppressFinalize(this);
-    }
-
-    public void SaveState()
-    {
-        Manager.SaveState($"Updates-{BotId}.state");
+		Update[] result;
+		limit = Math.Clamp(limit, 1, 100);
+		timeout *= 1000;
+		for (int maxWait = 0; ; maxWait = timeout)
+		{
+			if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
+				lock (_state.PendingUpdates)
+				{
+					if (offset < 0)
+						_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
+					else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
+						_state.PendingUpdates.RemoveRange(0, index);
+					else
+						_state.PendingUpdates.Clear();
+					if (_state.PendingUpdates.Count != 0)
+					{
+						_pendingCounter.Release();
+						result = new Update[Math.Min(limit, _state.PendingUpdates.Count)];
+						_state.PendingUpdates.CopyTo(0, result, 0, result.Length);
+						return result;
+					}
+				}
+			if (maxWait == timeout) break;
+		}
+		return [];
     }
 
     private async Task OnUpdate(TL.Update update)
@@ -171,10 +189,10 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
             {
                 wasEmpty = _state.PendingUpdates.Count == 0;
                 _state.PendingUpdates.Add(botUpdate);
-            }
-            if (wasEmpty) _pendingCounter.Release();
-        }
-    }
+			}
+			if (wasEmpty) _pendingCounter.Release();
+		}
+	}
 
     /// <returns>User or null</returns>
     public async Task<InputUser?> InputUser(string username)
