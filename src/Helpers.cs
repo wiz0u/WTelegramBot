@@ -30,5 +30,14 @@ public static class Helpers
 
 	public static string GetDisplayName<T>(this T enumValue) where T : Enum
 		=> typeof(T).GetMember(enumValue.ToString())[0].GetCustomAttribute<DisplayAttribute>()!.Name!;
+
+	// Task.WhenAll may lead to unnecessary multiple parallel resolve of the same users/stickerset
+	public async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
+	{
+		var result = new List<TResult>();
+		foreach (var task in tasks)
+			result.Add(await task);
+		return [.. result];
+	}
 }
 

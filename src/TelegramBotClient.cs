@@ -50,7 +50,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
     const long ZERO_CHANNEL_ID = -1000000000000;
     static readonly User GroupAnonymousBot = new() { Id = 1087968824, Username = "GroupAnonymousBot", FirstName = "Group", IsBot = true };
     static readonly User ServiceNotification = new() { Id = 777000, FirstName = "Telegram" };
-    static readonly Dictionary<long, ChatBase> NoChats = [];
 
     private readonly Task<TL.User> _initTask;
     private readonly FileDatabase<Chat> _chats = new(Path.Combine("database", "chats"));
@@ -59,8 +58,9 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
     private SemaphoreSlim _pendingCounter = new(0);
 	protected Dictionary<long, string> StickerSetNames = [];        // cache id -> name
 	protected Dictionary<string, string> StickerSetMimeType = [];   // cache name -> mimeType
+	protected Dictionary<(long peerId, int msgId), Message?> CachedMessages = [];
 
-	const int DefaultAllowedUpdates = 0b1111_1101_1111_1111_1111; /// all <see cref="UpdateType"/> except ChatMember=13
+	const int DefaultAllowedUpdates = 0b0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13
     private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
     class State //TODO: save/restore this
     {
@@ -225,7 +225,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
     }
 
     public async Task<InputChannel> InputChannel(ChatId chatId) => chatId.Identifier is not long id || id < ZERO_CHANNEL_ID
-        ? (InputPeerChannel)await InputPeerChat(chatId) : throw new ApiRequestException("Bad Request: method is available for supergroup and channel chats only");
+        ? (InputPeerChannel)await InputPeerChat(chatId) : throw new ApiRequestException("Bad Request: method is available for supergroup and channel chats only", 400);
 
     /// <summary>return Chat if found in known chats, or null</summary>
     public Chat? FindChat(long chatId)
@@ -297,5 +297,15 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
         int slash = filePath.IndexOf('/');
         await GetInfoAndDownloadFileAsync(slash < 0 ? filePath : filePath[..slash], destination, cancellationToken);
     }
+
+	/// <summary>Free up some memory by clearing internal caches that can be reconstructed automatically<para>Call this periodically for heavily used bots if you feel too much memory is used by TelegramBotClient</para></summary>
+	public void ClearCaches()
+	{
+		lock (_users) _users.ClearCache();
+		lock (_chats) _chats.ClearCache();
+		lock (StickerSetNames) StickerSetNames.Clear();
+		lock (StickerSetMimeType) StickerSetMimeType.Clear();
+		lock (CachedMessages) CachedMessages.Clear();
+	}
 }
 //TODO clean SLN before release

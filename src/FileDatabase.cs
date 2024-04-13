@@ -67,6 +67,7 @@ namespace Telegram.Bot
 			}
 		}
 
+		internal void ClearCache() => _cache.Clear();
 		internal T? SearchCache(Predicate<T> predicate)
 		{
 			foreach (var chat in _cache.Values)

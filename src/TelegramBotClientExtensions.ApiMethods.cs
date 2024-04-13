@@ -169,7 +169,6 @@ public partial class TelegramBotClient
         CancellationToken cancellationToken = default
     )
     {
-        //TODO: support logout & close ?
         using var httpClient = new HttpClient();
         var response = await httpClient.GetAsync($"https://api.telegram.org/bot{_options.Token}/deleteWebhook", cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -210,7 +209,6 @@ public partial class TelegramBotClient
     ) =>
         (await _initTask).User();
 
-#if false
     /// <summary>
     /// Use this method to log out from the cloud Bot API server before launching the bot locally. You <b>must</b>
     /// log out the bot before running it locally, otherwise there is no guarantee that the bot will receive
@@ -223,10 +221,12 @@ public partial class TelegramBotClient
     /// </param>
     public async Task LogOutAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull(nameof(botClient))
-            .MakeRequestAsync(request: new LogOutRequest(), cancellationToken)
-            .ConfigureAwait(false);
+    )
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetAsync($"https://api.telegram.org/bot{_options.Token}/logout", cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
 
     /// <summary>
     /// Use this method to close the bot instance before moving it from one local server to another. You need to
@@ -239,11 +239,14 @@ public partial class TelegramBotClient
     /// </param>
     public async Task CloseAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await botClient.ThrowIfNull(nameof(botClient))
-            .MakeRequestAsync(request: new CloseRequest(), cancellationToken)
-            .ConfigureAwait(false);
-#endif
+    )
+    {
+        try
+        {
+            await Client.Auth_LogOut();
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
 
     /// <summary>
     /// Use this method to send text messages.
@@ -305,7 +308,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref text!, ref entities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             return await PostedMsg(Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true,
                 silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
@@ -424,16 +427,21 @@ public partial class TelegramBotClient
     {
         try
         {
-            var msgb = await GetMessage(await InputPeerChat(fromChatId), messageId);
-            if (msgb is not TL.Message msg) throw new ApiRequestException("Cannot find source message");
+            var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
+            msgs.UserOrChat(_collector);
+            if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new ApiRequestException("Cannot find source message");
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var text = caption ?? msg.message;
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
-            var postedMsg = await PostedMsg(Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
-                await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
-                no_webpage: msg.media == null, silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var task = msg.media == null
+                ? Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
+                    await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
+                    no_webpage: true, silent: disableNotification == true, noforwards: protectContent == true)
+                : Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), text, WTelegram.Helpers.RandomLong(), reply_to,
+                    await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
+                    silent: disableNotification == true, noforwards: protectContent == true);
+            var postedMsg = await PostedMsg(task, peer, text);
             return new MessageId { Id = postedMsg.MessageId };
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
@@ -511,7 +519,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaPhoto(photo, hasSpoiler);
             return await PostedMsg(Client.Messages_SendMedia(peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
@@ -544,7 +552,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaDocument(file, hasSpoiler, defaultFilename: defaultFilename);
             if (media is TL.InputMediaUploadedDocument doc)
             {
@@ -1089,7 +1097,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             List<InputSingleMedia> multimedia = [];
             var random_id = WTelegram.Helpers.RandomLong();
             foreach (var aim in media)
@@ -1208,7 +1216,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, null, heading, proximityAlertRadius, livePeriod.Value)
                 : new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
@@ -1453,7 +1461,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaVenue
             {
                 geo_point = new InputGeoPoint { lat = latitude, lon = longitude },
@@ -1531,7 +1539,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaContact
             {
                 phone_number = phoneNumber,
@@ -1641,7 +1649,7 @@ public partial class TelegramBotClient
             ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaPoll
             {
                 poll = new TL.Poll
@@ -1723,7 +1731,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaDice { emoticon = emoji?.GetDisplayName() ?? "🎲" };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
@@ -1921,6 +1929,7 @@ public partial class TelegramBotClient
                     await Client.Channels_EditBanned(channel, user,
                         new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages, until_date = untilDate ?? default });
                     break;
+                default: throw new ApiRequestException("can't ban members in private chats", 400);
             }
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
@@ -2679,11 +2688,7 @@ public partial class TelegramBotClient
                 chat.HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden);
 				chat.MessageAutoDeleteTime = full.ttl_period == 0 ? null : full.ttl_period;
                 if (full.pinned_msg_id > 0)
-                {
-                    var msgs = await Client.GetMessages(inputUser, full.pinned_msg_id);
-                    msgs.UserOrChat(_collector);
-                    if (msgs.Messages.Length != 0) chat.PinnedMessage = await MakeMessage(msgs.Messages[0]);
-                }
+                    chat.PinnedMessage = await GetMessage(inputUser, full.pinned_msg_id);
 				return chat;
             }
             else
@@ -2699,10 +2704,7 @@ public partial class TelegramBotClient
                 chat.InviteLink = (full.ExportedInvite as ChatInviteExported)?.link;
                 chat.MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod;
                 if (full.PinnedMsg > 0)
-                {
-                    var msg = await GetMessage(inputPeer, full.PinnedMsg);
-                    if (msg != null) chat.PinnedMessage = await MakeMessage(msg);
-                }
+                    chat.PinnedMessage = await GetMessage(inputPeer, full.PinnedMsg);
                 if (tlChat is TL.Channel channel)
                 {
                     chat.ActiveUsernames = channel.ActiveUsernames.ToArray();
@@ -2759,16 +2761,15 @@ public partial class TelegramBotClient
             {
                 var participants = await Client.Channels_GetParticipants(ipc, new ChannelParticipantsAdmins());
                 participants.UserOrChat(_collector);
-                return await Task.WhenAll(participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))));
+                return await participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
             }
             else
             {
-                //TODO: cache full chat?
                 var full = await Client.Messages_GetFullChat(chat.ID);
                 full.UserOrChat(_collector);
                 if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
                     throw new ApiRequestException($"Cannot fetch participants for chat {chatId}");
-                return await Task.WhenAll(participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))));
+                return await participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
             }
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
@@ -2834,7 +2835,6 @@ public partial class TelegramBotClient
             }
             else
             {
-                //TODO: cache full chat?
                 var full = await Client.Messages_GetFullChat(chat.ID);
                 full.UserOrChat(_collector);
                 if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
@@ -2919,7 +2919,7 @@ public partial class TelegramBotClient
         {
 			var mss = await Client.Messages_GetStickerSet(new InputStickerSetEmojiDefaultTopicIcons());
 			CacheStickerSet(mss);
-			var stickers = await Task.WhenAll(mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())));
+			var stickers = await mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())).WhenAllSequential();
             return stickers;
 		}
 		catch (WTelegram.WTException ex) { throw MakeException(ex); }
@@ -4153,7 +4153,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaDocument(sticker);
             if (media is TL.InputMediaUploadedDocument doc)
                 doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
@@ -4189,7 +4189,7 @@ public partial class TelegramBotClient
             var mss = await Client.Messages_GetStickerSet(name);
             CacheStickerSet(mss);
             var thumb = mss.set.thumbs?[0].PhotoSize(mss.set.ToFileLocation(mss.set.thumbs[0]), mss.set.thumb_dc_id);
-			var stickers = await Task.WhenAll(mss.documents.OfType<TL.Document>().Select(async doc =>
+			var stickers = await mss.documents.OfType<TL.Document>().Select(async doc =>
             {
                 var sticker = await MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>());
 				if (thumb == null && doc.id == mss.set.thumb_document_id)
@@ -4198,7 +4198,7 @@ public partial class TelegramBotClient
                     thumb = thumbPhotoSize.PhotoSize(doc.ToFileLocation(thumbPhotoSize), doc.dc_id);
 				}
 				return sticker;
-            }));
+            }).WhenAllSequential();
 			return new Types.StickerSet
             {
                 Name = mss.set.short_name,
@@ -4233,12 +4233,11 @@ public partial class TelegramBotClient
 		try
 		{
             var documents = await Client.Messages_GetCustomEmojiDocuments(customEmojiIds.Select(long.Parse).ToArray());
-			//var mss = await Client.Messages_GetStickerSet(name);
-			return await Task.WhenAll(documents.OfType<TL.Document>().Select(async doc =>
+			return await documents.OfType<TL.Document>().Select(async doc =>
             {
                 var attrib = doc.GetAttribute<DocumentAttributeCustomEmoji>();
 				return await MakeSticker(doc, null);
-            }));
+            }).WhenAllSequential();
 		}
 		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
@@ -4853,7 +4852,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
                 providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
                 sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
@@ -5120,7 +5119,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId);
+            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaGame
             { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,

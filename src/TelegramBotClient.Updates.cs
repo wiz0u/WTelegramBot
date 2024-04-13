@@ -74,7 +74,7 @@ public partial class TelegramBotClient
 					{
 						Id = ubcq.query_id.ToString(),
 						From = await UserOrResolve(ubcq.user_id),
-						Message = await MakeMessage(await GetMessage(await ChatFromPeer(ubcq.peer, true), ubcq.msg_id)),
+						Message = await GetMessage(await ChatFromPeer(ubcq.peer, true), ubcq.msg_id),
 						ChatInstance = ubcq.chat_instance.ToString(),
 						Data = ubcq.data == null ? null : Encoding.UTF8.GetString(ubcq.data),
 						GameShortName = ubcq.game_short_name
@@ -376,6 +376,7 @@ public partial class TelegramBotClient
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
 				return await FillTextAndMedia(msg, message.message, message.entities, message.media);
 			case TL.MessageService msgSvc:
+				reply_to = msgSvc.reply_to as MessageReplyHeader;
 				msg = new Message
 				{
 					MessageId = msgSvc.id,
@@ -383,7 +384,16 @@ public partial class TelegramBotClient
 					SenderChat = await ChatFromPeer(msgSvc.from_id),
 					Date = msgSvc.date,
 					Chat = await ChatFromPeer(msgSvc.peer_id, allowUser: true),
+					ReplyToMessage = replyToMessage,
+					IsTopicMessage = reply_to?.flags.HasFlag(MessageReplyHeader.Flags.forum_topic),
 				};
+				if (msg.IsTopicMessage == true)
+					msg.MessageThreadId = reply_to.reply_to_top_id > 0 ? reply_to.reply_to_top_id : reply_to.reply_to_msg_id;
+				else if (reply_to == null && msgSvc.action is MessageActionTopicCreate)
+				{
+					msg.IsTopicMessage = true;
+					msg.MessageThreadId = msgSvc.id;
+				}
 				await FixMsgFrom(msg, msgSvc.from_id, msgSvc.peer_id);
 				if (await MakeServiceMessage(msgSvc, msg) == null) return null;
 				return msg;
@@ -569,7 +579,6 @@ public partial class TelegramBotClient
 					msg.Game.Animation = MakeAnimation(msgDoc, doc.GetAttribute<DocumentAttributeVideo>());
 				}
 				return msg;
-			//TODO ForumTopics
 			default:
 				System.Diagnostics.Debugger.Break();
 				break;
@@ -583,7 +592,7 @@ public partial class TelegramBotClient
 	{
 		return msgSvc.action switch
 		{
-			MessageActionChatAddUser macau => msg.NewChatMembers = await Task.WhenAll(macau.users.Select(id => UserOrResolve(id))),
+			MessageActionChatAddUser macau => msg.NewChatMembers = await macau.users.Select(id => UserOrResolve(id)).WhenAllSequential(),
 			MessageActionChatDeleteUser macdu => msg.LeftChatMember = await UserOrResolve(macdu.user_id),
 			MessageActionChatEditTitle macet => msg.NewChatTitle = macet.title,
 			MessageActionChatEditPhoto macep => msg.NewChatPhoto = macep.photo.PhotoSizes(),
@@ -595,8 +604,8 @@ public partial class TelegramBotClient
 				new MessageAutoDeleteTimerChanged { MessageAutoDeleteTime = macsmt.period },
 			MessageActionChatMigrateTo macmt => msg.MigrateToChatId = ZERO_CHANNEL_ID - macmt.channel_id,
 			MessageActionChannelMigrateFrom macmf => msg.MigrateFromChatId = -macmf.chat_id,
-			MessageActionPinMessage macpm => msg.PinnedMessage = await MakeMessage(await GetMessage(
-				await ChatFromPeer(msgSvc.peer_id, allowUser: true), msgSvc.reply_to is MessageReplyHeader mrh ? mrh.reply_to_msg_id : 0)),
+			MessageActionPinMessage macpm => msg.PinnedMessage = await GetMessage(
+				await ChatFromPeer(msgSvc.peer_id, allowUser: true), msgSvc.reply_to is MessageReplyHeader mrh ? mrh.reply_to_msg_id : 0),
 			MessageActionChatJoinedByLink or MessageActionChatJoinedByRequest => msg.NewChatMembers = [msg.From!],
 			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Types.Payments.SuccessfulPayment
 			{
@@ -632,7 +641,7 @@ public partial class TelegramBotClient
 				? msg.VideoChatEnded = new VideoChatEnded { Duration = magc.duration }
 				: msg.VideoChatStarted = new VideoChatStarted(),
 			MessageActionInviteToGroupCall maitgc => msg.VideoChatParticipantsInvited = new VideoChatParticipantsInvited {
-				Users = await Task.WhenAll(maitgc.users.Select(UserOrResolve)) },
+				Users = await maitgc.users.Select(UserOrResolve).WhenAllSequential() },
 			MessageActionWebViewDataSentMe mawvdsm => msg.WebAppData = new WebAppData { ButtonText = mawvdsm.text, Data = mawvdsm.data },
 			MessageActionTopicCreate matc => msg.ForumTopicCreated = new ForumTopicCreated { Name = matc.title, IconColor = matc.icon_color,
 				IconCustomEmojiId = matc.flags.HasFlag(MessageActionTopicCreate.Flags.has_icon_emoji_id) ? matc.icon_emoji_id.ToString() : null },

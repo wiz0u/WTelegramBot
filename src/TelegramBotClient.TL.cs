@@ -31,8 +31,8 @@ public partial class TelegramBotClient
 		},
 		InlineKeyboardMarkup ikm => new ReplyInlineMarkup
 		{
-			rows = await Task.WhenAll(ikm.InlineKeyboard.Select(
-				async row => new KeyboardButtonRow { buttons = await Task.WhenAll(row.Select(MakeKeyboardButton)) }))
+			rows = await ikm.InlineKeyboard.Select(
+				async row => new KeyboardButtonRow { buttons = await row.Select(MakeKeyboardButton).WhenAllSequential() }).WhenAllSequential()
 		} is { rows.Length: not 0 } rim ? rim : null,
 		_ => null,
 	};
@@ -107,35 +107,38 @@ public partial class TelegramBotClient
 		if (replyToMessageId > 0)
 		{
 			var msg = await GetMessage(peer, replyToMessageId.Value);
-			if (msg == null)
-				return allowSendingWithoutReply == true ? null : throw new ApiRequestException("message to reply not found", 400);
-			return await MakeMessage(msg);
+			if (msg == null && allowSendingWithoutReply != true) throw new ApiRequestException("message to reply not found", 400);
+			return msg;
 		}
 		return null;
 	}
 
-	protected InputReplyTo? MakeReplyTo(int? replyToMessageId, int? messageThreadId)
+	protected InputReplyTo? MakeReplyTo(int? replyToMessageId, int? messageThreadId, InputPeer? replyToPeer)
 	{
 		if (replyToMessageId > 0)
 			return new InputReplyToMessage
 			{
 				reply_to_msg_id = replyToMessageId.Value,
 				top_msg_id = messageThreadId ?? 0,
-				flags = messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id : 0
+				reply_to_peer_id = messageThreadId.HasValue ? replyToPeer : null,
+				flags = messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0
 			};
 		else if (messageThreadId > 0)
 			return new InputReplyToMessage { reply_to_msg_id = messageThreadId.Value };
 		return null;
 	}
 
-	//TODO: replace Client.GetMessages everywhere by this method?
-	protected async Task<MessageBase?> GetMessage(InputPeer peer, int messageId)
+	protected async Task<Message?> GetMessage(InputPeer peer, int messageId)
 	{
 		if (peer == null || messageId == 0) return null;
-		//TODO: check in cache first
+		lock (CachedMessages)
+			if (CachedMessages.TryGetValue((peer.ID, messageId), out var cachedMsg))
+				return cachedMsg;
 		var msgs = await Client.GetMessages(peer, messageId);
 		msgs.UserOrChat(_collector);
-		return msgs.Messages.FirstOrDefault();
+		var msg = await MakeMessage(msgs.Messages.FirstOrDefault());
+		lock (CachedMessages)
+			return CachedMessages[(peer.ID, messageId)] = msg;
 	}
 
 	protected string? ApplyParse(ParseMode? parseMode, string? text, ref MessageEntity[]? entities)
@@ -358,7 +361,7 @@ public partial class TelegramBotClient
 	};
 
 	private async Task<InputBotInlineResultBase[]> InputBotInlineResults(IEnumerable<InlineQueryResult> results)
-		=> await Task.WhenAll(results.Select(InputBotInlineResult));
+		=> await results.Select(InputBotInlineResult).WhenAllSequential();
 
 	private async Task<InputBotInlineResultBase> InputBotInlineResult(InlineQueryResult result)
 	{
