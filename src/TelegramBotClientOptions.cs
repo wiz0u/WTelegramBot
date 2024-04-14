@@ -21,6 +21,8 @@ public class TelegramBotClientOptions
     public string ApiHash { get; }
     /// <summary>Pathname of WTelegramClient session file for the bot account (by default: "WTelegramBot.session")</summary>
     public string SessionPathname { get; }
+	/// <summary>Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMeAsync()</c> to wait for login asynchronously instead</summary>
+	public bool WaitForLogin { get; } = true;
 
     /// <summary>
     /// Indicates that test environment will be used

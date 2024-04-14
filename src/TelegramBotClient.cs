@@ -87,11 +87,11 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
         _state = new() { AllowedUpdates = DefaultAllowedUpdates, PendingUpdates = [] };
         Client = new WTelegram.Client(_options.WTCConfig);
         Manager = Client.WithUpdateManager(OnUpdate, $"Updates-{BotId}.state", _collector);
-        _initTask = DoLogin(_options.Token);
-        _initTask.Wait(5000);
+        _initTask = InitLogin(_options.Token);
+        if (_options.WaitForLogin) _initTask.Wait(); //TODO: test on winforms
     }
 
-	private async Task<TL.User> DoLogin(string token)
+	private async Task<TL.User> InitLogin(string token)
 	{
 		try
 		{
@@ -109,8 +109,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
         string? sessionPathname = null) :
         this(new TelegramBotClientOptions(token, apiId, apiHash, sessionPathname))
     { }
-
-    public async Task Login() => await _initTask;
 
 	public void Dispose()
 	{
