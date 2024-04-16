@@ -136,5 +136,6 @@ public class Update
         _                           => UpdateType.Unknown
     };
 
-    public TL.Update? RawUpdate;
+	/// <summary>The corresponding Client API update structure</summary>
+	public TL.Update? RawUpdate;
 }

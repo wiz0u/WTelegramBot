@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
 using System.Reflection;
 
 namespace Telegram.Bot;
 
+/// <summary>Helpers methods</summary>
 public static class Helpers
 {
+	/// <summary>Used to guess MimeType based on file extension, when uploading documents</summary>
 	public static readonly Dictionary<string, string> ExtToMimeType = new(StringComparer.OrdinalIgnoreCase)
 	{
 		[".jpg"] = "image/jpeg",
@@ -26,18 +29,31 @@ public static class Helpers
 		[".tgs"] = "application/x-tgsticker",
 		[".pdf"] = "application/pdf",
 	};
-	public static Func<string, string?> GetMimeType { get; set; } = ExtToMimeType.GetValueOrDefault;
 
-	public static string GetDisplayName<T>(this T enumValue) where T : Enum
+	internal static string GetDisplayName<T>(this T enumValue) where T : Enum
 		=> typeof(T).GetMember(enumValue.ToString())[0].GetCustomAttribute<DisplayAttribute>()!.Name!;
 
 	// Task.WhenAll may lead to unnecessary multiple parallel resolve of the same users/stickerset
-	public async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
+	internal async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
 	{
 		var result = new List<TResult>();
 		foreach (var task in tasks)
 			result.Add(await task);
 		return [.. result];
+	}
+
+	internal static string? NullIfEmpty(this string? s) => s == "" ? null : s;
+
+	internal static void ExecuteSave(this DbCommand cmd)
+	{
+		try
+		{
+			cmd.ExecuteNonQuery();
+		}
+		catch (Exception ex)
+		{
+			WTelegram.Helpers.Log(4, $"{ex.GetType().Name} while saving to DB: {ex.Message} ");
+		}
 	}
 }
 

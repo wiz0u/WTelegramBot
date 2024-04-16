@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WTelegramClient", "..\WTele
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telegram.Bot.Tests.Integ", "Telegram.Bot\test\Telegram.Bot.Tests.Integ\Telegram.Bot.Tests.Integ.csproj", "{C0FF782D-1576-468B-84D4-8F9918E94645}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "Examples\ConsoleApp\ConsoleApp.csproj", "{1D2C245C-21DE-450B-9B2E-2E541A2B746A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{C0FF782D-1576-468B-84D4-8F9918E94645}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0FF782D-1576-468B-84D4-8F9918E94645}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C0FF782D-1576-468B-84D4-8F9918E94645}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D2C245C-21DE-450B-9B2E-2E541A2B746A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D2C245C-21DE-450B-9B2E-2E541A2B746A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D2C245C-21DE-450B-9B2E-2E541A2B746A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D2C245C-21DE-450B-9B2E-2E541A2B746A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

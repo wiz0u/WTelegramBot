@@ -7,6 +7,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TL;
 using File = Telegram.Bot.Types.File;
 
+#pragma warning disable CS1572
+
 namespace Telegram.Bot;
 
 /// <summary>
@@ -63,7 +65,7 @@ public partial class TelegramBotClient
         int? timeout = default,
         IEnumerable<UpdateType>? allowedUpdates = default,
         CancellationToken cancellationToken = default
-    ) => GetUpdatesAsync(offset ?? 0, limit ?? 100, timeout ?? 0, allowedUpdates, cancellationToken);
+    ) => GetUpdates(offset ?? 0, limit ?? 100, timeout ?? 0, allowedUpdates, cancellationToken);
 
     /// <summary>
     /// Use this method to specify a URL and receive incoming updates via an outgoing webhook.
@@ -145,11 +147,11 @@ public partial class TelegramBotClient
         if (!string.IsNullOrEmpty(url)) throw new NotSupportedException("WTelegramBot doesn't support setting Webhooks)");
         await DeleteWebhookAsync(dropPendingUpdates, cancellationToken);
         if (dropPendingUpdates == true)
-            await GetUpdatesAsync(-1, 1, 0, allowedUpdates, cancellationToken);
+            await GetUpdates(-1, 1, 0, allowedUpdates, cancellationToken);
         else
             try
             {
-                await GetUpdatesAsync(0, 0, 0, allowedUpdates, new CancellationToken(true));
+                await GetUpdates(0, 0, 0, allowedUpdates, new CancellationToken(true));
             }
             catch (TaskCanceledException) { }
     }
@@ -203,7 +205,7 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns basic information about the bot in form of a <see cref="User"/> object.</returns>
+    /// <returns>Returns basic information about the bot in form of a <see cref="Types.User"/> object.</returns>
     public async Task<User> GetMeAsync(
         CancellationToken cancellationToken = default
     ) =>
@@ -245,7 +247,7 @@ public partial class TelegramBotClient
         {
             await Client.Auth_LogOut();
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -308,12 +310,12 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref text!, ref entities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             return await PostedMsg(Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true,
                 silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -357,7 +359,7 @@ public partial class TelegramBotClient
                 top_msg_id: messageThreadId, silent: disableNotification == true, noforwards: protectContent == true), peer);
 
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -433,7 +435,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var text = caption ?? msg.message;
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var task = msg.media == null
                 ? Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
                     await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
@@ -444,7 +446,7 @@ public partial class TelegramBotClient
             var postedMsg = await PostedMsg(task, peer, text);
             return new MessageId { Id = postedMsg.MessageId };
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -519,13 +521,13 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaPhoto(photo, hasSpoiler);
             return await PostedMsg(Client.Messages_SendMedia(peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
                 silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     private async Task<Message> SendDocument(
@@ -552,7 +554,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaDocument(file, hasSpoiler, defaultFilename: defaultFilename);
             if (media is TL.InputMediaUploadedDocument doc)
             {
@@ -563,7 +565,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
                 silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1097,7 +1099,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             List<InputSingleMedia> multimedia = [];
             var random_id = WTelegram.Helpers.RandomLong();
             foreach (var aim in media)
@@ -1151,7 +1153,7 @@ public partial class TelegramBotClient
                 silent: disableNotification == true, noforwards: protectContent == true),
                 multimedia.Count, random_id, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1216,14 +1218,14 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, null, heading, proximityAlertRadius, livePeriod.Value)
                 : new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1277,7 +1279,7 @@ public partial class TelegramBotClient
             var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1325,7 +1327,7 @@ public partial class TelegramBotClient
             var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
             await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1361,7 +1363,7 @@ public partial class TelegramBotClient
             var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1391,7 +1393,7 @@ public partial class TelegramBotClient
             var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
             await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1461,7 +1463,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaVenue
             {
                 geo_point = new InputGeoPoint { lat = latitude, lon = longitude },
@@ -1484,7 +1486,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1539,7 +1541,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaContact
             {
                 phone_number = phoneNumber,
@@ -1551,7 +1553,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1649,7 +1651,7 @@ public partial class TelegramBotClient
             ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaPoll
             {
                 poll = new TL.Poll
@@ -1675,7 +1677,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1731,13 +1733,13 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaDice { emoticon = emoji?.GetDisplayName() ?? "🎲" };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1789,7 +1791,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_SetTyping(peer, chatAction.ChatAction(), messageThreadId);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1824,7 +1826,7 @@ public partial class TelegramBotClient
                 Photos = photos.photos.Select(pb => pb.PhotoSizes()!).ToArray()
             };
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1853,7 +1855,7 @@ public partial class TelegramBotClient
         {
             return Task.FromResult(fileId.ParseFileId(true).file);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1880,7 +1882,7 @@ public partial class TelegramBotClient
 
             return file;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1932,7 +1934,7 @@ public partial class TelegramBotClient
                 default: throw new ApiRequestException("can't ban members in private chats", 400);
             }
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -1980,7 +1982,7 @@ public partial class TelegramBotClient
                 await Client.Channels_EditBanned(channel, user, new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages });
             await Client.Channels_EditBanned(channel, user, new ChatBannedRights { });
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2025,7 +2027,7 @@ public partial class TelegramBotClient
             if (useIndependentChatPermissions != true) permissions.LegacyMode();
 			await Client.Channels_EditBanned(channel, user, permissions.ToChatBannedRights(untilDate));
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2090,7 +2092,7 @@ public partial class TelegramBotClient
                 | (canManageTopic == true ? ChatAdminRights.Flags.manage_topics : 0)
             }, null);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2127,7 +2129,7 @@ public partial class TelegramBotClient
                 throw new ApiRequestException("Bad Request: not enough rights to change custom title of the user");
             await Client.Channels_EditAdmin(channel, user, admin.admin_rights, customTitle);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2157,7 +2159,7 @@ public partial class TelegramBotClient
             var senderChat = await InputPeerChat(senderChatId);
             await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages });
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2186,7 +2188,7 @@ public partial class TelegramBotClient
             var senderChat = await InputPeerChat(senderChatId);
             await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { });
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2226,7 +2228,7 @@ public partial class TelegramBotClient
 			await Client.Messages_EditChatDefaultBannedRights(peer, permissions.ToChatBannedRights());
 		}
 		catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2253,7 +2255,7 @@ public partial class TelegramBotClient
             var exported = (ChatInviteExported)await Client.Messages_ExportChatInvite(peer, legacy_revoke_permanent: true);
             return exported.link;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2295,7 +2297,7 @@ public partial class TelegramBotClient
             ExportedChatInvite exported = await Client.Messages_ExportChatInvite(peer, expireDate, memberLimit, name, request_needed: createsJoinRequest == true);
             return (await MakeChatInviteLink(exported))!;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2338,7 +2340,7 @@ public partial class TelegramBotClient
             var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, expireDate, memberLimit, title: name, request_needed: createsJoinRequest == true);
             return (await MakeChatInviteLink(result.Invite))!;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2368,7 +2370,7 @@ public partial class TelegramBotClient
             var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, revoked: true);
             return (await MakeChatInviteLink(result.Invite))!;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2389,7 +2391,7 @@ public partial class TelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) => HideChatJoinRequest(chatId, userId, cancellationToken, true);
+    ) => HideChatJoinRequest(chatId, userId, true, cancellationToken);
 
 
     /// <summary>
@@ -2410,9 +2412,9 @@ public partial class TelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) => HideChatJoinRequest(chatId, userId, cancellationToken, false);
+    ) => HideChatJoinRequest(chatId, userId, false, cancellationToken);
 
-    private async Task<bool> HideChatJoinRequest(ChatId chatId, long userId, CancellationToken cancellationToken, bool approved)
+    private async Task<bool> HideChatJoinRequest(ChatId chatId, long userId, bool approved, CancellationToken cancellationToken)
     {
         try
         {
@@ -2421,7 +2423,7 @@ public partial class TelegramBotClient
             await Client.Messages_HideChatJoinRequest(peer, user, approved);
             return true;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2449,7 +2451,7 @@ public partial class TelegramBotClient
             var inputPhoto = await InputChatPhoto(photo);
             await Client.EditChatPhoto(peer, inputPhoto);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2473,7 +2475,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.EditChatPhoto(peer, null);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2501,7 +2503,7 @@ public partial class TelegramBotClient
             await Client.EditChatTitle(peer, title);
         }
         catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2528,7 +2530,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_EditChatAbout(peer, description);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2562,7 +2564,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification == true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2599,7 +2601,7 @@ public partial class TelegramBotClient
                     messageId = (await Client.GetFullChat(peer)).full_chat.PinnedMsg;
             await Client.Messages_UpdatePinnedMessage(peer, messageId.Value, unpin: true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2626,7 +2628,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_UnpinAllMessages(peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2649,7 +2651,7 @@ public partial class TelegramBotClient
         {
             await Client.LeaveChat(await InputPeerChat(chatId));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2664,7 +2666,7 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns a <see cref="Chat"/> object on success.</returns>
+    /// <returns>Returns a <see cref="Types.Chat"/> object on success.</returns>
     public async Task<Chat> GetChatAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
@@ -2730,7 +2732,7 @@ public partial class TelegramBotClient
                 return chat;
             }
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2772,7 +2774,7 @@ public partial class TelegramBotClient
                 return await participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
             }
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2800,7 +2802,7 @@ public partial class TelegramBotClient
             chatFull.UserOrChat(_collector);
             return chatFull.full_chat.ParticipantsCount;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
 
@@ -2843,7 +2845,7 @@ public partial class TelegramBotClient
                 return participant.ChatMember(await UserOrResolve(userId));
             }
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
 
@@ -2873,7 +2875,7 @@ public partial class TelegramBotClient
             var channel = await InputChannel(chatId);
             await Client.Channels_SetStickers(channel, stickerSetName);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2900,7 +2902,7 @@ public partial class TelegramBotClient
             var channel = await InputChannel(chatId);
             await Client.Channels_SetStickers(channel, null);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -2922,7 +2924,7 @@ public partial class TelegramBotClient
 			var stickers = await mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())).WhenAllSequential();
             return stickers;
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -2966,7 +2968,7 @@ public partial class TelegramBotClient
             var ftc = msg.ForumTopicCreated ?? throw new ApiRequestException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
             return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = new Color(ftc.IconColor), IconCustomEmojiId = ftc.IconCustomEmojiId };
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3005,7 +3007,7 @@ public partial class TelegramBotClient
             await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null : 
                 iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3033,7 +3035,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: true);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3061,7 +3063,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: false);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3090,7 +3092,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_DeleteTopicHistory(channel, messageThreadId);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3118,7 +3120,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Messages_UnpinAllMessages(channel, messageThreadId);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3201,7 +3203,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, 1, hidden: true);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3227,7 +3229,7 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, 1, hidden: false);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -3278,7 +3280,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime ?? 0, text, url, showAlert == true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3304,7 +3306,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3337,7 +3339,7 @@ public partial class TelegramBotClient
         {
             await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, commands.Select(TypesTLConverters.BotCommand).ToArray());
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3368,7 +3370,7 @@ public partial class TelegramBotClient
         {
             await Client.Bots_ResetBotCommands(await BotCommandScope(scope), languageCode);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3399,7 +3401,7 @@ public partial class TelegramBotClient
             var commands = await Client.Bots_GetBotCommands(await BotCommandScope(scope), languageCode);
             return commands.Select(TypesTLConverters.BotCommand).ToArray();
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3426,7 +3428,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, name: name);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3452,7 +3454,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
 			return new BotName { Name = botInfo.about };
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3481,7 +3483,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, description: description);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3508,7 +3510,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
             return new BotDescription { Description = botInfo.description };
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3538,7 +3540,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, about: shortDescription);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3565,7 +3567,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
 			return new BotShortDescription { ShortDescription = botInfo.about };
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -3592,7 +3594,7 @@ public partial class TelegramBotClient
             var user = chatId.HasValue ? InputUser(chatId.Value) : null;
             await Client.Bots_SetBotMenuButton(user, menuButton.BotMenuButton());
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3618,7 +3620,7 @@ public partial class TelegramBotClient
             var botMenuButton = await Client.Bots_GetBotMenuButton(user);
             return botMenuButton.MenuButton();
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3652,7 +3654,7 @@ public partial class TelegramBotClient
             else
                 await Client.Bots_SetBotGroupDefaultAdminRights(admin_rights);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3677,7 +3679,7 @@ public partial class TelegramBotClient
             var full = await Client.Users_GetFullUser(Client.User);
             return (forChannels == true ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 #endregion Available methods
 
@@ -3731,7 +3733,7 @@ public partial class TelegramBotClient
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, text, null,
                 await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true), peer, text);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3776,7 +3778,7 @@ public partial class TelegramBotClient
             await Client.Messages_EditInlineBotMessage(id, text, null,
                 await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3825,7 +3827,7 @@ public partial class TelegramBotClient
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, caption, null,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray()), peer, caption);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3867,7 +3869,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray());
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3909,7 +3911,7 @@ public partial class TelegramBotClient
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
                 imedia, await MakeReplyMarkup(replyMarkup), captionEntities), peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3945,7 +3947,7 @@ public partial class TelegramBotClient
             await Client.Messages_EditInlineBotMessage(id, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
                 imedia, await MakeReplyMarkup(replyMarkup), captionEntities);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -3979,7 +3981,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, null, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4007,7 +4009,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_EditInlineBotMessage(id, reply_markup: await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4041,10 +4043,10 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             var closedPoll = new InputMediaPoll { poll = new() { flags = TL.Poll.Flags.closed } };
             var updates = await Client.Messages_EditMessage(peer, messageId, null, closedPoll, await MakeReplyMarkup(replyMarkup));
-            var ump = updates.UpdateList.OfType<UpdateMessagePoll>().FirstOrDefault();
+            var ump = updates.UpdateList.OfType<UpdateMessagePoll>().First();
             return MakePoll(ump.poll, ump.results);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4080,7 +4082,7 @@ public partial class TelegramBotClient
         {
             await Client.DeleteMessages(await InputPeerChat(chatId), messageId);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     #endregion Updating messages
@@ -4153,7 +4155,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = await InputMediaDocument(sticker);
             if (media is TL.InputMediaUploadedDocument doc)
                 doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
@@ -4161,7 +4163,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4211,7 +4213,7 @@ public partial class TelegramBotClient
                 Thumbnail = thumb
             };
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
 	/// <summary>
@@ -4239,7 +4241,7 @@ public partial class TelegramBotClient
 				return await MakeSticker(doc, null);
             }).WhenAllSequential();
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -4286,7 +4288,7 @@ public partial class TelegramBotClient
             file.FilePath = file.FileId + '/' + sticker.FileName;
             return file;
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4345,7 +4347,7 @@ public partial class TelegramBotClient
                 stickerType == StickerType.Mask, stickerType == StickerType.CustomEmoji, needsRepainting == true);
             CacheStickerSet(mss, mimeType);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4396,7 +4398,7 @@ public partial class TelegramBotClient
             var mss = await Client.Stickers_AddStickerToSet(name, tlSticker);
             CacheStickerSet(mss, mimeType);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
 	/// <summary>
@@ -4421,7 +4423,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
             var mss = await Client.Stickers_ChangeStickerPosition(inputDoc, position);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4444,7 +4446,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_RemoveStickerFromSet(inputDoc);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4474,7 +4476,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, emoji: string.Concat(emojiList));
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -4505,7 +4507,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, keywords: keywords == null ? "" : string.Join(',', keywords));
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -4536,7 +4538,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, mask_coords: maskPosition.MaskCoord());
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -4564,7 +4566,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Stickers_RenameStickerSet(name, title);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -4614,7 +4616,7 @@ public partial class TelegramBotClient
                 await Client.Stickers_SetStickerSetThumb(name, document);
             }
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4643,7 +4645,7 @@ public partial class TelegramBotClient
 		{
 			var mss = await Client.Stickers_SetStickerSetThumb(name, null, customEmojiId == null ? null : long.Parse(customEmojiId));
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
     /// <summary>
@@ -4667,7 +4669,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Stickers_DeleteStickerSet(name);
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
     #endregion
 
@@ -4718,7 +4720,7 @@ public partial class TelegramBotClient
             await Client.Messages_SetInlineBotResults(long.Parse(inlineQueryId), await InputBotInlineResults(results), cacheTime ?? 0,
                 nextOffset, switch_pm, switch_webview, private_: isPersonal == true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     #endregion Inline mode
@@ -4852,7 +4854,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
                 providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
                 sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
@@ -4860,7 +4862,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -4958,7 +4960,7 @@ public partial class TelegramBotClient
 			var exported = await Client.Payments_ExportInvoice(media);
             return exported.url;
 		}
-		catch (WTelegram.WTException ex) { throw MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
 	}
 
 	/// <summary>
@@ -4985,7 +4987,7 @@ public partial class TelegramBotClient
             await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), shipping_options:
                 shippingOptions.Select(so => new TL.ShippingOption { id = so.Id, title = so.Title, prices = so.Prices.LabeledPrices() }).ToArray());
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5013,7 +5015,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5038,7 +5040,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), success: true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5067,7 +5069,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), error: errorMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 #endregion Payments
 
@@ -5119,14 +5121,14 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
             var media = new InputMediaGame
             { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
             return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5170,7 +5172,7 @@ public partial class TelegramBotClient
             if (editUpdate != null) return (await MakeMessage(editUpdate.message))!;
             else return await PostedMsg(Task.FromResult(updates), peer);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5208,7 +5210,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force == true);
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5243,7 +5245,7 @@ public partial class TelegramBotClient
             return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore
             { Position = hs.pos, User = await UserOrResolve(hs.user_id), Score = hs.score }));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
 
     /// <summary>
@@ -5276,7 +5278,7 @@ public partial class TelegramBotClient
             return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore
             { Position = hs.pos, User = await UserOrResolve(hs.user_id), Score = hs.score }));
         }
-        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
     }
     #endregion Games
 }

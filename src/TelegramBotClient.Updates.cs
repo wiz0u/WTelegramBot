@@ -9,6 +9,7 @@ namespace Telegram.Bot;
 
 public partial class TelegramBotClient
 {
+	/// <summary>Converts Client API TL.Update to Bot Types.Update</summary>
 	protected async Task<Update?> MakeUpdate(TL.Update update)
 	{
 		switch (update)
@@ -244,7 +245,7 @@ public partial class TelegramBotClient
 
 	private async Task<Chat> ChannelOrResolve(long id)
 	{
-		if (FindChat(id) is { } chat)
+		if (Chat(id) is { } chat)
 			return chat;
 		try
 		{
@@ -259,7 +260,7 @@ public partial class TelegramBotClient
 
 	private async Task<Chat> ChatOrResolve(long chatId)
 	{
-		if (FindChat(chatId) is { } chat)
+		if (Chat(chatId) is { } chat)
 			return chat;
 		try
 		{
@@ -295,6 +296,7 @@ public partial class TelegramBotClient
 		return await GetReplyToMessage(await ChatFromPeer(peer, true), reply_to.reply_to_msg_id, true);
 	}
 
+	/// <summary>Handle UpdatesBase returned by various Client API and build the returned Bot Message</summary>
 	protected async Task<Message> PostedMsg(Task<UpdatesBase> updatesTask, InputPeer peer, string? text = null, Message? replyToMessage = null)
 	{
 		var updates = await updatesTask;
@@ -338,6 +340,7 @@ public partial class TelegramBotClient
 		return result;
 	}
 
+	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message</summary>
 	[return: NotNullIfNotNull(nameof(msgBase))]
 	protected async Task<Message?> MakeMessage(MessageBase? msgBase, Message? replyToMessage = null)
 	{

@@ -78,10 +78,13 @@ public class User
         $"{(Username is null ? $"{FirstName}{LastName?.Insert(0, " ")}" : $"@{Username}")} ({Id})";
 
 
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-	internal long AccessHash { get; set; }
-    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
+	/// <summary>Client API access_hash of the user</summary>
+	[JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+	public long AccessHash { get; set; }
+	/// <summary>Useful operator for Client API calls</summary>
+	[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
 	public static implicit operator TL.InputPeerUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
-    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
+	/// <summary>Useful operator for Client API calls</summary>
+	[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
 	public static implicit operator TL.InputUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
 }

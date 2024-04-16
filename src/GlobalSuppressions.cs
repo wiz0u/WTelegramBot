@@ -3,6 +3,8 @@
 // Project-level suppressions either have no target or are given
 // a specific target and scoped to a namespace, type, member, etc.
 
+global using Newtonsoft.Json;
+global using Newtonsoft.Json.Serialization;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 
@@ -14,40 +16,29 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:Telegram.Bot.TelegramBotClient.GetFileAsync(System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClient.LocalBotServer")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClientOptions.LocalBotServer")]
-[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~M:Telegram.Bot.TelegramBotClientOptions.#ctor(System.String,System.Int32,System.String,System.String,System.Boolean)")]
-[assembly: SuppressMessage("Style", "IDE0290:Use primary constructor")]
-[assembly: SuppressMessage("Style", "IDE0280:Use 'nameof'")]
+[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.TelegramBotClientOptions")]
+
+#pragma warning disable CS9113, CS1591
 
 namespace System.Runtime.CompilerServices
 {
 	[EditorBrowsable(EditorBrowsableState.Never)]
 	internal class IsExternalInit { }
 
-#if !NETCOREAPP3_1_OR_GREATER
+#if NETSTANDARD2_1
 	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
-	internal sealed class CallerArgumentExpressionAttribute : Attribute
-	{
-		public CallerArgumentExpressionAttribute(string parameterName)
-		{
-			ParameterName = parameterName;
-		}
-
-		// ReSharper disable once UnusedAutoPropertyAccessor.Global
-		public string ParameterName { get; }
-	}
+	internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute { }
 #endif
 }
 
-#pragma warning disable CS9113
-
 // These stubs are just to make the compiler happy with existing Telegram.Bot code, as we are not using Newtonsoft.Json in this package
 
-namespace Newtonsoft.Json.Converters { }
-namespace Telegram.Bot.Types
+namespace JetBrains.Annotations { class PublicAPIAttribute : Attribute; }
+namespace Newtonsoft.Json
 {
 	class JsonConstructorAttribute : Attribute;
 	class JsonConverterAttribute(Type converterType) : Attribute;
-	class JsonObjectAttribute(MemberSerialization _ = default) : Attribute { public Type NamingStrategyType = null!; }
+	class JsonObjectAttribute(MemberSerialization memberSerialization = default) : Attribute { public Type NamingStrategyType = null!; }
 	class JsonPropertyAttribute(string? propertyName = null) : Attribute
 	{
 		public Required Required { get; set; }
@@ -59,8 +50,12 @@ namespace Telegram.Bot.Types
 	enum DefaultValueHandling { Include, Ignore, Populate, IgnoreAndPopulate }
 	enum MemberSerialization { OptOut, OptIn, Fields }
 	enum NullValueHandling { Include, Ignore }
-	class SnakeCaseNamingStrategy;
 	class UnixDateTimeConverter;
+}
+namespace Newtonsoft.Json.Converters { }
+namespace Newtonsoft.Json.Serialization
+{
+	class SnakeCaseNamingStrategy;
 }
 namespace Telegram.Bot.Converters
 {

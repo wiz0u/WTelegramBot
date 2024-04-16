@@ -7,6 +7,7 @@ using TL;
 
 namespace Telegram.Bot.Types;
 
+/// <summary>Extension methods for converting between Client API and Bot API</summary>
 public static class TypesTLConverters
 {
 	const long ZERO_CHANNEL_ID = -1000000000000;
@@ -28,7 +29,7 @@ public static class TypesTLConverters
 	/// Optional. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
 	/// </summary>
 	public static User? User(this MessageEntity entity, TelegramBotClient botClient)
-		=> entity.UserId() is long userId ? botClient.FindUser(userId) ?? new User { Id = userId, FirstName = "" } : null;
+		=> entity.UserId() is long userId ? botClient.User(userId) ?? new User { Id = userId, FirstName = "" } : null;
 
 	/// <summary>
 	/// Optional. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text
@@ -43,7 +44,7 @@ public static class TypesTLConverters
 	public static string? CustomEmojiId(this MessageEntity entity)
 		=> (entity as MessageEntityCustomEmoji)?.document_id.ToString();
 
-
+	/// <summary>Convert TL.User to Bot Types.User</summary>
 	[return: NotNullIfNotNull(nameof(user))]
 	public static User? User(this TL.User? user)
 	{
@@ -69,6 +70,7 @@ public static class TypesTLConverters
 		return result;
 	}
 
+	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(chat))]
 	public static Chat? Chat(this ChatBase? chat)
 	{
@@ -84,6 +86,7 @@ public static class TypesTLConverters
 		};
 	}
 
+	/// <summary>Convert TL.User to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(user))]
 	public static Chat? Chat(this TL.User? user) => user == null ? null : new Chat
 	{
@@ -95,6 +98,7 @@ public static class TypesTLConverters
 		AccessHash = user.access_hash
 	};
 
+	/// <summary>Convert Bot Types.User to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(user))]
 	public static Chat? Chat(this User? user) => user == null ? null : new Chat
 	{
@@ -259,9 +263,11 @@ public static class TypesTLConverters
 			_ => new InlineKeyboardButton(btn.Text),
 		})));
 
+	/// <summary>Convert TL.Photo into Bot Types.PhotoSize[]</summary>
 	public static PhotoSize[]? PhotoSizes(this PhotoBase photoBase)
 		=> (photoBase is not Photo photo) ? null : photo.sizes.Select(ps => ps.PhotoSize(photo.ToFileLocation(ps), photo.dc_id)).ToArray();
 
+	/// <summary>Convert TL.PhotoSize into Bot Types.PhotoSize</summary>
 	public static PhotoSize PhotoSize(this PhotoSizeBase ps, InputFileLocationBase location, int dc_id)
 		=> new PhotoSize()
 		{
@@ -270,10 +276,34 @@ public static class TypesTLConverters
 			FileSize = ps.FileSize,
 		}.SetFileIds(location, dc_id, ps.Type);
 
+	/// <summary>Encode TL.InputFileLocation as FileId/FileUniqueId strings into a Bot File structure</summary>
+	public static T SetFileIds<T>(this T file, InputFileLocationBase location, int dc_id, string? type = null) where T : FileBase
+	{
+		using var memStream = new MemoryStream(128);
+		using (var writer = new BinaryWriter(memStream))
+		{
+			writer.WriteTLObject(location);
+			writer.Write((byte)dc_id);
+			writer.Write((int)(file.FileSize ?? 0));
+			writer.Write((byte)42);
+		}
+		var bytes = memStream.ToArray();
+		file.FileId = ToBase64(bytes);
+		bytes[12] = (byte)(type?[0] ?? 0);
+		file.FileUniqueId = ToBase64(bytes.AsSpan(3, 10));
+		return file;
+		// fileType = 0 for web, or FileTypeClass+1 (see D:\Repos\telegram-bot-api\td\td\telegram\files\FileType.cpp)
+		// fileId
+		// 0 for Type 'a', 1 for Type 'c', or Type char + 5
+		//byte type = Type switch { "a" => 0, "c" => 1, _ => (byte)(Type[0] + 5) };
+		//Convert.ToBase64String(BitConverter.GetBytes(photoId).Prepend(fileType).Append(type).EncodeZero().ToArray());
+	}
+
+	/// <summary>Decode FileId into TL.InputFileLocation</summary>
 	public static (File file, InputFileLocationBase location, int dc_id) ParseFileId(this string fileId, bool generateFile = false)
 	{
-		var idBytes = Convert.FromBase64String(fileId.Replace('_', '/').Replace('-', '+') + new string('=', 3 - ((fileId.Length + 3) % 4)));
-		if (idBytes[^1] != 42) throw new ApiRequestException("Unsupported FileID format");
+		var idBytes = Convert.FromBase64String(fileId.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - fileId.Length) % 4));
+		if (idBytes[^1] != 42) throw new ApiRequestException("Unsupported file_id format");
 		using var memStream = new MemoryStream(idBytes);
 		using var reader = new BinaryReader(memStream);
 		var location = (InputFileLocationBase)reader.ReadTLObject();
@@ -295,28 +325,6 @@ public static class TypesTLConverters
 			FileUniqueId = ToBase64(idBytes.AsSpan(3, 10)),
 			FileSize = fileSize
 		}, location, dc_id);
-	}
-
-	public static T SetFileIds<T>(this T file, InputFileLocationBase location, int dc_id, string? type = null) where T : FileBase
-	{
-		using var memStream = new MemoryStream(128);
-		using (var writer = new BinaryWriter(memStream))
-		{
-			writer.WriteTLObject(location);
-			writer.Write((byte)dc_id);
-			writer.Write((int)(file.FileSize ?? 0));
-			writer.Write((byte)42);
-		}
-		var bytes = memStream.ToArray();
-		file.FileId = ToBase64(bytes);
-		bytes[12] = (byte)(type?[0] ?? 0);
-		file.FileUniqueId = ToBase64(bytes.AsSpan(3, 10));
-		return file;
-		// fileType = 0 for web, or FileTypeClass+1 (see D:\Repos\telegram-bot-api\td\td\telegram\files\FileType.cpp)
-		// fileId
-		// 0 for Type 'a', 1 for Type 'c', or Type char + 5
-		//byte type = Type switch { "a" => 0, "c" => 1, _ => (byte)(Type[0] + 5) };
-		//Convert.ToBase64String(BitConverter.GetBytes(photoId).Prepend(fileType).Append(type).EncodeZero().ToArray());
 	}
 
 	internal static ChatPhoto? ChatPhoto(this PhotoBase? photoBase)
@@ -361,15 +369,14 @@ public static class TypesTLConverters
 
 	internal static InputBotInlineMessageIDBase ParseInlineMsgID(this string inlineMessageId)
 	{
-		var idBytes = Convert.FromBase64String(inlineMessageId.Replace('_', '/').Replace('-', '+') + new string('=', 3 - ((inlineMessageId.Length + 3) % 4)));
+		var idBytes = Convert.FromBase64String(inlineMessageId.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - inlineMessageId.Length) % 4));
 		using var memStream = new MemoryStream(idBytes);
 		using var reader = new BinaryReader(memStream);
 		return (InputBotInlineMessageIDBase)reader.ReadTLObject();
 	}
 
 	private static string ToBase64(this byte[] bytes) => ToBase64(bytes.AsSpan());
-	private static string ToBase64(this Span<byte> bytes)
-		=> Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+	private static string ToBase64(this Span<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
 	internal static SendMessageAction ChatAction(this ChatAction action) => action switch
 	{
@@ -447,9 +454,9 @@ public static class TypesTLConverters
 	internal static TL.LabeledPrice[] LabeledPrices(this IEnumerable<Payments.LabeledPrice> prices)
 		=> prices.Select(p => new TL.LabeledPrice { label = p.Label, amount = p.Amount }).ToArray();
 
-	public static TL.BotCommand BotCommand(this BotCommand bc)
+	internal static TL.BotCommand BotCommand(this BotCommand bc)
 		=> new() { command = bc.Command.StartsWith('/') ? bc.Command[1..] : bc.Command, description = bc.Description };
-	public static BotCommand BotCommand(this TL.BotCommand bc)
+	internal static BotCommand BotCommand(this TL.BotCommand bc)
 		=> new() { Command = bc.command, Description = bc.description };
 
 	[return: NotNullIfNotNull(nameof(pa))]
@@ -472,7 +479,7 @@ public static class TypesTLConverters
 		ShippingAddress = pri.shipping_address.ShippingAddress()
 	};
 
-	public static InlineQueryPeerType[] InlineQueryPeerTypes(this SwitchInlineQueryChosenChat swiqcc)
+	internal static InlineQueryPeerType[] InlineQueryPeerTypes(this SwitchInlineQueryChosenChat swiqcc)
 	{
 		var result = new List<InlineQueryPeerType>();
 		if (swiqcc.AllowUserChats == true) result.Add(InlineQueryPeerType.PM);
@@ -482,13 +489,13 @@ public static class TypesTLConverters
 		return [.. result];
 	}
 
-	public static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
+	internal static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
 	{
 		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
 		Credentials = new Passport.EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
 	};
 
-	public static Passport.EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
+	internal static Passport.EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
 	{
 		Type = sv.type switch
 		{

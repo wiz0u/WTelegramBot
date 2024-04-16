@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Data.Common;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -15,14 +16,16 @@ public class TelegramBotClientOptions
     /// </summary>
     public string Token { get; }
 
-    /// <summary>Your api_id, obtained at https://my.telegram.org/apps</summary>
-    public int ApiId { get; }
-    /// <summary>Your api_hash, obtained at https://my.telegram.org/apps</summary>
-    public string ApiHash { get; }
-    /// <summary>Pathname of WTelegramClient session file for the bot account (by default: "WTelegramBot.session")</summary>
-    public string SessionPathname { get; }
+	/// <summary>Your api_id, obtained at https://my.telegram.org/apps</summary>
+	public int ApiId { get; }
+	/// <summary>Your api_hash, obtained at https://my.telegram.org/apps</summary>
+	public string ApiHash { get; }
+	/// <summary>Connection to Database for loading/storing the bot state</summary>
+	public DbConnection DbConnection { get; }
+	/// <summary>You can set the SQL queries for your specific DB engine</summary>
+	public string[] SqlCommands { get; set; }
 	/// <summary>Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMeAsync()</c> to wait for login asynchronously instead</summary>
-	public bool WaitForLogin { get; } = true;
+	public bool WaitForLogin { get; set; } = true;
 
     /// <summary>
     /// Indicates that test environment will be used
@@ -53,19 +56,20 @@ public class TelegramBotClientOptions
     /// <param name="token">API token</param>
     /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
     /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
+    /// <param name="dbConnection">DB connection for storage and later resume</param>
+    /// <param name="sqlCommands">Template for SQL strings</param>
     /// <param name="useTestEnvironment"></param>
     /// <exception cref="ArgumentException">
     /// Thrown if <paramref name="token"/> format is invalid
     /// </exception>
-    /// <exception cref="ArgumentException">
-    /// Thrown if <paramref name="baseUrl"/> format is invalid
-    /// </exception>
-    public TelegramBotClientOptions(string token, int apiId, string apiHash, string? sessionPathname = null, bool useTestEnvironment = false)
+    public TelegramBotClientOptions(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = Bot.SqlCommands.Detect, bool useTestEnvironment = false)
     {
         Token = token ?? throw new ArgumentNullException(nameof(token));
         ApiId = apiId;
         ApiHash = apiHash;
-        SessionPathname = sessionPathname ?? "WTelegramBot.session";
+		DbConnection = dbConnection;
+		if (sqlCommands == Bot.SqlCommands.Detect) sqlCommands = Database.DetectType(dbConnection);
+		SqlCommands = Database.DefaultSqlCommands[(int)sqlCommands];
         UseTestEnvironment = useTestEnvironment;
 
         BotId = GetIdFromToken(token)
@@ -99,13 +103,13 @@ public class TelegramBotClientOptions
         }
     }
 
-    public virtual string? WTCConfig(string what) => what switch
-    {
-        "api_id" => ApiId.ToString(),
-        "api_hash" => ApiHash,
-        "session_pathname" => SessionPathname,
-        "device_model" => "server",
-        "server_address" => BaseServerAddress,
-        _ => null
-    };
+	/// <summary>The Config callback used by WTelegramClient</summary>
+	public virtual string? WTCConfig(string what) => what switch
+	{
+		"api_id" => ApiId.ToString(),
+		"api_hash" => ApiHash,
+		"device_model" => "server",
+		"server_address" => BaseServerAddress,
+		_ => null
+	};
 }

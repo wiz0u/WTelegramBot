@@ -36,7 +36,7 @@ If your code used it a lot, you might find it useful to add this line at the top
     ```csharp
     global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
     ```
-- A few optional fields (when unset) may be assigned to the default non-null value (like false) instead of null
+- Some nullable properties may be assigned to the default type value instead of `null` (like `false` for `bool?`)
 - Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_
   Use the direct async methods instead
 - There is no support for Webhooks or HTTP

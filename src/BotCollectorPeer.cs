@@ -53,8 +53,8 @@ public partial class TelegramBotClient
 					}
 		}
 
-		public bool HasUser(long id) { lock (client._users) return client._users.ContainsKey(id); }
-		public bool HasChat(long id) { lock (client._chats) return client._chats.ContainsKey(id); }
+		public bool HasUser(long id) { lock (client._users) return client._users.TryGetValue(id, out _); }
+		public bool HasChat(long id) { lock (client._chats) return client._chats.TryGetValue(id, out _); }
 
 		public TL.User this[long key] => throw new NotImplementedException();
 		public IEnumerable<long> Keys => throw new NotImplementedException();

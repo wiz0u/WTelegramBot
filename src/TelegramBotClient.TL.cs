@@ -102,6 +102,7 @@ public partial class TelegramBotClient
 		return new TL.KeyboardButton { text = btn.Text };
 	}
 
+	/// <summary>Fetch the message being replied-to if any</summary>
 	protected async Task<Message?> GetReplyToMessage(InputPeer peer, int? replyToMessageId, bool? allowSendingWithoutReply)
 	{
 		if (replyToMessageId > 0)
@@ -113,7 +114,8 @@ public partial class TelegramBotClient
 		return null;
 	}
 
-	protected InputReplyTo? MakeReplyTo(int? replyToMessageId, int? messageThreadId, InputPeer? replyToPeer)
+	/// <summary>Build the eventual InputReplyTo structure for sending a reply message</summary>
+	protected static InputReplyTo? MakeReplyTo(int? replyToMessageId, int? messageThreadId, InputPeer? replyToPeer)
 	{
 		if (replyToMessageId > 0)
 			return new InputReplyToMessage
@@ -128,6 +130,7 @@ public partial class TelegramBotClient
 		return null;
 	}
 
+	/// <summary>Fetch and build a Bot Message (cached)</summary>
 	protected async Task<Message?> GetMessage(InputPeer peer, int messageId)
 	{
 		if (peer == null || messageId == 0) return null;
@@ -141,6 +144,7 @@ public partial class TelegramBotClient
 			return CachedMessages[(peer.ID, messageId)] = msg;
 	}
 
+	/// <summary>Apply ParseMode to text and entities</summary>
 	protected string? ApplyParse(ParseMode? parseMode, string? text, ref MessageEntity[]? entities)
 	{
 		if (parseMode == null) return text;
@@ -150,6 +154,7 @@ public partial class TelegramBotClient
 		return text;
 	}
 
+	/// <summary>Apply ParseMode to text and entities</summary>
 	protected void ApplyParse(ParseMode? parseMode, ref string? text, ref IEnumerable<MessageEntity>? entities)
 	{
 		if (entities != null || text == null) return;
@@ -198,6 +203,7 @@ public partial class TelegramBotClient
 		return new InputPhoto { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
+	/// <summary>Return TL structure for the photo InputFile. Upload the file for InputFileStream</summary>
 	public async Task<TL.InputMedia> InputMediaPhoto(InputFile file, bool? hasSpoiler = false)
 	{
 		switch (file.FileType)
@@ -219,6 +225,7 @@ public partial class TelegramBotClient
 		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
+	/// <summary>Return TL structure for the document InputFile. Upload the file for InputFileStream</summary>
 	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, bool? hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
 	{
 		switch (file.FileType)
@@ -234,7 +241,7 @@ public partial class TelegramBotClient
 				{
 					string? fileExt = Path.GetExtension(stream.FileName); // ?? defaultFilename (if we want to behave exactly like Telegram.Bot)
 					fileExt ??= Path.GetExtension((stream.Content as FileStream)?.Name);
-					mimeType = string.IsNullOrEmpty(fileExt) ? null : Helpers.GetMimeType(fileExt);
+					mimeType = string.IsNullOrEmpty(fileExt) ? null : Helpers.ExtToMimeType.GetValueOrDefault(fileExt);
 				}
 				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
 		}
@@ -266,9 +273,9 @@ public partial class TelegramBotClient
 		return doc;
 	}
 
-	private string CacheStickerSet(Messages_StickerSet mss, string? mimeType = null)
+	private string? CacheStickerSet(Messages_StickerSet mss, string? mimeType = null)
 	{
-		mimeType ??= mss.documents.OfType<TL.Document>().FirstOrDefault(doc => !string.IsNullOrEmpty(doc.mime_type)).mime_type;
+		mimeType ??= mss.documents.OfType<TL.Document>().FirstOrDefault(doc => !string.IsNullOrEmpty(doc.mime_type))?.mime_type;
 		lock (StickerSetNames)
 			StickerSetNames[mss.set.id] = mss.set.short_name;
 		lock (StickerSetMimeType)
@@ -563,7 +570,8 @@ public partial class TelegramBotClient
 		};
 	}
 
-	public ApiRequestException MakeException(WTelegram.WTException ex)
+	/// <summary>Convert WTelegram Exception into ApiRequestException</summary>
+	protected static ApiRequestException MakeException(WTelegram.WTException ex)
 	{
 		if (ex is not RpcException rpcEx) return new ApiRequestException(ex.Message, ex);
 		var msg = ex.Message switch
