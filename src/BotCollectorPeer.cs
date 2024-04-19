@@ -33,6 +33,7 @@ public partial class TelegramBotClient
 								prevUser.CanJoinGroups = !user.flags.HasFlag(TL.User.Flags.bot_nochats);
 								prevUser.CanReadAllGroupMessages = user.flags.HasFlag(TL.User.Flags.bot_chat_history);
 								prevUser.SupportsInlineQueries = user.flags.HasFlag(TL.User.Flags.has_bot_inline_placeholder);
+								prevUser.CanConnectToBusiness = user.flags2.HasFlag(TL.User.Flags2.bot_business);
 							}
 							client._users[user.id] = prevUser;
 						}

@@ -39,15 +39,53 @@ public partial class TelegramBotClient
 
 	private static KeyboardButtonBase MakeKeyboardButton(KeyboardButton btn)
 	{
-		if (btn.RequestUser is { } ru) return new KeyboardButtonRequestPeer { text = btn.Text, button_id = ru.RequestId, max_quantity = 1,
-			peer_type = new RequestPeerTypeUser { bot = ru.UserIsBot == true, premium = ru.UserIsPremium == true,
-				flags = (ru.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (ru.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium) } };
-		if (btn.RequestChat is { } rc) return new KeyboardButtonRequestPeer { text = btn.Text, button_id = rc.RequestId, max_quantity = 1,
-			peer_type = MakeRequestPeerType(rc) };
+		if (btn.RequestUsers is { } rus) return new InputKeyboardButtonRequestPeer
+		{
+			text = btn.Text,
+			button_id = rus.RequestId,
+			max_quantity = rus.MaxQuantity ?? 1,
+			peer_type = new RequestPeerTypeUser
+			{
+				bot = rus.UserIsBot == true,
+				premium = rus.UserIsPremium == true,
+				flags = (rus.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (rus.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium)
+			},
+			flags = (rus.RequestName == true ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
+				| (rus.RequestUsername == true ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
+				| (rus.RequestPhoto == true ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+		};
+#pragma warning disable CS0618 // Type or member is obsolete
+		if (btn.RequestUser is { } ru) return new InputKeyboardButtonRequestPeer
+		{
+			text = btn.Text,
+			button_id = ru.RequestId,
+			max_quantity = 1,
+			peer_type = new RequestPeerTypeUser
+			{
+				bot = ru.UserIsBot == true,
+				premium = ru.UserIsPremium == true,
+				flags = (ru.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (ru.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium)
+			}
+		};
+#pragma warning restore CS0618 // Type or member is obsolete
+		if (btn.RequestChat is { } rc) return new InputKeyboardButtonRequestPeer
+		{
+			text = btn.Text,
+			button_id = rc.RequestId,
+			max_quantity = 1,
+			peer_type = MakeRequestPeerType(rc),
+			flags = (rc.RequestTitle == true ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
+				| (rc.RequestUsername == true ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
+				| (rc.RequestPhoto == true ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+		};
 		if (btn.RequestContact == true) return new KeyboardButtonRequestPhone { text = btn.Text };
 		if (btn.RequestLocation == true) return new KeyboardButtonRequestGeoLocation { text = btn.Text };
-		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll { text = btn.Text, quiz = btn.RequestPoll.Type is "quiz",
-			flags = btn.RequestPoll.Type is "quiz" or "regular" ? KeyboardButtonRequestPoll.Flags.has_quiz : 0 };
+		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll
+		{
+			text = btn.Text,
+			quiz = btn.RequestPoll.Type is "quiz",
+			flags = btn.RequestPoll.Type is "quiz" or "regular" ? KeyboardButtonRequestPoll.Flags.has_quiz : 0
+		};
 		if (btn.WebApp != null) return new KeyboardButtonSimpleWebView { text = btn.Text, url = btn.WebApp.Url };
 		return new TL.KeyboardButton { text = btn.Text };
 	}
@@ -61,8 +99,11 @@ public partial class TelegramBotClient
 		}
 		else
 		{
-			var rptc = new RequestPeerTypeChat { forum = rc.ChatIsForum == true,
-				flags = (rc.ChatIsForum != null ? RequestPeerTypeChat.Flags.has_forum : 0) | (rc.BotIsMember == true ? RequestPeerTypeChat.Flags.bot_participant : 0) };
+			var rptc = new RequestPeerTypeChat
+			{
+				forum = rc.ChatIsForum == true,
+				flags = (rc.ChatIsForum != null ? RequestPeerTypeChat.Flags.has_forum : 0) | (rc.BotIsMember == true ? RequestPeerTypeChat.Flags.bot_participant : 0)
+			};
 			return FillFields(rc, rptc, ref rptc.flags, ref rptc.has_username, ref rptc.user_admin_rights, ref rptc.bot_admin_rights);
 		}
 		static T FillFields<T, F>(KeyboardButtonRequestChat rc, T obj, ref F flags, ref bool has_username, ref ChatAdminRights? user_admin_rights, ref ChatAdminRights? bot_admin_rights)
@@ -103,35 +144,57 @@ public partial class TelegramBotClient
 	}
 
 	/// <summary>Fetch the message being replied-to if any</summary>
-	protected async Task<Message?> GetReplyToMessage(InputPeer peer, int? replyToMessageId, bool? allowSendingWithoutReply)
+	protected async Task<Message?> GetReplyToMessage(InputPeer peer, ReplyParameters? replied)
 	{
-		if (replyToMessageId > 0)
+		if (replied?.MessageId > 0)
 		{
-			var msg = await GetMessage(peer, replyToMessageId.Value);
-			if (msg == null && allowSendingWithoutReply != true) throw new ApiRequestException("message to reply not found", 400);
+			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId);
+			var msg = await GetMessage(peer, replied.MessageId);
+			if (msg == null && replied.AllowSendingWithoutReply != true) throw new ApiRequestException("message to reply not found", 400);
 			return msg;
 		}
 		return null;
 	}
 
 	/// <summary>Build the eventual InputReplyTo structure for sending a reply message</summary>
-	protected static InputReplyTo? MakeReplyTo(int? replyToMessageId, int? messageThreadId, InputPeer? replyToPeer)
+	protected async Task<InputReplyTo?> MakeReplyTo(ReplyParameters? replied, int? messageThreadId, InputPeer? replyToPeer)
 	{
-		if (replyToMessageId > 0)
+		if (replied?.MessageId > 0)
+		{
+			if (replied.ChatId is not null) replyToPeer = await InputPeerChat(replied.ChatId);
+			var quote = replied.Quote;
+			var quoteEntities = replied.QuoteEntities;
+			if (replied.QuoteParseMode != null)
+				quote = ApplyParse(Enum.Parse<ParseMode>(replied.QuoteParseMode), quote, ref quoteEntities);
 			return new InputReplyToMessage
 			{
-				reply_to_msg_id = replyToMessageId.Value,
+				reply_to_msg_id = replied.MessageId,
 				top_msg_id = messageThreadId ?? 0,
 				reply_to_peer_id = messageThreadId.HasValue ? replyToPeer : null,
-				flags = messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0
+				quote_text = quote,
+				quote_entities = quoteEntities,
+				quote_offset = replied.QuotePosition ?? 0,
+				flags = (messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
+					| (replied.ChatId is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
+					| (quote != null ? InputReplyToMessage.Flags.has_quote_text : 0)
+					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
+					| (replied.QuotePosition.HasValue ? InputReplyToMessage.Flags.has_quote_offset : 0)
 			};
+		}
 		else if (messageThreadId > 0)
 			return new InputReplyToMessage { reply_to_msg_id = messageThreadId.Value };
 		return null;
 	}
 
+	private async Task<MaybeInaccessibleMessage?> GetMIMessage(InputPeer peer, int messageId)
+	{
+		var msg = await GetMessage(peer, messageId);
+		if (msg != null && msg.Date != default) return msg;
+		return new InaccessibleMessage { Chat = await ChatFromPeer(peer), MessageId = messageId };
+	}
+
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
-	protected async Task<Message?> GetMessage(InputPeer peer, int messageId)
+	protected async Task<Message?> GetMessage(InputPeer? peer, int messageId)
 	{
 		if (peer == null || messageId == 0) return null;
 		lock (CachedMessages)
@@ -247,10 +310,10 @@ public partial class TelegramBotClient
 		}
 	}
 
-	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker, string? mimeType)
+	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker)
 	{
 		var peer = InputPeerUser(userId);
-		var media = await InputMediaDocument(sticker.Sticker, mimeType: mimeType);
+		var media = await InputMediaDocument(sticker.Sticker, mimeType: MimeType(sticker.Format));
 		var document = await UploadMediaDocument(peer, media);
 		string keywords = sticker.KeyWords == null ? "" : string.Join(',', sticker.KeyWords);
 		return new InputStickerSetItem
@@ -273,13 +336,10 @@ public partial class TelegramBotClient
 		return doc;
 	}
 
-	private string? CacheStickerSet(Messages_StickerSet mss, string? mimeType = null)
+	private void CacheStickerSet(Messages_StickerSet mss)
 	{
-		mimeType ??= mss.documents.OfType<TL.Document>().FirstOrDefault(doc => !string.IsNullOrEmpty(doc.mime_type))?.mime_type;
 		lock (StickerSetNames)
 			StickerSetNames[mss.set.id] = mss.set.short_name;
-		lock (StickerSetMimeType)
-			return StickerSetMimeType[mss.set.short_name] = mimeType;
 	}
 
 	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker)
@@ -346,10 +406,10 @@ public partial class TelegramBotClient
 				break;
 			default: throw new ApiRequestException("Only InputFileStream is not supported for thumbnails", 400);
 		}
-		
+
 	}
 
-	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, float? horizontalAccuracy, int? heading, int? proximityAlertRadius, int livePeriod = 0)
+	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, double? horizontalAccuracy, int? heading, int? proximityAlertRadius, int livePeriod = 0)
 	=> new()
 	{
 		geo_point = new InputGeoPoint
@@ -375,15 +435,20 @@ public partial class TelegramBotClient
 		if (result is InlineQueryResultGame game)
 			return new InputBotInlineResultGame
 			{
-				id = result.Id, short_name = game.GameShortName, send_message = new InputBotInlineMessageGame
+				id = result.Id,
+				short_name = game.GameShortName,
+				send_message = new InputBotInlineMessageGame
 				{
 					reply_markup = await MakeReplyMarkup(game.ReplyMarkup),
-					flags = game.ReplyMarkup != null ? InputBotInlineMessageGame.Flags.has_reply_markup : 0 }
+					flags = game.ReplyMarkup != null ? InputBotInlineMessageGame.Flags.has_reply_markup : 0
+				}
 			};
 		if (result is InlineQueryResultCachedPhoto cachedPhoto)
 			return new InputBotInlineResultPhoto
 			{
-				id = result.Id, type = "photo", photo = InputPhoto(cachedPhoto.PhotoFileId),
+				id = result.Id,
+				type = "photo",
+				photo = InputPhoto(cachedPhoto.PhotoFileId),
 				send_message = await InputBotInlineMessage(result, cachedPhoto.InputMessageContent, cachedPhoto.Caption, cachedPhoto.ParseMode, cachedPhoto.CaptionEntities)
 			};
 		InputBotInlineResultDocument? cached = result switch
@@ -450,10 +515,10 @@ public partial class TelegramBotClient
 		});
 	}
 
-	private async Task<InputBotInlineResult> MakeIbir(InlineQueryResult r, string? title, string? description, 
+	private async Task<InputBotInlineResult> MakeIbir(InlineQueryResult r, string? title, string? description,
 		InputMessageContent? imc, string? caption, ParseMode? parseMode, MessageEntity[]? captionEntities,
-		string? thumbnail_url = null, string? thumbnail_type = null, int? thumbWidth = 0, int? thumbHeight = 0, 
-		string? content_url = null, string? content_type = null, DocumentAttribute? attribute = null, 
+		string? thumbnail_url = null, string? thumbnail_type = null, int? thumbWidth = 0, int? thumbHeight = 0,
+		string? content_url = null, string? content_type = null, DocumentAttribute? attribute = null,
 		string? type = null, string? url = null)
 	{
 		InputWebDocument? thumb = null, content = null;
@@ -470,7 +535,12 @@ public partial class TelegramBotClient
 		}
 		return new()
 		{
-			id = r.Id, title = title, description = description, url = url, thumb = thumb, content = content,
+			id = r.Id,
+			title = title,
+			description = description,
+			url = url,
+			thumb = thumb,
+			content = content,
 			type = type ?? r.Type.ToString().ToLower(),
 			send_message = await InputBotInlineMessage(r, imc, caption, parseMode, captionEntities),
 			flags = (title != null ? TL.InputBotInlineResult.Flags.has_title : 0)
@@ -488,38 +558,78 @@ public partial class TelegramBotClient
 		var reply_markup = await MakeReplyMarkup(iqr.ReplyMarkup);
 		return message switch
 		{
+			InputTextMessageContent itmc when itmc.LinkPreviewOptions?.Url != null => new InputBotInlineMessageMediaWebPage
+			{
+				reply_markup = reply_markup,
+				message = ApplyParse(itmc.ParseMode, itmc.MessageText, ref captionEntities),
+				entities = itmc.Entities ?? captionEntities,
+				url = itmc.LinkPreviewOptions.Url,
+				flags = (reply_markup != null ? InputBotInlineMessageMediaWebPage.Flags.has_reply_markup : 0) |
+						((itmc.Entities ?? captionEntities) != null ? InputBotInlineMessageMediaWebPage.Flags.has_entities : 0) |
+						(itmc.LinkPreviewOptions.PreferLargeMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_large_media : 0) |
+						(itmc.LinkPreviewOptions.PreferSmallMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_small_media : 0) |
+						(itmc.LinkPreviewOptions.ShowAboveText == true ? InputBotInlineMessageMediaWebPage.Flags.invert_media : 0)
+			},
 			InputTextMessageContent itmc => new InputBotInlineMessageText
-			{ reply_markup = reply_markup,
-				message = ApplyParse(itmc.ParseMode, itmc.MessageText, ref captionEntities), entities = itmc.Entities ?? captionEntities, 
+			{
+				reply_markup = reply_markup,
+				message = ApplyParse(itmc.ParseMode, itmc.MessageText, ref captionEntities),
+				entities = itmc.Entities ?? captionEntities,
 				flags = (reply_markup != null ? InputBotInlineMessageText.Flags.has_reply_markup : 0) |
 						((itmc.Entities ?? captionEntities) != null ? InputBotInlineMessageText.Flags.has_entities : 0) |
-						(itmc.DisableWebPagePreview == true ? InputBotInlineMessageText.Flags.no_webpage : 0)},
+						(itmc.LinkPreviewOptions?.IsDisabled == true ? InputBotInlineMessageText.Flags.no_webpage : 0) |
+						(itmc.LinkPreviewOptions?.ShowAboveText == true ? InputBotInlineMessageText.Flags.invert_media : 0)
+			},
 			InputContactMessageContent icmc => new InputBotInlineMessageMediaContact
-			{ reply_markup = reply_markup,
-				phone_number = icmc.PhoneNumber, first_name = icmc.FirstName, last_name = icmc.LastName, vcard = icmc.Vcard,
-				flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0 },
+			{
+				reply_markup = reply_markup,
+				phone_number = icmc.PhoneNumber,
+				first_name = icmc.FirstName,
+				last_name = icmc.LastName,
+				vcard = icmc.Vcard,
+				flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0
+			},
 			InputVenueMessageContent ivmc => new InputBotInlineMessageMediaVenue
-			{ reply_markup = reply_markup,
+			{
+				reply_markup = reply_markup,
 				geo_point = new InputGeoPoint { lat = ivmc.Latitude, lon = ivmc.Longitude },
-				title = ivmc.Title, address = ivmc.Address, provider = ivmc.GooglePlaceId != null ? "gplaces" : "foursquare",
-				venue_id = ivmc.GooglePlaceId ?? ivmc.FoursquareId, venue_type = ivmc.GooglePlaceType ?? ivmc.FoursquareType,
-				flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0 },
+				title = ivmc.Title,
+				address = ivmc.Address,
+				provider = ivmc.GooglePlaceId != null ? "gplaces" : "foursquare",
+				venue_id = ivmc.GooglePlaceId ?? ivmc.FoursquareId,
+				venue_type = ivmc.GooglePlaceType ?? ivmc.FoursquareType,
+				flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0
+			},
 			InputLocationMessageContent ilmc => new InputBotInlineMessageMediaGeo
-			{ reply_markup = reply_markup,
+			{
+				reply_markup = reply_markup,
 				geo_point = new InputGeoPoint
-				{ lat = ilmc.Latitude, lon = ilmc.Longitude, accuracy_radius = (int)(ilmc.HorizontalAccuracy ?? 0), 
-					flags = ilmc.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0 },
-				heading = ilmc.Heading ?? 0, period = ilmc.LivePeriod ?? 0, proximity_notification_radius = ilmc.ProximityAlertRadius ?? 0,
+				{
+					lat = ilmc.Latitude,
+					lon = ilmc.Longitude,
+					accuracy_radius = (int)(ilmc.HorizontalAccuracy ?? 0),
+					flags = ilmc.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0
+				},
+				heading = ilmc.Heading ?? 0,
+				period = ilmc.LivePeriod ?? 0,
+				proximity_notification_radius = ilmc.ProximityAlertRadius ?? 0,
 				flags = (reply_markup != null ? InputBotInlineMessageMediaGeo.Flags.has_reply_markup : 0)
 					| (ilmc.LivePeriod > 0 ? InputBotInlineMessageMediaGeo.Flags.has_period : 0)
 					| (ilmc.Heading.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_heading : 0)
-					| (ilmc.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0) },
+					| (ilmc.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0)
+			},
 			InputInvoiceMessageContent iimc => new InputBotInlineMessageMediaInvoice
-			{ reply_markup = reply_markup,
-				title = iimc.Title, description = iimc.Description,
+			{
+				reply_markup = reply_markup,
+				title = iimc.Title,
+				description = iimc.Description,
 				photo = new InputWebDocument
-				{ url = iimc.PhotoUrl, size = iimc.PhotoSize ?? 0, mime_type = "image/jpeg",
-				attributes = iimc.PhotoWidth + iimc.PhotoHeight > 0 ? [new TL.DocumentAttributeImageSize { w = iimc.PhotoWidth ?? 0, h = iimc.PhotoHeight ?? 0 }] : null },
+				{
+					url = iimc.PhotoUrl,
+					size = iimc.PhotoSize ?? 0,
+					mime_type = "image/jpeg",
+					attributes = iimc.PhotoWidth + iimc.PhotoHeight > 0 ? [new TL.DocumentAttributeImageSize { w = iimc.PhotoWidth ?? 0, h = iimc.PhotoHeight ?? 0 }] : null
+				},
 				invoice = new Invoice
 				{
 					flags = (iimc.MaxTipAmount.HasValue ? Invoice.Flags.has_max_tip_amount : 0)
@@ -535,36 +645,59 @@ public partial class TelegramBotClient
 					max_tip_amount = iimc.MaxTipAmount ?? 0,
 					suggested_tip_amounts = iimc.SuggestedTipAmounts?.Select(sta => (long)sta).ToArray(),
 				},
-				payload = Encoding.UTF8.GetBytes(iimc.Payload), provider = iimc.ProviderToken, 
+				payload = Encoding.UTF8.GetBytes(iimc.Payload),
+				provider = iimc.ProviderToken,
 				provider_data = new DataJSON { data = iimc.ProviderData ?? "null" },
-				flags = reply_markup != null ? InputBotInlineMessageMediaInvoice.Flags.has_reply_markup : 0 },
+				flags = reply_markup != null ? InputBotInlineMessageMediaInvoice.Flags.has_reply_markup : 0
+			},
 			null => iqr switch
 			{
 				InlineQueryResultContact iqrc => new InputBotInlineMessageMediaContact
-				{ reply_markup = reply_markup,
-					phone_number = iqrc.PhoneNumber, first_name = iqrc.FirstName, last_name = iqrc.LastName, vcard = iqrc.Vcard,
-					flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0 },
+				{
+					reply_markup = reply_markup,
+					phone_number = iqrc.PhoneNumber,
+					first_name = iqrc.FirstName,
+					last_name = iqrc.LastName,
+					vcard = iqrc.Vcard,
+					flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0
+				},
 				InlineQueryResultLocation iqrl => new InputBotInlineMessageMediaGeo
-				{ reply_markup = reply_markup,
+				{
+					reply_markup = reply_markup,
 					geo_point = new InputGeoPoint
-					{ lat = iqrl.Latitude, lon = iqrl.Longitude, accuracy_radius = (int)(iqrl.HorizontalAccuracy ?? 0), 
-						flags = iqrl.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0 },
-					heading = iqrl.Heading ?? 0, period = iqrl.LivePeriod ?? 0, proximity_notification_radius = iqrl.ProximityAlertRadius ?? 0,
+					{
+						lat = iqrl.Latitude,
+						lon = iqrl.Longitude,
+						accuracy_radius = (int)(iqrl.HorizontalAccuracy ?? 0),
+						flags = iqrl.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0
+					},
+					heading = iqrl.Heading ?? 0,
+					period = iqrl.LivePeriod ?? 0,
+					proximity_notification_radius = iqrl.ProximityAlertRadius ?? 0,
 					flags = (reply_markup != null ? InputBotInlineMessageMediaGeo.Flags.has_reply_markup : 0)
 						| (iqrl.LivePeriod > 0 ? InputBotInlineMessageMediaGeo.Flags.has_period : 0)
 						| (iqrl.Heading.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_heading : 0)
-						| (iqrl.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0) },
+						| (iqrl.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0)
+				},
 				InlineQueryResultVenue iqrv => new InputBotInlineMessageMediaVenue
-				{ reply_markup = reply_markup,
+				{
+					reply_markup = reply_markup,
 					geo_point = new InputGeoPoint { lat = iqrv.Latitude, lon = iqrv.Longitude },
-					title = iqrv.Title, address = iqrv.Address, provider = iqrv.GooglePlaceId != null ? "gplaces" : "foursquare",
-					venue_id = iqrv.GooglePlaceId ?? iqrv.FoursquareId, venue_type = iqrv.GooglePlaceType ?? iqrv.FoursquareType,
-					flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0 },
+					title = iqrv.Title,
+					address = iqrv.Address,
+					provider = iqrv.GooglePlaceId != null ? "gplaces" : "foursquare",
+					venue_id = iqrv.GooglePlaceId ?? iqrv.FoursquareId,
+					venue_type = iqrv.GooglePlaceType ?? iqrv.FoursquareType,
+					flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0
+				},
 				_ => new InputBotInlineMessageMediaAuto
-				{ reply_markup = reply_markup,
-					message = ApplyParse(parseMode, caption, ref captionEntities), entities = captionEntities, 
+				{
+					reply_markup = reply_markup,
+					message = ApplyParse(parseMode, caption, ref captionEntities),
+					entities = captionEntities,
 					flags = (reply_markup != null ? InputBotInlineMessageMediaAuto.Flags.has_reply_markup : 0) |
-							(captionEntities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities: 0) },
+							(captionEntities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities : 0)
+				},
 			},
 			_ => throw new NotImplementedException()
 		};
@@ -612,10 +745,10 @@ public partial class TelegramBotClient
 	};
 
 	private static InputMediaInvoice InputMediaInvoice(string title, string description, string payload, string providerToken,
-        string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
-        string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
-        bool? needName, bool? needPhoneNumber, bool? needEmail, bool? needShippingAddress,
-        bool? sendPhoneNumberToProvider, bool? sendEmailToProvider, bool? isFlexible) => new()
+		string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
+		string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
+		bool? needName, bool? needPhoneNumber, bool? needEmail, bool? needShippingAddress,
+		bool? sendPhoneNumberToProvider, bool? sendEmailToProvider, bool? isFlexible) => new()
 		{
 			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0),
 			title = title,
@@ -647,4 +780,85 @@ public partial class TelegramBotClient
 			provider_data = new DataJSON { data = providerData ?? "null" },
 			start_param = startParameter,
 		};
+
+	private async Task<ChatBoost> MakeBoost(Boost boost)
+	{
+		var cb = new ChatBoost
+		{
+			BoostId = boost.id,
+			AddDate = boost.date,
+			ExpirationDate = boost.expires,
+		};
+		if (boost.flags.HasFlag(Boost.Flags.giveaway))
+			cb.Source = new ChatBoostSourceGiveaway
+			{
+				GiveawayMessageId = boost.giveaway_msg_id,
+				User = boost.user_id == 0 ? null : await UserOrResolve(boost.user_id),
+				IsUnclaimed = boost.flags.HasFlag(Boost.Flags.unclaimed)
+			};
+		else if (boost.flags.HasFlag(Boost.Flags.gift))
+			cb.Source = new ChatBoostSourceGiftCode { User = await UserOrResolve(boost.user_id) };
+		else
+			cb.Source = new ChatBoostSourcePremium { User = await UserOrResolve(boost.user_id) };
+		return cb;
+	}
+
+	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string message, long random_id, InputReplyTo? reply_to = null, ReplyMarkup? reply_markup = null, MessageEntity[]? entities = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool no_webpage = false, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	{
+		var query = new TL.Methods.Messages_SendMessage
+		{
+			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			peer = peer,
+			reply_to = reply_to,
+			message = message,
+			random_id = random_id,
+			reply_markup = reply_markup,
+			entities = entities,
+			schedule_date = schedule_date.GetValueOrDefault(),
+			send_as = send_as,
+			quick_reply_shortcut = quick_reply_shortcut,
+		};
+		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+	}
+
+	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id, InputReplyTo? reply_to = null, ReplyMarkup? reply_markup = null, MessageEntity[]? entities = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	{
+		var query = new TL.Methods.Messages_SendMedia
+		{
+			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			peer = peer,
+			reply_to = reply_to,
+			media = media,
+			message = message,
+			random_id = random_id,
+			reply_markup = reply_markup,
+			entities = entities,
+			schedule_date = schedule_date.GetValueOrDefault(),
+			send_as = send_as,
+			quick_reply_shortcut = quick_reply_shortcut,
+		};
+		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+	}
+
+	Task<UpdatesBase> Messages_SendMultiMedia(string? bConnId, InputPeer peer, InputSingleMedia[] multi_media, InputReplyTo? reply_to = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	{
+		var query = new TL.Methods.Messages_SendMultiMedia
+		{
+			flags = (TL.Methods.Messages_SendMultiMedia.Flags)((reply_to != null ? 0x1 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			peer = peer,
+			reply_to = reply_to,
+			multi_media = multi_media,
+			schedule_date = schedule_date.GetValueOrDefault(),
+			send_as = send_as,
+			quick_reply_shortcut = quick_reply_shortcut,
+		};
+		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+	}
+
+	internal async Task<Types.BusinessIntro?> MakeBusinessIntro(TL.BusinessIntro? intro) => intro == null ? null : new()
+	{
+		Title = intro.title,
+		Message = intro.description,
+		Sticker = intro.sticker is TL.Document doc ? await MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>()) : null
+	};
 }

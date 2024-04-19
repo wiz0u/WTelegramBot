@@ -18,7 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClientOptions.LocalBotServer")]
 [assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.TelegramBotClientOptions")]
 
-#pragma warning disable CS9113, CS1591
+#pragma warning disable CS9113, CS1591, CA1018
 
 namespace System.Runtime.CompilerServices
 {
@@ -38,6 +38,7 @@ namespace Newtonsoft.Json
 {
 	class JsonConstructorAttribute : Attribute;
 	class JsonConverterAttribute(Type converterType) : Attribute;
+	class JsonIgnoreAttribute : Attribute;
 	class JsonObjectAttribute(MemberSerialization memberSerialization = default) : Attribute { public Type NamingStrategyType = null!; }
 	class JsonPropertyAttribute(string? propertyName = null) : Attribute
 	{
@@ -66,6 +67,10 @@ namespace Telegram.Bot.Converters
 	class InputFileConverter;
 	class InputMediaConverter;
 	class MenuButtonConverter;
+	class MessageOriginConverter;
+	class ReactionTypeConverter;
+	class ChatBoostSourceConverter;
+	class MaybeInaccessibleMessageConverter;
 }
 namespace Telegram.Bot.Types.Enums
 {
@@ -84,6 +89,9 @@ namespace Telegram.Bot.Types.Enums
 	class StickerFormatConverter;
 	class StickerTypeConverter;
 	class UpdateTypeConverter;
+	class ChatBoostSourceTypeConverter;
+	class MessageOriginTypeConverter;
+	class ReactionTypeKindConverter;
 }
 namespace Telegram.Bot.Types.Passport { class EncryptedPassportElementTypeConverter; }
 namespace Telegram.Bot.Types.InlineQueryResults { class InlineQueryResultTypeConverter; }

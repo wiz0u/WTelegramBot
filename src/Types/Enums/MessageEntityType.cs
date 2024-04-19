@@ -89,4 +89,9 @@ public static class MessageEntityType
     /// Inline custom emoji stickers
     /// </summary>
     public const string CustomEmoji = "CustomEmoji";
+
+    /// <summary>
+    /// Block quotation
+    /// </summary>
+    public const string Blockquote = "Blockquote";
 }

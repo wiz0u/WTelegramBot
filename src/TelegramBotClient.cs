@@ -63,8 +63,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	private SemaphoreSlim _pendingCounter = new(0);
 	/// <summary>Cache StickerSet ID => Name</summary>
 	protected Dictionary<long, string> StickerSetNames = [];
-	/// <summary>Cache StickerSet Name => MimeType</summary>
-	protected Dictionary<string, string?> StickerSetMimeType = [];
 	/// <summary>Cache used by <see cref="GetMessage"/></summary>
 	protected Dictionary<(long peerId, int msgId), Message?> CachedMessages = [];
 
@@ -343,8 +341,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		lock (_users) _users.ClearCache();
 		lock (_chats) _chats.ClearCache();
 		lock (StickerSetNames) StickerSetNames.Clear();
-		lock (StickerSetMimeType) StickerSetMimeType.Clear();
 		lock (CachedMessages) CachedMessages.Clear();
 	}
 }
-//TODO clean SLN before release

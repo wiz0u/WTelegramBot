@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Chat.cs" />
     <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Enums\MessageEntityType.cs" />
+    <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\InputFiles\InputFile.cs" />
     <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\MessageEntity.cs" />
     <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\Update.cs" />
     <Compile Remove="..\Telegram.Bot\src\Telegram.Bot\Types\User.cs" />
@@ -52,9 +53,13 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="Required" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
+    <PackageReference Include="Required" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WTelegramClient" Version="4.0.1-dev.3" />
+    <PackageReference Include="WTelegramClient" Version="4.0.1-dev.5" />
   </ItemGroup>
 </Project>

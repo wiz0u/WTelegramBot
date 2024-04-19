@@ -7,7 +7,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TL;
 using File = Telegram.Bot.Types.File;
 
-#pragma warning disable CS1572
+#pragma warning disable CS1572, CS1580
 
 namespace Telegram.Bot;
 
@@ -26,8 +26,9 @@ public partial class TelegramBotClient
     /// <param name="offset">
     /// Identifier of the first update to be returned. Must be greater by one than the highest among the
     /// identifiers of previously received updates. By default, updates starting with the earliest unconfirmed
-    /// update are returned. An update is considered confirmed as soon as <see cref="GetUpdatesAsync"/> is called
-    /// with an <paramref name="offset"/> higher than its <see cref="Update.Id"/>. The negative offset can be
+    /// update are returned. An update is considered confirmed as soon as
+    /// <see cref="GetUpdatesAsync(ITelegramBotClient,GetUpdatesRequest,CancellationToken)"/> is called with an
+    /// <paramref name="offset"/> higher than its <see cref="Update.Id"/>. The negative offset can be
     /// specified to retrieve updates starting from <paramref name="offset">-offset</paramref> update from the end
     /// of the updates queue. All previous updates will forgotten.
     /// </param>
@@ -104,7 +105,8 @@ public partial class TelegramBotClient
     /// </para>
     /// <para>
     /// Please note that this parameter doesn't affect updates created before the call to the
-    /// <see cref="SetWebhookAsync"/>, so unwanted updates may be received for a short period of time.
+    /// <see cref="SetWebhookAsync(ITelegramBotClient,SetWebhookRequest,CancellationToken)"/>,
+    /// so unwanted updates may be received for a short period of time.
     /// </para>
     /// </param>
     /// <param name="dropPendingUpdates">Pass <see langword="true"/> to drop all pending updates</param>
@@ -119,8 +121,9 @@ public partial class TelegramBotClient
     /// <remarks>
     /// <list type="number">
     /// <item>
-    /// You will not be able to receive updates using <see cref="GetUpdatesAsync"/> for as long as an outgoing
-    /// webhook is set up
+    /// You will not be able to receive updates using
+    /// <see cref="GetUpdatesAsync(ITelegramBotClient,GetUpdatesRequest,CancellationToken)"/> for as long as
+    /// an outgoing webhook is set up
     /// </item>
     /// <item>
     /// To use a self-signed certificate, you need to upload your
@@ -158,7 +161,8 @@ public partial class TelegramBotClient
 
 
     /// <summary>
-    /// Use this method to remove webhook integration if you decide to switch back to <see cref="GetUpdatesAsync"/>
+    /// Use this method to remove webhook integration if you decide to switch back to
+    /// <see cref="GetUpdatesAsync(ITelegramBotClient,GetUpdatesRequest,CancellationToken)"/>
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="dropPendingUpdates">Pass <see langword="true"/> to drop all pending updates</param>
@@ -185,7 +189,8 @@ public partial class TelegramBotClient
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
     /// <returns>
-    /// On success, returns a <see cref="WebhookInfo"/> object. If the bot is using <see cref="GetUpdatesAsync"/>,
+    /// On success, returns a <see cref="WebhookInfo"/> object. If the bot is using
+    /// <see cref="GetUpdatesAsync(ITelegramBotClient,GetUpdatesRequest,CancellationToken)"/>,
     /// will return an object with the <see cref="WebhookInfo.Url"/> field empty.
     /// </returns>
     public Task<WebhookInfo> GetWebhookInfoAsync(
@@ -205,7 +210,7 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns basic information about the bot in form of a <see cref="Types.User"/> object.</returns>
+    /// <returns>Returns basic information about the bot in form of a <see cref="User"/> object.</returns>
     public async Task<User> GetMeAsync(
         CancellationToken cancellationToken = default
     ) =>
@@ -247,7 +252,7 @@ public partial class TelegramBotClient
         {
             await Client.Auth_LogOut();
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -271,20 +276,20 @@ public partial class TelegramBotClient
     /// List of special entities that appear in message text, which can be specified instead
     /// of <see cref="ParseMode"/>
     /// </param>
-    /// <param name="disableWebPagePreview">Disables link previews for links in this message</param>
+    /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="disableNotification">
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to <see cref="ForceReplyMarkup">force a
     /// reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -296,12 +301,12 @@ public partial class TelegramBotClient
         int? messageThreadId = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default,
-        bool? disableWebPagePreview = default,
+        LinkPreviewOptions? linkPreviewOptions = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -309,13 +314,19 @@ public partial class TelegramBotClient
         {
             ApplyParse(parseMode, ref text!, ref entities);
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
-            return await PostedMsg(Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
-                await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true,
-                silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+            var media = linkPreviewOptions.InputMediaWebPage();
+            if (media == null)
+                return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, WTelegram.Helpers.RandomLong(), reply_to,
+                    await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true,
+                    silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
+            else
+                return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, WTelegram.Helpers.RandomLong(), reply_to,
+                    await MakeReplyMarkup(replyMarkup), entities?.ToArray(), invert_media: linkPreviewOptions?.ShowAboveText == true,
+                    silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -343,14 +354,14 @@ public partial class TelegramBotClient
     /// </param>
     /// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> ForwardMessageAsync(
-        ChatId chatId,
-        ChatId fromChatId,
-        int messageId,
-        int? messageThreadId = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
-        CancellationToken cancellationToken = default
-    )
+         ChatId chatId,
+         ChatId fromChatId,
+         int messageId,
+         int? messageThreadId = default,
+         bool? disableNotification = default,
+         bool? protectContent = default,
+         CancellationToken cancellationToken = default
+     )
     {
         try
         {
@@ -363,9 +374,67 @@ public partial class TelegramBotClient
     }
 
     /// <summary>
+    /// Use this method to forward multiple messages of any kind. If some of the specified messages can't be found
+    /// or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded.
+    /// Album grouping is kept for forwarded messages.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="fromChatId">
+    /// Unique identifier for the chat where the original messages were sent
+    /// (or channel username in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageIds">
+    /// Identifiers of 1-100 messages in the chat from_chat_id to forward.
+    /// The identifiers must be specified in a strictly increasing order.
+    /// </param>
+    /// <param name="messageThreadId">
+    /// Unique identifier for the target message thread (topic) of the forum; for forum supergroups only
+    /// </param>
+    /// <param name="disableNotification">
+    /// Sends the message silently. Users will receive a notification with no sound.
+    /// </param>
+    /// <param name="protectContent">
+    /// Protects the contents of sent messages from forwarding and saving
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>On success, an array of <see cref="MessageId"/> of the sent messages is returned.</returns>
+    public async Task<MessageId[]> ForwardMessagesAsync(
+        ChatId chatId,
+        ChatId fromChatId,
+        IEnumerable<int> messageIds,
+        int? messageThreadId = default,
+        bool? disableNotification = default,
+        bool? protectContent = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var peer = await InputPeerChat(chatId);
+            var random_id = WTelegram.Helpers.RandomLong();
+            var ids = messageIds.ToArray();
+            var random_ids = new long[ids.Length];
+            for (int i = 0; i < ids.Length; i++) random_ids[i] = random_id + i;
+            var msgs = await PostedMsgs(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), ids, random_ids, peer,
+                top_msg_id: messageThreadId, silent: disableNotification == true, noforwards: protectContent == true),
+                ids.Length, random_id, null);
+            return msgs.Select(m => new MessageId { Id = m.MessageId }).ToArray();
+
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
     /// Use this method to copy messages of any kind. Service messages and invoice messages can't be copied.
-    /// The method is analogous to the method <see cref="ForwardMessageAsync"/>, but the copied message doesn't
-    /// have a link to the original message.
+    /// The method is analogous to the method
+    /// <see cref="ForwardMessageAsync(ITelegramBotClient,ForwardMessageRequest,CancellationToken)"/>,
+    /// but the copied message doesn't have a link to the original message.
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">
@@ -397,10 +466,7 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
@@ -421,8 +487,7 @@ public partial class TelegramBotClient
         IEnumerable<MessageEntity>? captionEntities = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     )
@@ -435,7 +500,7 @@ public partial class TelegramBotClient
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
             var text = caption ?? msg.message;
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var task = msg.media == null
                 ? Client.Messages_SendMessage(peer, text, WTelegram.Helpers.RandomLong(), reply_to,
                     await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
@@ -446,7 +511,78 @@ public partial class TelegramBotClient
             var postedMsg = await PostedMsg(task, peer, text);
             return new MessageId { Id = postedMsg.MessageId };
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to copy messages of any kind. If some of the specified messages can't be found or copied,
+    /// they are skipped. Service messages, giveaway messages, giveaway winners messages, and invoice messages
+    /// can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field
+    /// <see cref="Poll.CorrectOptionId">CorrectOptionId</see> is known to the bot. The method is analogous
+    /// to the method
+    /// <see cref="ForwardMessagesAsync(ITelegramBotClient,ForwardMessagesRequest,CancellationToken)"/>, but the
+    /// copied messages don't have a link to the original message. Album grouping is kept for copied messages.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="fromChatId">
+    /// Unique identifier for the chat where the original messages were sent
+    /// (or channel username in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageIds">
+    /// Identifiers of 1-100 messages in the chat <paramref name="fromChatId"/> to copy.
+    /// The identifiers must be specified in a strictly increasing order.
+    /// </param>
+    /// <param name="messageThreadId">
+    /// Unique identifier for the target message thread (topic) of the forum; for forum supergroups only
+    /// </param>
+    /// <param name="disableNotification">
+    /// Sends the message silently. Users will receive a notification with no sound.
+    /// </param>
+    /// <param name="protectContent">
+    /// Protects the contents of sent messages from forwarding and saving
+    /// </param>
+    /// <param name="removeCaption">
+    /// Pass <see langword="true"/> to copy the messages without their captions
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>On success, an array of <see cref="MessageId"/> of the sent messages is returned.</returns>
+    public async Task<MessageId[]> CopyMessagesAsync(
+        ChatId chatId,
+        ChatId fromChatId,
+        int[] messageIds,
+        int? messageThreadId = default,
+        bool? disableNotification = default,
+        bool? protectContent = default,
+        bool? removeCaption = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageIds.Select(id => (InputMessageID)id).ToArray());
+            msgs.UserOrChat(_collector);
+            var peer = await InputPeerChat(chatId);
+            var reply_to = await MakeReplyTo(null, messageThreadId, peer);
+            var msgIds = new List<MessageId>();
+            foreach (var msg in msgs.Messages.OfType<TL.Message>())
+            {
+                var task = msg.media == null
+                    ? Client.Messages_SendMessage(peer, msg.message, WTelegram.Helpers.RandomLong(), reply_to,
+                        no_webpage: true, silent: disableNotification == true, noforwards: protectContent == true)
+                    : Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), removeCaption == true ? null : msg.message, WTelegram.Helpers.RandomLong(), reply_to,
+                        silent: disableNotification == true, noforwards: protectContent == true);
+                var postedMsg = await PostedMsg(task, peer);
+                msgIds.Add(new MessageId { Id = postedMsg.MessageId });
+            }
+            return [.. msgIds];
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -486,15 +622,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -510,9 +646,9 @@ public partial class TelegramBotClient
         bool? hasSpoiler = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -520,14 +656,14 @@ public partial class TelegramBotClient
         {
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = await InputMediaPhoto(photo, hasSpoiler);
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
                 silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     private async Task<Message> SendDocument(
@@ -541,9 +677,9 @@ public partial class TelegramBotClient
         InputFile? thumbnail = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         bool? hasSpoiler = default,
         int? messageThreadId = default,
         CancellationToken cancellationToken = default
@@ -553,19 +689,19 @@ public partial class TelegramBotClient
         {
             ApplyParse(parseMode, ref caption, ref captionEntities);
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = await InputMediaDocument(file, hasSpoiler, defaultFilename: defaultFilename);
             if (media is TL.InputMediaUploadedDocument doc)
             {
                 prepareDoc?.Invoke(doc);
                 await SetDocThumb(doc, thumbnail);
             }
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
                 silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -610,15 +746,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -637,9 +773,9 @@ public partial class TelegramBotClient
         InputFile? thumbnail = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -647,7 +783,7 @@ public partial class TelegramBotClient
             doc => doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
                 duration = duration ?? 0, performer = performer, title = title,
                 flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }],
-            thumbnail, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -694,15 +830,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -719,15 +855,15 @@ public partial class TelegramBotClient
         bool? disableContentTypeDetection = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         return await SendDocument(chatId, document, caption, parseMode, captionEntities, "document",
             doc => { if (disableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file; },
-            thumbnail, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -778,15 +914,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -807,9 +943,9 @@ public partial class TelegramBotClient
         bool? supportsStreaming = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -817,7 +953,7 @@ public partial class TelegramBotClient
             doc => doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
                 duration = duration ?? 0, h = height ?? 0, w = width ?? 0,
                 flags = supportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }],
-            thumbnail, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, hasSpoiler, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, hasSpoiler, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -861,21 +997,21 @@ public partial class TelegramBotClient
     /// of <see cref="ParseMode"/>
     /// </param>
     /// <param name="hasSpoiler">
-    /// Pass <see langword="true"/> if the animatopn needs to be covered with a spoiler animation
+    /// Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation
     /// </param>
     /// <param name="disableNotification">
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -895,9 +1031,9 @@ public partial class TelegramBotClient
         bool? hasSpoiler = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) 
     {
@@ -913,7 +1049,7 @@ public partial class TelegramBotClient
                     doc.attributes = [.. doc.attributes, new DocumentAttributeImageSize { w = width ?? 0, h = height ?? 0 }];
                 }
             },
-            thumbnail, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, hasSpoiler, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, hasSpoiler, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -927,10 +1063,10 @@ public partial class TelegramBotClient
     /// Unique identifier for the target chat or username of the target channel
     /// (in the format <c>@channelusername</c>)
     /// </param>
-    /// <param name="voice">
     /// <param name="messageThreadId">
     /// Unique identifier for the target message thread (topic) of the forum; for forum supergroups only
     /// </param>
+    /// <param name="voice">
     /// Audio file to send. Pass a <see cref="InputFileId"/> as String to send a file that exists
     /// on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a file from
     /// the Internet, or upload a new one using multipart/form-data
@@ -950,10 +1086,7 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
@@ -962,6 +1095,9 @@ public partial class TelegramBotClient
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVoiceAsync(
@@ -974,9 +1110,9 @@ public partial class TelegramBotClient
         int? duration = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -987,7 +1123,7 @@ public partial class TelegramBotClient
                     duration = duration ?? 0, flags = DocumentAttributeAudio.Flags.voice }];
                 if (doc.mime_type is not "audio/ogg" and not "audio/mpeg" and not "audio/mp4") doc.mime_type = "audio/ogg";
             },
-            null, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, null, messageThreadId, cancellationToken);
+            null, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -1020,15 +1156,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1043,9 +1179,9 @@ public partial class TelegramBotClient
         InputFile? thumbnail = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) 
     {
@@ -1056,7 +1192,7 @@ public partial class TelegramBotClient
                 doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
                     flags = DocumentAttributeVideo.Flags.round_message, duration = duration ?? 0, w = length ?? 384, h = length ?? 384 }];
             },
-            thumbnail, disableNotification, protectContent, replyToMessageId, allowSendingWithoutReply, replyMarkup, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -1076,9 +1212,9 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
+    /// <param name="replyParameters">Description of the message to reply to</param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1090,16 +1226,16 @@ public partial class TelegramBotClient
         int? messageThreadId = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             List<InputSingleMedia> multimedia = [];
             var random_id = WTelegram.Helpers.RandomLong();
             foreach (var aim in media)
@@ -1148,12 +1284,11 @@ public partial class TelegramBotClient
                     entities = captionEntities?.ToArray(),
                 });
             }
-
-            return await PostedMsgs(Client.Messages_SendMultiMedia(peer, [.. multimedia], reply_to,
+            return await PostedMsgs(Messages_SendMultiMedia(businessConnectionId, peer, [.. multimedia], reply_to,
                 silent: disableNotification == true, noforwards: protectContent == true),
                 multimedia.Count, random_id, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1169,6 +1304,7 @@ public partial class TelegramBotClient
     /// <param name="messageThreadId">
     /// Unique identifier for the target message thread (topic) of the forum; for forum supergroups only
     /// </param>
+    /// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
     /// <param name="livePeriod">
     /// Period in seconds for which the location will be updated, should be between 60 and 86400
     /// </param>
@@ -1184,15 +1320,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1203,29 +1339,30 @@ public partial class TelegramBotClient
         double latitude,
         double longitude,
         int? messageThreadId = default,
+        double? horizontalAccuracy = default,
         int? livePeriod = default,
         int? heading = default,
         int? proximityAlertRadius = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
-            TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, null, heading, proximityAlertRadius, livePeriod.Value)
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+            TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod.Value)
                 : new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1279,7 +1416,7 @@ public partial class TelegramBotClient
             var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1327,7 +1464,7 @@ public partial class TelegramBotClient
             var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
             await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1363,7 +1500,7 @@ public partial class TelegramBotClient
             var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1393,7 +1530,7 @@ public partial class TelegramBotClient
             var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
             await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1425,15 +1562,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1453,17 +1590,17 @@ public partial class TelegramBotClient
         string? googlePlaceType = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = new InputMediaVenue
             {
                 geo_point = new InputGeoPoint { lat = latitude, lon = longitude },
@@ -1482,11 +1619,11 @@ public partial class TelegramBotClient
                 media.venue_id = foursquareId;
                 media.venue_type = foursquareType;
             }
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1508,15 +1645,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the action will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1531,17 +1668,17 @@ public partial class TelegramBotClient
         string? vCard = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = new InputMediaContact
             {
                 phone_number = phoneNumber,
@@ -1549,11 +1686,11 @@ public partial class TelegramBotClient
                 last_name = lastName,
                 vcard = vCard
             };
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1609,15 +1746,15 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the action will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1640,9 +1777,9 @@ public partial class TelegramBotClient
         bool? isClosed = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -1650,8 +1787,8 @@ public partial class TelegramBotClient
         {
             ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = new InputMediaPoll
             {
                 poll = new TL.Poll
@@ -1673,11 +1810,11 @@ public partial class TelegramBotClient
                 flags = (explanation != null ? InputMediaPoll.Flags.has_solution : 0)
                     | (correctOptionId >= 0 ? InputMediaPoll.Flags.has_correct_answers : 0)
             };
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1697,21 +1834,21 @@ public partial class TelegramBotClient
     /// <see cref="Emoji.Bowling"/> or <see cref="Emoji.SlotMachine"/>. Dice can have values 1-6 for
     /// <see cref="Emoji.Dice"/>, <see cref="Emoji.Darts"/> and <see cref="Emoji.Bowling"/>, values 1-5 for
     /// <see cref="Emoji.Basketball"/> and <see cref="Emoji.Football"/>, and values 1-64 for
-    /// <see cref="Emoji.SlotMachine"/>. Defauts to <see cref="Emoji.Dice"/>
+    /// <see cref="Emoji.SlotMachine"/>. Defaults to <see cref="Emoji.Dice"/>
     /// </param>
     /// <param name="disableNotification">
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the action will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -1723,23 +1860,23 @@ public partial class TelegramBotClient
         Emoji? emoji = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = new InputMediaDice { emoticon = emoji?.GetDisplayName() ?? "🎲" };
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1750,7 +1887,8 @@ public partial class TelegramBotClient
     /// <para>
     /// The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the
     /// image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may
-    /// use <see cref="SendChatActionAsync"/> with <see cref="Action"/> = <see cref="ChatAction.UploadPhoto"/>.
+    /// use <see cref="SendChatActionAsync(ITelegramBotClient,SendChatActionRequest,CancellationToken)"/> with
+    /// <see cref="SendChatActionRequest.Action"/> = <see cref="ChatAction.UploadPhoto"/>.
     /// The user will see a “sending photo” status for the bot.
     /// </para>
     /// <para>
@@ -1766,16 +1904,23 @@ public partial class TelegramBotClient
     /// <param name="chatAction">
     /// Type of action to broadcast. Choose one, depending on what the user is about to receive:
     /// <see cref="ChatAction.Typing"/> for <see cref="SendTextMessageAsync">text messages</see>,
-    /// <see cref="ChatAction.UploadPhoto"/> for <see cref="SendPhotoAsync">photos</see>,
+    /// <see cref="ChatAction.UploadPhoto"/> for
+    /// <see cref="SendPhotoAsync(ITelegramBotClient,SendPhotoRequest,CancellationToken)">photos</see>,
     /// <see cref="ChatAction.RecordVideo"/> or <see cref="ChatAction.UploadVideo"/> for
-    /// <see cref="SendVideoAsync">videos</see>, <see cref="ChatAction.RecordVoice"/> or
-    /// <see cref="ChatAction.UploadVoice"/> for <see cref="SendVoiceAsync">voice notes</see>,
-    /// <see cref="ChatAction.UploadDocument"/> for <see cref="SendDocumentAsync">general files</see>,
-    /// <see cref="ChatAction.FindLocation"/> for <see cref="SendLocationAsync">location data</see>,
+    /// <see cref="SendVideoAsync(ITelegramBotClient,SendVideoRequest,CancellationToken)">videos</see>,
+    /// <see cref="ChatAction.RecordVoice"/> or <see cref="ChatAction.UploadVoice"/> for
+    /// <see cref="SendVoiceAsync(ITelegramBotClient,SendVoiceRequest,CancellationToken)">voice notes</see>,
+    /// <see cref="ChatAction.UploadDocument"/> for
+    /// <see cref="SendDocumentAsync(ITelegramBotClient,SendDocumentRequest,CancellationToken)">general files</see>,
+    /// <see cref="ChatAction.FindLocation"/> for
+    /// <see cref="SendLocationAsync(ITelegramBotClient,SendLocationRequest,CancellationToken)">location data</see>,
     /// <see cref="ChatAction.RecordVideoNote"/> or <see cref="ChatAction.UploadVideoNote"/> for
-    /// <see cref="SendVideoNoteAsync">video notes</see>
+    /// <see cref="SendVideoNoteAsync(ITelegramBotClient,SendVideoNoteRequest,CancellationToken)">video notes</see>
     /// </param>
     /// <param name="messageThreadId">Unique identifier for the target message thread; supergroups only</param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the action will be sent
+    /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
@@ -1783,15 +1928,68 @@ public partial class TelegramBotClient
         ChatId chatId,
         ChatAction chatAction,
         int? messageThreadId = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            await Client.Messages_SetTyping(peer, chatAction.ChatAction(), messageThreadId);
+            if (businessConnectionId is null)
+                await Client.Messages_SetTyping(peer, chatAction.ChatAction(), messageThreadId);
+            else
+                await Client.InvokeWithBusinessConnection(businessConnectionId,
+                    new TL.Methods.Messages_SetTyping
+                    {
+                        flags = (TL.Methods.Messages_SetTyping.Flags)(messageThreadId != null ? 0x1 : 0),
+                        peer = peer,
+                        top_msg_id = messageThreadId.GetValueOrDefault(),
+                        action = chatAction.ChatAction(),
+                    });
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to change the chosen reactions on a message. Service messages can't be reacted to.
+    /// Automatically forwarded messages from a channel to its discussion group have the same
+    /// available reactions as messages in the channel.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageId">
+    /// Identifier of the target message. If the message belongs to a media group, the reaction
+    /// is set to the first non-deleted message in the group instead.
+    /// </param>
+    /// <param name="reaction">
+    /// New list of reaction types to set on the message. Currently, as non-premium users, bots can
+    /// set up to one reaction per message. A custom emoji reaction can be used if it is either
+    /// already present on the message or explicitly allowed by chat administrators.
+    /// </param>
+    /// <param name="isBig">
+    /// Pass <see langword="true"/> to set the reaction with a big animation
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    public async Task SetMessageReactionAsync(
+        ChatId chatId,
+        int messageId,
+        IEnumerable<ReactionType>? reaction,
+        bool? isBig,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var peer = await InputPeerChat(chatId);
+            reaction ??= [];
+            await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig == true);
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1826,7 +2024,7 @@ public partial class TelegramBotClient
                 Photos = photos.photos.Select(pb => pb.PhotoSizes()!).ToArray()
             };
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1834,10 +2032,11 @@ public partial class TelegramBotClient
     /// download files of up to 20MB in size. The file can then be downloaded via the link
     /// <c>https://api.telegram.org/file/bot&lt;token&gt;/&lt;file_path&gt;</c>, where <c>&lt;file_path&gt;</c>
     /// is taken from the response. It is guaranteed that the link will be valid for at least 1 hour.
-    /// When the link expires, a new one can be requested by calling <see cref="GetFileAsync"/> again.
+    /// When the link expires, a new one can be requested by calling
+    /// <see cref="GetFileAsync(ITelegramBotClient,GetFileRequest,CancellationToken)"/> again.
     /// </summary>
     /// <remarks>
-    /// You can use <see cref="ITelegramBotClient.DownloadFileAsync"/> or
+    /// You can use <see cref="DownloadFileAsync"/> or
     /// <see cref="TelegramBotClientExtensions.GetInfoAndDownloadFileAsync"/> methods to download the file
     /// </remarks>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
@@ -1855,7 +2054,7 @@ public partial class TelegramBotClient
         {
             return Task.FromResult(fileId.ParseFileId(true).file);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1882,7 +2081,7 @@ public partial class TelegramBotClient
 
             return file;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1934,7 +2133,7 @@ public partial class TelegramBotClient
                 default: throw new ApiRequestException("can't ban members in private chats", 400);
             }
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -1982,7 +2181,7 @@ public partial class TelegramBotClient
                 await Client.Channels_EditBanned(channel, user, new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages });
             await Client.Channels_EditBanned(channel, user, new ChatBannedRights { });
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2007,7 +2206,7 @@ public partial class TelegramBotClient
     /// permissions; the <see cref="ChatPermissions.CanSendPolls"/> permission will imply the
     /// <see cref="ChatPermissions.CanSendMessages"/> permission.
     /// </param>
-    /// <param name="untilDate">Date when restrictions will be lifted for the user, unix time. If user is restricted for more than 366 days or less than 30 seconds from the current time, they are considered to be restricted forever.</param>
+    /// <param name="untilDate">Date when restrictions will be lifted for this user; Unix time. If 0, then the user is restricted forever</param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
@@ -2027,11 +2226,13 @@ public partial class TelegramBotClient
             if (useIndependentChatPermissions != true) permissions.LegacyMode();
 			await Client.Channels_EditBanned(channel, user, permissions.ToChatBannedRights(untilDate));
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
-    /// Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass <c><see langword="false"/></c> for all boolean parameters to demote a user.
+    /// Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in
+    /// the chat for this to work and must have the appropriate admin rights. Pass <c><see langword="false"/></c> for
+    /// all boolean parameters to demote a user.
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">
@@ -2039,18 +2240,56 @@ public partial class TelegramBotClient
     /// (in the format <c>@channelusername</c>)
     /// </param>
     /// <param name="userId">Unique identifier of the target user</param>
-    /// <param name="isAnonymous">Pass <see langword="true"/>, if the administrator's presence in the chat is hidden</param>
-    /// <param name="canManageChat">Pass <see langword="true"/>, if the administrator can access the chat event log, chat statistics, message statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode. Implied by any other administrator privilege</param>
-    /// <param name="canPostMessages">Pass <see langword="true"/>, if the administrator can create channel posts, channels only</param>
-    /// <param name="canEditMessages">Pass <see langword="true"/>, if the administrator can edit messages of other users, channels only</param>
-    /// <param name="canDeleteMessages">Pass <see langword="true"/>, if the administrator can delete messages of other users</param>
-    /// <param name="canManageVideoChats">Pass <see langword="true"/>, if the administrator can manage voice chats, supergroups only</param>
-    /// <param name="canRestrictMembers">Pass <see langword="true"/>, if the administrator can restrict, ban or unban chat members</param>
-    /// <param name="canPromoteMembers">Pass <see langword="true"/>, if the administrator can add new administrators with a subset of his own privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that were appointed by him)</param>
-    /// <param name="canChangeInfo">Pass <see langword="true"/>, if the administrator can change chat title, photo and other settings</param>
-    /// <param name="canInviteUsers">Pass <see langword="true"/>, if the administrator can invite new users to the chat</param>
-    /// <param name="canPinMessages">Pass <see langword="true"/>, if the administrator can pin messages, supergroups only</param>
-    /// <param name="canManageTopic">Pass <see langword="true"/> if the user is allowed to create, rename, close, and reopen forum topics, supergroups only</param>
+    /// <param name="isAnonymous">
+    /// Pass <see langword="true"/>, if the administrator's presence in the chat is hidden
+    /// </param>
+    /// <param name="canManageChat">
+    /// Pass <see langword="true"/>, if the administrator can access the chat event log, chat statistics, message
+    /// statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode.
+    /// Implied by any other administrator privilege
+    /// </param>
+    /// <param name="canPostMessages">
+    /// Pass <see langword="true"/>, if the administrator can create channel posts, channels only
+    /// </param>
+    /// <param name="canEditMessages">
+    /// Pass <see langword="true"/>, if the administrator can edit messages of other users, channels only
+    /// </param>
+    /// <param name="canDeleteMessages">
+    /// Pass <see langword="true"/>, if the administrator can delete messages of other users
+    /// </param>
+    /// <param name="canPostStories">
+    /// Pass <see langword="true"/> if the administrator can post stories in the channel; channels only
+    /// </param>
+    /// <param name="canEditStories">
+    /// Pass <see langword="true"/> if the administrator can edit stories posted by other users; channels only
+    /// </param>
+    /// <param name="canDeleteStories">
+    /// Pass <see langword="true"/> if the administrator can delete stories posted by other users; channels only
+    /// </param>
+    /// <param name="canManageVideoChats">
+    /// Pass <see langword="true"/>, if the administrator can manage voice chats, supergroups only
+    /// </param>
+    /// <param name="canRestrictMembers">
+    /// Pass <see langword="true"/>, if the administrator can restrict, ban or unban chat members
+    /// </param>
+    /// <param name="canPromoteMembers">
+    /// Pass <see langword="true"/>, if the administrator can add new administrators with a subset of his own
+    /// privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators
+    /// that were appointed by him)
+    /// </param>
+    /// <param name="canChangeInfo">
+    /// Pass <see langword="true"/>, if the administrator can change chat title, photo and other settings
+    /// </param>
+    /// <param name="canInviteUsers">
+    /// Pass <see langword="true"/>, if the administrator can invite new users to the chat
+    /// </param>
+    /// <param name="canPinMessages">
+    /// Pass <see langword="true"/>, if the administrator can pin messages, supergroups only
+    /// </param>
+    /// <param name="canManageTopic">
+    /// Pass <see langword="true"/> if the user is allowed to create, rename, close, and reopen forum topics,
+    /// supergroups only
+    /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
@@ -2062,6 +2301,9 @@ public partial class TelegramBotClient
         bool? canPostMessages = default,
         bool? canEditMessages = default,
         bool? canDeleteMessages = default,
+        bool? canPostStories = default,
+        bool? canEditStories = default,
+        bool? canDeleteStories = default,
         bool? canManageVideoChats = default,
         bool? canRestrictMembers = default,
         bool? canPromoteMembers = default,
@@ -2090,9 +2332,12 @@ public partial class TelegramBotClient
                 | (canManageVideoChats == true ? ChatAdminRights.Flags.manage_call : 0)
                 | (canManageChat == true ? ChatAdminRights.Flags.other : 0)
                 | (canManageTopic == true ? ChatAdminRights.Flags.manage_topics : 0)
+                | (canPostStories == true ? ChatAdminRights.Flags.post_stories : 0)
+                | (canEditStories == true ? ChatAdminRights.Flags.edit_stories : 0)
+                | (canDeleteStories == true ? ChatAdminRights.Flags.delete_stories : 0)
             }, null);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2129,7 +2374,7 @@ public partial class TelegramBotClient
                 throw new ApiRequestException("Bad Request: not enough rights to change custom title of the user");
             await Client.Channels_EditAdmin(channel, user, admin.admin_rights, customTitle);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2159,7 +2404,7 @@ public partial class TelegramBotClient
             var senderChat = await InputPeerChat(senderChatId);
             await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages });
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2188,7 +2433,7 @@ public partial class TelegramBotClient
             var senderChat = await InputPeerChat(senderChatId);
             await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { });
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2228,7 +2473,7 @@ public partial class TelegramBotClient
 			await Client.Messages_EditChatDefaultBannedRights(peer, permissions.ToChatBannedRights());
 		}
 		catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2255,13 +2500,14 @@ public partial class TelegramBotClient
             var exported = (ChatInviteExported)await Client.Messages_ExportChatInvite(peer, legacy_revoke_permanent: true);
             return exported.link;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
     /// Use this method to create an additional invite link for a chat. The bot must be an administrator
     /// in the chat for this to work and must have the appropriate admin rights. The link can be revoked
-    /// using the method <see cref="RevokeChatInviteLinkAsync"/>
+    /// using the method
+    /// <see cref="RevokeChatInviteLinkAsync(ITelegramBotClient,RevokeChatInviteLinkRequest,CancellationToken)"/>
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">
@@ -2297,7 +2543,7 @@ public partial class TelegramBotClient
             ExportedChatInvite exported = await Client.Messages_ExportChatInvite(peer, expireDate, memberLimit, name, request_needed: createsJoinRequest == true);
             return (await MakeChatInviteLink(exported))!;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2340,7 +2586,7 @@ public partial class TelegramBotClient
             var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, expireDate, memberLimit, title: name, request_needed: createsJoinRequest == true);
             return (await MakeChatInviteLink(result.Invite))!;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2370,7 +2616,7 @@ public partial class TelegramBotClient
             var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, revoked: true);
             return (await MakeChatInviteLink(result.Invite))!;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2423,7 +2669,7 @@ public partial class TelegramBotClient
             await Client.Messages_HideChatJoinRequest(peer, user, approved);
             return true;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2451,7 +2697,7 @@ public partial class TelegramBotClient
             var inputPhoto = await InputChatPhoto(photo);
             await Client.EditChatPhoto(peer, inputPhoto);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2475,7 +2721,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.EditChatPhoto(peer, null);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2503,7 +2749,7 @@ public partial class TelegramBotClient
             await Client.EditChatTitle(peer, title);
         }
         catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2530,13 +2776,13 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_EditChatAbout(peer, description);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
     /// Use this method to add a message to the list of pinned messages in a chat. If the chat is not a private
     /// chat, the bot must be an administrator in the chat for this to work and must have the
-    /// '<see cref="ChatPermissions.CanPinMessages"/>' admin right in a supergroup or
+    /// '<see cref="ChatMemberAdministrator.CanPinMessages"/>' admin right in a supergroup or
     /// '<see cref="ChatMemberAdministrator.CanEditMessages"/>' admin right in a channel
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
@@ -2564,7 +2810,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification == true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2601,7 +2847,7 @@ public partial class TelegramBotClient
                     messageId = (await Client.GetFullChat(peer)).full_chat.PinnedMsg;
             await Client.Messages_UpdatePinnedMessage(peer, messageId.Value, unpin: true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2628,7 +2874,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             await Client.Messages_UnpinAllMessages(peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2651,7 +2897,7 @@ public partial class TelegramBotClient
         {
             await Client.LeaveChat(await InputPeerChat(chatId));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2666,7 +2912,7 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns a <see cref="Types.Chat"/> object on success.</returns>
+    /// <returns>Returns a <see cref="Chat"/> object on success.</returns>
     public async Task<Chat> GetChatAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
@@ -2684,7 +2930,18 @@ public partial class TelegramBotClient
                 var chat = user.Chat();
                 chat.Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto();
                 chat.ActiveUsernames = user.ActiveUsernames.ToArray();
+                chat.Birthday = full.birthday.Birthday();
+                chat.BusinessIntro = await MakeBusinessIntro(full.business_intro);
+                chat.BusinessLocation = full.business_location.BusinessLocation();
+                chat.BusinessOpeningHours = full.business_work_hours.BusinessOpeningHours();
+                chat.PersonalChat = full.personal_channel_id == 0 ? null : Chat(full.personal_channel_id);
+                chat.AccentColorId = (int)(user.id % 7);
+                if (user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = user.color.color;
+                if (user.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = user.color.background_emoji_id.ToString();
+                if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
+                if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = user.profile_color.background_emoji_id.ToString();
                 chat.EmojiStatusCustomEmojiId = user.emoji_status?.document_id.ToString();
+                chat.EmojiStatusExpirationDate = (user.emoji_status as EmojiStatusUntil)?.until;
 				chat.Bio = full.about;
                 chat.HasPrivateForwards = full.private_forward_name != null;
                 chat.HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden);
@@ -2702,27 +2959,42 @@ public partial class TelegramBotClient
                 var tlChat = chatFull.chats[inputPeer.ID];
                 var chat = tlChat.Chat();
                 chat.Photo = full.ChatPhoto.ChatPhoto();
-				chat.Description = full.About;
+                chat.AvailableReactions = full.AvailableReactions switch
+                {
+                    null => [],
+                    ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
+                    /*ChatReactionsAll*/_ => null,
+                };
+                chat.Description = full.About;
                 chat.InviteLink = (full.ExportedInvite as ChatInviteExported)?.link;
-                chat.MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod;
                 if (full.PinnedMsg > 0)
                     chat.PinnedMessage = await GetMessage(inputPeer, full.PinnedMsg);
+                chat.MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod;
+                chat.AccentColorId = (int)(tlChat.ID % 7);
                 if (tlChat is TL.Channel channel)
                 {
                     chat.ActiveUsernames = channel.ActiveUsernames.ToArray();
-    				chat.EmojiStatusCustomEmojiId = channel.emoji_status?.document_id.ToString();
-					chat.Permissions = (channel.banned_rights ?? channel.default_banned_rights).ChatPermissions();
-					var channelFull = (ChannelFull)full;
+                    if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
+                    if (channel.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = channel.color.background_emoji_id.ToString();
+                    if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = channel.profile_color.color;
+                    if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = channel.profile_color.background_emoji_id.ToString();
+                    chat.EmojiStatusCustomEmojiId = channel.emoji_status?.document_id.ToString();
+                    chat.EmojiStatusExpirationDate = (channel.emoji_status as EmojiStatusUntil)?.until;
+                    chat.JoinToSendMessages = channel.flags.HasFlag(Channel.Flags.join_to_send);
+                    chat.JoinByRequest = channel.flags.HasFlag(Channel.Flags.join_request);
+                    chat.Permissions = (channel.banned_rights ?? channel.default_banned_rights).ChatPermissions();
+                    var channelFull = (ChannelFull)full;
                     chat.SlowModeDelay = channelFull.slowmode_seconds == 0 ? null : channelFull.slowmode_seconds;
+                    chat.UnrestrictBoostCount = channelFull.boosts_unrestrict == 0 ? null : channelFull.boosts_unrestrict;
+                    chat.HasAggressiveAntiSpamEnabled = channelFull.flags2.HasFlag(ChannelFull.Flags2.antispam);
+                    chat.HasHiddenMembers = channelFull.flags2.HasFlag(ChannelFull.Flags2.participants_hidden);
+                    chat.HasVisibleHistory = !channelFull.flags.HasFlag(ChannelFull.Flags.hidden_prehistory);
                     chat.HasProtectedContent = channel.flags.HasFlag(Channel.Flags.noforwards);
                     chat.StickerSetName = channelFull.stickerset?.short_name;
                     chat.CanSetStickerSet = channelFull.flags.HasFlag(ChannelFull.Flags.can_set_stickers);
+                    chat.CustomEmojiStickerSetName = channelFull.emojiset?.short_name;
                     chat.LinkedChatId = channelFull.linked_chat_id == 0 ? 0 : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
                     chat.Location = channelFull.location.ChatLocation();
-					chat.JoinToSendMessages = channel.flags.HasFlag(Channel.Flags.join_to_send);
-					chat.JoinByRequest = channel.flags.HasFlag(Channel.Flags.join_request);
-					chat.HasAggressiveAntiSpamEnabled = channelFull.flags2.HasFlag(ChannelFull.Flags2.antispam);
-					chat.HasHiddenMembers = channelFull.flags2.HasFlag(ChannelFull.Flags2.participants_hidden);
                 }
                 else if (tlChat is TL.Chat basicChat)
                 {
@@ -2732,7 +3004,7 @@ public partial class TelegramBotClient
                 return chat;
             }
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2774,7 +3046,7 @@ public partial class TelegramBotClient
                 return await participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
             }
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2788,7 +3060,7 @@ public partial class TelegramBotClient
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns <see cref="int"/> on success..</returns>
+    /// <returns>Returns <see cref="int"/> on success.</returns>
     public async Task<int> GetChatMemberCountAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
@@ -2802,7 +3074,7 @@ public partial class TelegramBotClient
             chatFull.UserOrChat(_collector);
             return chatFull.full_chat.ParticipantsCount;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
 
@@ -2845,15 +3117,16 @@ public partial class TelegramBotClient
                 return participant.ChatMember(await UserOrResolve(userId));
             }
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
 
     /// <summary>
     /// Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the
     /// chat for this to work and must have the appropriate admin rights. Use the field
-    /// <see cref="Chat.CanSetStickerSet"/> optionally returned in <see cref="GetChatAsync"/> requests to check
-    /// if the bot can use this method.
+    /// <see cref="Chat.CanSetStickerSet"/> optionally returned in
+    /// <see cref="GetChatAsync(ITelegramBotClient,GetChatRequest,CancellationToken)"/> requests to check if the bot
+    /// can use this method.
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">
@@ -2875,14 +3148,15 @@ public partial class TelegramBotClient
             var channel = await InputChannel(chatId);
             await Client.Channels_SetStickers(channel, stickerSetName);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
     /// Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the
     /// chat for this to work and must have the appropriate admin rights. Use the field
-    /// <see cref="Chat.CanSetStickerSet"/> optionally returned in <see cref="GetChatAsync"/> requests to
-    /// check if the bot can use this method
+    /// <see cref="Chat.CanSetStickerSet"/> optionally returned in
+    /// <see cref="GetChatAsync(ITelegramBotClient,GetChatRequest,CancellationToken)"/> requests to check if the bot
+    /// can use this method
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">
@@ -2902,7 +3176,7 @@ public partial class TelegramBotClient
             var channel = await InputChannel(chatId);
             await Client.Channels_SetStickers(channel, null);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -2924,34 +3198,35 @@ public partial class TelegramBotClient
 			var stickers = await mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())).WhenAllSequential();
             return stickers;
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for
-	/// this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights.
-	/// Returns information about the created topic as a <see cref="ForumTopic"/> object.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="name">Topic name, 1-128 characters</param>
-	/// <param name="iconColor">
-	/// Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E),
-	/// 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)
-	/// </param>
-	/// <param name="iconCustomEmojiId">
-	/// Unique identifier of the custom emoji shown as the topic icon. Use <see cref="GetForumTopicIconStickersAsync"/>
-	/// to get all allowed custom emoji identifiers
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
-	/// <returns>
-	/// Returns information about the created topic as a <see cref="ForumTopic"/> object.
-	/// </returns>
+    /// <summary>
+    /// Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for
+    /// this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights.
+    /// Returns information about the created topic as a <see cref="ForumTopic"/> object.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="name">Topic name, 1-128 characters</param>
+    /// <param name="iconColor">
+    /// Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E),
+    /// 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)
+    /// </param>
+    /// <param name="iconCustomEmojiId">
+    /// Unique identifier of the custom emoji shown as the topic icon. Use
+    /// <see cref="GetForumTopicIconStickersAsync(ITelegramBotClient,GetForumTopicIconStickersRequest,CancellationToken)"/>
+    /// to get all allowed custom emoji identifiers
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>
+    /// Returns information about the created topic as a <see cref="ForumTopic"/> object.
+    /// </returns>
 	public async Task<ForumTopic> CreateForumTopicAsync(
         ChatId chatId,
         string name,
@@ -2968,31 +3243,31 @@ public partial class TelegramBotClient
             var ftc = msg.ForumTopicCreated ?? throw new ApiRequestException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
             return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = new Color(ftc.IconColor), IconCustomEmojiId = ftc.IconCustomEmojiId };
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator
-	/// in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-	/// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <param name="name">
-	/// New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept
-	/// </param>
-	/// <param name="iconCustomEmojiId">
-	/// New unique identifier of the custom emoji shown as the topic icon. Use
-	/// <see cref="GetForumTopicIconStickersRequest"/> to get all allowed custom emoji identifiers. Pass an empty
-	/// string to remove the icon. If not specified, the current icon will be kept
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator
+    /// in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+    /// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+    /// <param name="name">
+    /// New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept
+    /// </param>
+    /// <param name="iconCustomEmojiId">
+    /// New unique identifier of the custom emoji shown as the topic icon. Use
+    /// <see cref="GetForumTopicIconStickersRequest"/> to get all allowed custom emoji identifiers. Pass an empty
+    /// string to remove the icon. If not specified, the current icon will be kept
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task EditForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
@@ -3007,23 +3282,23 @@ public partial class TelegramBotClient
             await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null : 
                 iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat
-	/// for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights,
-	/// unless it is the creator of the topic. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat
+    /// for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights,
+    /// unless it is the creator of the topic. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task CloseForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
@@ -3035,23 +3310,23 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: true);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
-	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-	/// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
+    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+    /// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task ReopenForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
@@ -3063,24 +3338,24 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, messageThreadId, closed: false);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
-	/// an administrator in the chat for this to work and must have the
-	/// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. Returns <see langword="true"/>
-	/// on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
+    /// an administrator in the chat for this to work and must have the
+    /// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. Returns <see langword="true"/>
+    /// on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task DeleteForumTopicAsync(
         ChatId chatId,
         int messageThreadId,
@@ -3092,23 +3367,23 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_DeleteTopicHistory(channel, messageThreadId);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the
-	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/> administrator
-	/// right in the supergroup. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the
+    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/> administrator
+    /// right in the supergroup. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task UnpinAllForumTopicMessagesAsync(
         ChatId chatId,
         int messageThreadId,
@@ -3120,23 +3395,23 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Messages_UnpinAllMessages(channel, messageThreadId);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an
-	/// administrator in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/>
-	/// administrator rights. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="name">New topic name, 1-128 characters</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an
+    /// administrator in the chat for this to work and must have <see cref="ChatAdministratorRights.CanManageTopics"/>
+    /// administrator rights. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="name">New topic name, 1-128 characters</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public Task EditGeneralForumTopicAsync(
         ChatId chatId,
         string name,
@@ -3161,38 +3436,38 @@ public partial class TelegramBotClient
         CancellationToken cancellationToken = default
     ) => CloseForumTopicAsync(chatId, 1, cancellationToken);
 
-	/// <summary>
-	/// Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an
-	/// administrator in the chat for this to work and must have the
-	/// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. The topic will be automatically
-	/// unhidden if it was hidden. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an
+    /// administrator in the chat for this to work and must have the
+    /// <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights. The topic will be automatically
+    /// unhidden if it was hidden. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public Task ReopenGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) => ReopenForumTopicAsync(chatId, 1, cancellationToken);
 
-	/// <summary>
-	/// Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
-	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-	/// rights. The topic will be automatically closed if it was open. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
+    /// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
+    /// rights. The topic will be automatically closed if it was open. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task HideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
@@ -3203,22 +3478,22 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, 1, hidden: true);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to uhhide the 'General' topic in a forum supergroup chat. The bot must be an administrator
-	/// in the chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/>
-	/// administrator rights. Returns <see langword="true"/> on success.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="chatId">
-	/// Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to uhhide the 'General' topic in a forum supergroup chat. The bot must be an administrator
+    /// in the chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/>
+    /// administrator rights. Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task UnhideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
@@ -3229,44 +3504,62 @@ public partial class TelegramBotClient
 			var channel = await InputChannel(chatId);
 			await Client.Channels_EditForumTopic(channel, 1, hidden: false);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to send answers to callback queries sent from
-	/// <see cref="InlineKeyboardMarkup">inline keyboards</see>. The answer will be displayed
-	/// to the user as a notification at the top of the chat screen or as an alert
-	/// </summary>
-	/// <remarks>
-	/// Alternatively, the user can be redirected to the specified Game URL.For this option to work, you must
-	/// first create a game for your bot via <c>@Botfather</c> and accept the terms. Otherwise, you may use
-	/// links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
-	/// </remarks>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="callbackQueryId">Unique identifier for the query to be answered</param>
-	/// <param name="text">
-	/// Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters
-	/// </param>
-	/// <param name="showAlert">
-	/// If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat
-	/// screen. Defaults to <see langword="false"/>
-	/// </param>
-	/// <param name="url">
-	/// URL that will be opened by the user's client. If you have created a
-	/// <a href="https://core.telegram.org/bots/api#game">Game</a> and accepted the conditions via
-	/// <c>@Botfather</c>, specify the URL that opens your game — note that this will only work if the query
-	/// comes from a callback_game button
-	/// <para>
-	/// Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
-	/// </para>
-	/// </param>
-	/// <param name="cacheTime">
-	/// The maximum amount of time in seconds that the result of the callback query may be cached client-side.
-	/// Telegram apps will support caching starting in version 3.14
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to clear the list of pinned messages in a General forum topic. The bot must be an administrator
+    /// in the chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/>
+    /// administrator right in the supergroup.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@supergroupusername</c>)
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    public Task UnpinAllGeneralForumTopicMessagesAsync(
+        ChatId chatId,
+        CancellationToken cancellationToken = default
+    ) => UnpinAllForumTopicMessagesAsync(chatId, 1, cancellationToken);
+
+    /// <summary>
+    /// Use this method to send answers to callback queries sent from
+    /// <see cref="InlineKeyboardMarkup">inline keyboards</see>. The answer will be displayed
+    /// to the user as a notification at the top of the chat screen or as an alert
+    /// </summary>
+    /// <remarks>
+    /// Alternatively, the user can be redirected to the specified Game URL.For this option to work, you must
+    /// first create a game for your bot via <c>@BotFather</c> and accept the terms. Otherwise, you may use
+    /// links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
+    /// </remarks>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="callbackQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="text">
+    /// Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters
+    /// </param>
+    /// <param name="showAlert">
+    /// If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat
+    /// screen. Defaults to <see langword="false"/>
+    /// </param>
+    /// <param name="url">
+    /// URL that will be opened by the user's client. If you have created a
+    /// <a href="https://core.telegram.org/bots/api#game">Game</a> and accepted the conditions via
+    /// <c>@BotFather</c>, specify the URL that opens your game — note that this will only work if the query
+    /// comes from a callback_game button
+    /// <para>
+    /// Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter
+    /// </para>
+    /// </param>
+    /// <param name="cacheTime">
+    /// The maximum amount of time in seconds that the result of the callback query may be cached client-side.
+    /// Telegram apps will support caching starting in version 3.14
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task AnswerCallbackQueryAsync(
         string callbackQueryId,
         string? text = default,
@@ -3280,33 +3573,71 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime ?? 0, text, url, showAlert == true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
-    /// Use this method to set the result of an interaction with a Web App and send a corresponding message on
-    /// behalf of the user to the chat from which the query originated. On success, a <see cref="SentWebAppMessage"/>
-    /// object is returned.
+    /// Use this method to get the list of boosts added to a chat by a user.
+    /// Requires administrator rights in the chat.
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-    /// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="result">
-    /// An object describing the message to be sent
+    /// <param name="chatId">
+    /// Unique identifier for the chat or username of the channel (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="userId">
+    /// Unique identifier of the target user
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    public async Task AnswerWebAppQueryAsync(
-        string webAppQueryId,
-        InlineQueryResult result,
+    /// <returns>Returns a <see cref="UserChatBoosts"/> object.</returns>
+    public async Task<UserChatBoosts> GetUserChatBoostsAsync(
+        ChatId chatId,
+        long userId,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
+			var peer = await InputPeerChat(chatId);
+            var boosts = await Client.Premium_GetUserBoosts(peer, InputUser(userId));
+            return new UserChatBoosts { Boosts = await boosts.boosts.Select(MakeBoost).WhenAllSequential() };
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to get information about the connection of the bot with a business account.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>Returns a <see cref="BusinessConnection"/> object.</returns>
+    public async Task<BusinessConnection> GetBusinessConnectionAsync(
+        string businessConnectionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var updates = await Client.Account_GetBotBusinessConnection(businessConnectionId);
+            updates.UserOrChat(_collector);
+            var conn = updates.UpdateList.OfType<UpdateBotBusinessConnect>().First().connection;
+            return new BusinessConnection
+            {
+                Id = conn.connection_id,
+                User = await UserOrResolve(conn.user_id),
+                UserChatId = conn.user_id,
+                Date = conn.date,
+                CanReply = conn.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
+                IsEnabled = !conn.flags.HasFlag(BotBusinessConnection.Flags.disabled)
+            };
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3339,7 +3670,7 @@ public partial class TelegramBotClient
         {
             await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, commands.Select(TypesTLConverters.BotCommand).ToArray());
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3370,7 +3701,7 @@ public partial class TelegramBotClient
         {
             await Client.Bots_ResetBotCommands(await BotCommandScope(scope), languageCode);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3401,7 +3732,7 @@ public partial class TelegramBotClient
             var commands = await Client.Bots_GetBotCommands(await BotCommandScope(scope), languageCode);
             return commands.Select(TypesTLConverters.BotCommand).ToArray();
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3428,7 +3759,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, name: name);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3454,7 +3785,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
 			return new BotName { Name = botInfo.about };
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3483,7 +3814,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, description: description);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3510,7 +3841,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
             return new BotDescription { Description = botInfo.description };
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3540,7 +3871,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Bots_SetBotInfo(languageCode, about: shortDescription);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3567,7 +3898,7 @@ public partial class TelegramBotClient
 			var botInfo = await Client.Bots_GetBotInfo(languageCode);
 			return new BotShortDescription { ShortDescription = botInfo.about };
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -3594,7 +3925,7 @@ public partial class TelegramBotClient
             var user = chatId.HasValue ? InputUser(chatId.Value) : null;
             await Client.Bots_SetBotMenuButton(user, menuButton.BotMenuButton());
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3620,7 +3951,7 @@ public partial class TelegramBotClient
             var botMenuButton = await Client.Bots_GetBotMenuButton(user);
             return botMenuButton.MenuButton();
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3654,7 +3985,7 @@ public partial class TelegramBotClient
             else
                 await Client.Bots_SetBotGroupDefaultAdminRights(admin_rights);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3679,9 +4010,9 @@ public partial class TelegramBotClient
             var full = await Client.Users_GetFullUser(Client.User);
             return (forChannels == true ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
-#endregion Available methods
+    #endregion Available methods
 
     #region Updating messages
 
@@ -3704,7 +4035,7 @@ public partial class TelegramBotClient
     /// List of special entities that appear in message text, which can be specified instead
     /// of <see cref="ParseMode"/>
     /// </param>
-    /// <param name="disableWebPagePreview">Disables link previews for links in this message</param>
+    /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
@@ -3721,7 +4052,7 @@ public partial class TelegramBotClient
         string text,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default,
-        bool? disableWebPagePreview = default,
+        LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     )
@@ -3730,10 +4061,11 @@ public partial class TelegramBotClient
         {
             ApplyParse(parseMode, ref text!, ref entities);
             var peer = await InputPeerChat(chatId);
-            return await PostedMsg(Client.Messages_EditMessage(peer, messageId, text, null,
-                await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true), peer, text);
+            var media = linkPreviewOptions.InputMediaWebPage();
+            return await PostedMsg(Client.Messages_EditMessage(peer, messageId, text, media,
+                await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true), peer, text);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3751,7 +4083,7 @@ public partial class TelegramBotClient
     /// List of special entities that appear in message text, which can be specified instead
     /// of <see cref="ParseMode"/>
     /// </param>
-    /// <param name="disableWebPagePreview">Disables link previews for links in this message</param>
+    /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
@@ -3766,7 +4098,7 @@ public partial class TelegramBotClient
         string text,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default,
-        bool? disableWebPagePreview = default,
+        LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     )
@@ -3775,10 +4107,11 @@ public partial class TelegramBotClient
         {
             ApplyParse(parseMode, ref text!, ref entities);
             var id = inlineMessageId.ParseInlineMsgID();
-            await Client.Messages_EditInlineBotMessage(id, text, null,
-                await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: disableWebPagePreview == true);
+            var media = linkPreviewOptions.InputMediaWebPage();
+            await Client.Messages_EditInlineBotMessage(id, text, media,
+                await MakeReplyMarkup(replyMarkup), entities?.ToArray(), linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3789,7 +4122,7 @@ public partial class TelegramBotClient
     /// Unique identifier for the target chat or username of the target channel
     /// (in the format <c>@channelusername</c>)
     /// </param>
-    /// <param name="messageId">dentifier of the message to edit</param>
+    /// <param name="messageId">Identifier of the message to edit</param>
     /// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">
     /// Mode for parsing entities in the new caption. See
@@ -3827,7 +4160,7 @@ public partial class TelegramBotClient
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, caption, null,
                 await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray()), peer, caption);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3869,7 +4202,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray());
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3911,7 +4244,7 @@ public partial class TelegramBotClient
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
                 imedia, await MakeReplyMarkup(replyMarkup), captionEntities), peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3947,7 +4280,7 @@ public partial class TelegramBotClient
             await Client.Messages_EditInlineBotMessage(id, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
                 imedia, await MakeReplyMarkup(replyMarkup), captionEntities);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -3981,7 +4314,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, null, await MakeReplyMarkup(replyMarkup)), peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4009,7 +4342,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_EditInlineBotMessage(id, reply_markup: await MakeReplyMarkup(replyMarkup));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4043,10 +4376,11 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             var closedPoll = new InputMediaPoll { poll = new() { flags = TL.Poll.Flags.closed } };
             var updates = await Client.Messages_EditMessage(peer, messageId, null, closedPoll, await MakeReplyMarkup(replyMarkup));
+            updates.UserOrChat(_collector);
             var ump = updates.UpdateList.OfType<UpdateMessagePoll>().First();
             return MakePoll(ump.poll, ump.results);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4082,7 +4416,37 @@ public partial class TelegramBotClient
         {
             await Client.DeleteMessages(await InputPeerChat(chatId), messageId);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to delete multiple messages simultaneously.
+    /// If some of the specified messages can't be found, they are skipped.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="chatId">
+    /// Unique identifier for the target chat or username of the target channel
+    /// (in the format <c>@channelusername</c>)
+    /// </param>
+    /// <param name="messageIds">
+    /// Identifiers of 1-100 messages to delete. See
+    /// <see cref="DeleteMessageAsync(ITelegramBotClient,DeleteMessageRequest,CancellationToken)"/> for limitations
+    /// on which messages can be deleted
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    public async Task DeleteMessagesAsync(
+        ChatId chatId,
+        IEnumerable<int> messageIds,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            await Client.DeleteMessages(await InputPeerChat(chatId), messageIds.ToArray());
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     #endregion Updating messages
@@ -4119,18 +4483,15 @@ public partial class TelegramBotClient
     /// <param name="protectContent">
     /// Protects the contents of sent messages from forwarding and saving
     /// </param>
-    /// <param name="replyToMessageId">
-    /// If the message is a reply, ID of the original message
-    /// </param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified
-    /// replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the action will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -4145,25 +4506,25 @@ public partial class TelegramBotClient
         string? emoji = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = await InputMediaDocument(sticker);
             if (media is TL.InputMediaUploadedDocument doc)
                 doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4201,32 +4562,34 @@ public partial class TelegramBotClient
 				}
 				return sticker;
             }).WhenAllSequential();
-			return new Types.StickerSet
+            return new Types.StickerSet
             {
                 Name = mss.set.short_name,
                 Title = mss.set.title,
 				StickerType = mss.set.flags.HasFlag(TL.StickerSet.Flags.emojis) ? StickerType.CustomEmoji :
 					            mss.set.flags.HasFlag(TL.StickerSet.Flags.masks) ? StickerType.Mask : StickerType.Regular,
-				IsAnimated = stickers[0].IsAnimated, // mss.set.flags.HasFlag(TL.StickerSet.Flags.animated), was removed
+#pragma warning disable CS0618 // Type or member is obsolete
+                IsAnimated = stickers[0].IsAnimated, // mss.set.flags.HasFlag(TL.StickerSet.Flags.animated), was removed
                 IsVideo = stickers[0].IsVideo, // mss.set.flags.HasFlag(TL.StickerSet.Flags.videos),
+#pragma warning restore CS0618 // Type or member is obsolete
                 Stickers = stickers,
                 Thumbnail = thumb
             };
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
-	/// <summary>
-	/// Use this method to get information about custom emoji stickers by their identifiers.
-	/// Returns an Array of <see cref="Sticker"/> objects.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="customEmojiIds">List of custom emoji identifiers. At most 200 custom emoji
-	/// identifiers can be specified.</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
-	/// <returns>On success, a <see cref="StickerSet"/> object is returned.</returns>
+    /// <summary>
+    /// Use this method to get information about custom emoji stickers by their identifiers.
+    /// Returns an Array of <see cref="Sticker"/> objects.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="customEmojiIds">List of custom emoji identifiers. At most 200 custom emoji
+    /// identifiers can be specified.</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>On success, a <see cref="StickerSet"/> object is returned.</returns>
 	public async Task<Sticker[]> GetCustomEmojiStickersAsync(
         IEnumerable<string> customEmojiIds,
         CancellationToken cancellationToken = default
@@ -4241,32 +4604,32 @@ public partial class TelegramBotClient
 				return await MakeSticker(doc, null);
             }).WhenAllSequential();
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// Use this method to upload a file with a sticker for later use in the
-	/// <see cref="CreateNewStickerSetRequest"/> and <see cref="AddStickerToSetRequest"/>
-	/// methods (the file can be used multiple times).
-	/// </summary>
-	/// <param name="botClient">
-	/// An instance of <see cref="ITelegramBotClient"/>
-	/// </param>
-	/// <param name="userId">
-	/// User identifier of sticker file owner
-	/// </param>
-	/// <param name="sticker">
-	/// A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format.
-	/// </param>
-	/// <param name="stickerFormat">
-	/// Format of the sticker
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
-	/// <returns>
-	/// Returns the uploaded <see cref="File"/> on success.
-	/// </returns>
+    /// <summary>
+    /// Use this method to upload a file with a sticker for later use in the
+    /// <see cref="CreateNewStickerSetRequest"/> and <see cref="AddStickerToSetRequest"/>
+    /// methods (the file can be used multiple times).
+    /// </summary>
+    /// <param name="botClient">
+    /// An instance of <see cref="ITelegramBotClient"/>
+    /// </param>
+    /// <param name="userId">
+    /// User identifier of sticker file owner
+    /// </param>
+    /// <param name="sticker">
+    /// A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format.
+    /// </param>
+    /// <param name="stickerFormat">
+    /// Format of the sticker
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    /// <returns>
+    /// Returns the uploaded <see cref="File"/> on success.
+    /// </returns>
 	public async Task<File> UploadStickerFileAsync(
         long userId,
         InputFileStream sticker,
@@ -4288,7 +4651,7 @@ public partial class TelegramBotClient
             file.FilePath = file.FileId + '/' + sticker.FileName;
             return file;
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4302,7 +4665,7 @@ public partial class TelegramBotClient
     /// </param>
     /// <param name="name">
     /// Short name of sticker set, to be used in <c>t.me/addstickers/</c> URLs (e.g., <i>animals</i>). Can contain
-    /// only english letters, digits and underscores. Must begin with a letter, can't contain consecutive
+    /// only English letters, digits and underscores. Must begin with a letter, can't contain consecutive
     /// underscores and must end in <i>"_by_&lt;bot username&gt;"</i>. <i>&lt;bot_username&gt;</i> is case
     /// insensitive. 1-64 characters
     /// </param>
@@ -4333,7 +4696,7 @@ public partial class TelegramBotClient
         string name,
         string title,
         IEnumerable<InputSticker> stickers,
-        StickerFormat stickerFormat,
+        StickerFormat stickerFormat, // no longer used
         StickerType? stickerType = default,
         bool? needsRepainting = default,
         CancellationToken cancellationToken = default
@@ -4341,13 +4704,12 @@ public partial class TelegramBotClient
     {
         try
         {
-            var mimeType = MimeType(stickerFormat);
-            var tlStickers = await Task.WhenAll(stickers.Select(sticker => InputStickerSetItem(userId, sticker, mimeType)));
+            var tlStickers = await Task.WhenAll(stickers.Select(sticker => InputStickerSetItem(userId, sticker)));
             var mss = await Client.Stickers_CreateStickerSet(InputPeerUser(userId), title, name, tlStickers, null, "bot" + BotId,
                 stickerType == StickerType.Mask, stickerType == StickerType.CustomEmoji, needsRepainting == true);
-            CacheStickerSet(mss, mimeType);
+            CacheStickerSet(mss);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4388,30 +4750,26 @@ public partial class TelegramBotClient
         CancellationToken cancellationToken = default
     )
     {
-        string? mimeType;
 		try
 		{
-            lock (StickerSetMimeType)
-                StickerSetMimeType.TryGetValue(name, out mimeType);
-            mimeType ??= CacheStickerSet(await Client.Messages_GetStickerSet(name));
-			var tlSticker = await InputStickerSetItem(userId, sticker, mimeType);
+			var tlSticker = await InputStickerSetItem(userId, sticker);
             var mss = await Client.Stickers_AddStickerToSet(name, tlSticker);
-            CacheStickerSet(mss, mimeType);
+            CacheStickerSet(mss);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
-	/// <summary>
-	/// Use this method to move a sticker in a set created by the bot to a specific position.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="sticker">
-	/// <see cref="InputFileId">File identifier</see> of the sticker
-	/// </param>
-	/// <param name="position">New sticker position in the set, zero-based</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// Use this method to move a sticker in a set created by the bot to a specific position.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="sticker">
+    /// <see cref="InputFileId">File identifier</see> of the sticker
+    /// </param>
+    /// <param name="position">New sticker position in the set, zero-based</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task SetStickerPositionInSetAsync(
         InputFileId sticker,
         int position,
@@ -4423,7 +4781,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
             var mss = await Client.Stickers_ChangeStickerPosition(inputDoc, position);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4446,7 +4804,46 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_RemoveStickerFromSet(inputDoc);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to replace an existing sticker in a sticker set with a new one. The method is equivalent to
+    /// calling <see cref="DeleteStickerFromSetAsync(Telegram.Bot.ITelegramBotClient,Telegram.Bot.Requests.DeleteStickerFromSetRequest,System.Threading.CancellationToken)"/>,
+    /// then <see cref="AddStickerToSetAsync(Telegram.Bot.ITelegramBotClient,Telegram.Bot.Requests.AddStickerToSetRequest,System.Threading.CancellationToken)"/>,
+    /// then <see cref="SetStickerPositionInSetAsync(Telegram.Bot.ITelegramBotClient,Telegram.Bot.Requests.SetStickerPositionInSetRequest,System.Threading.CancellationToken)"/>.
+    /// Returns <see langword="true"/> on success.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="userId">
+    /// User identifier of the sticker set owner
+    /// </param>
+    /// <param name="name">
+    /// Sticker set name
+    /// </param>
+    /// <param name="oldSticker">
+    /// File identifier of the replaced sticker
+    /// </param>
+    /// <param name="sticker">
+    /// An object with information about the added sticker. If exactly the same sticker had already been added to the
+    /// set, then the set remains unchanged.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    public async Task ReplaceStickerInSetAsync(
+        long userId, string name, string oldSticker, InputSticker sticker,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+			var inputDoc = InputDocument(oldSticker);
+            var tlSticker = await InputStickerSetItem(userId, sticker);
+            var mss = await Client.Stickers_ReplaceSticker(inputDoc, tlSticker);
+            CacheStickerSet(mss);
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4476,7 +4873,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, emoji: string.Concat(emojiList));
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -4507,7 +4904,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, keywords: keywords == null ? "" : string.Join(',', keywords));
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -4538,7 +4935,7 @@ public partial class TelegramBotClient
 			var inputDoc = InputDocument(sticker.Id);
 			await Client.Stickers_ChangeSticker(inputDoc, mask_coords: maskPosition.MaskCoord());
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -4566,7 +4963,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Stickers_RenameStickerSet(name, title);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -4583,6 +4980,7 @@ public partial class TelegramBotClient
     /// <param name="userId">
     /// User identifier of the sticker set owner
     /// </param>
+    /// <param name="format">Format of the thumbnail</param>
     /// <param name="thumbnail">
     /// A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have
     /// a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in
@@ -4600,6 +4998,7 @@ public partial class TelegramBotClient
 	public async Task SetStickerSetThumbnailAsync(
         string name,
         long userId,
+        StickerFormat format,
         InputFile? thumbnail = default,
         CancellationToken cancellationToken = default
     )
@@ -4611,12 +5010,13 @@ public partial class TelegramBotClient
             else
             {
                 var peer = InputPeerUser(userId);
-                var media = await InputMediaDocument(thumbnail);
+                var mimeType = MimeType(format);
+                var media = await InputMediaDocument(thumbnail, mimeType: mimeType);
 		        var document = await UploadMediaDocument(peer, media);
                 await Client.Stickers_SetStickerSetThumb(name, document);
             }
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4645,7 +5045,7 @@ public partial class TelegramBotClient
 		{
 			var mss = await Client.Stickers_SetStickerSetThumb(name, null, customEmojiId == null ? null : long.Parse(customEmojiId));
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
     /// <summary>
@@ -4669,7 +5069,7 @@ public partial class TelegramBotClient
 		{
 			await Client.Stickers_DeleteStickerSet(name);
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
     #endregion
 
@@ -4720,7 +5120,33 @@ public partial class TelegramBotClient
             await Client.Messages_SetInlineBotResults(long.Parse(inlineQueryId), await InputBotInlineResults(results), cacheTime ?? 0,
                 nextOffset, switch_pm, switch_webview, private_: isPersonal == true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
+    }
+
+    /// <summary>
+    /// Use this method to set the result of an interaction with a Web App and send a corresponding message on
+    /// behalf of the user to the chat from which the query originated. On success, a <see cref="SentWebAppMessage"/>
+    /// object is returned.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="result">
+    /// An object describing the message to be sent
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
+    public async Task AnswerWebAppQueryAsync(
+        string webAppQueryId,
+        InlineQueryResult result,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
+        }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     #endregion Inline mode
@@ -4742,7 +5168,7 @@ public partial class TelegramBotClient
     /// use for your internal processes
     /// </param>
     /// <param name="providerToken">
-    /// Payments provider token, obtained via <a href="https://t.me/botfather">@Botfather</a>
+    /// Payments provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>
     /// </param>
     /// <param name="currency">
     /// Three-letter ISO 4217 currency code, see
@@ -4804,10 +5230,7 @@ public partial class TelegramBotClient
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
@@ -4844,8 +5267,7 @@ public partial class TelegramBotClient
         bool? isFlexible = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     )
@@ -4853,8 +5275,8 @@ public partial class TelegramBotClient
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
                 providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
                 sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
@@ -4862,7 +5284,7 @@ public partial class TelegramBotClient
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -4876,7 +5298,7 @@ public partial class TelegramBotClient
     /// use for your internal processes
     /// </param>
     /// <param name="providerToken">
-    /// Payments provider token, obtained via <a href="https://t.me/botfather">@Botfather</a>
+    /// Payments provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>
     /// </param>
     /// <param name="currency">
     /// Three-letter ISO 4217 currency code, see
@@ -4960,22 +5382,22 @@ public partial class TelegramBotClient
 			var exported = await Client.Payments_ExportInvoice(media);
             return exported.url;
 		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+		catch (WTelegram.WTException ex) { throw MakeException(ex); }
 	}
 
-	/// <summary>
-	/// If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,
-	/// the Bot API will send an <see cref="Update"/> with a <see cref="ShippingQuery"/> field
-	/// to the bot. Use this method to reply to shipping queries
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
-	/// <param name="shippingOptions">
-	/// Required if ok is <see langword="true"/>. An array of available shipping options
-	/// </param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
+    /// <summary>
+    /// If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,
+    /// the Bot API will send an <see cref="Update"/> with a <see cref="ShippingQuery"/> field
+    /// to the bot. Use this method to reply to shipping queries
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="shippingOptions">
+    /// Required if ok is <see langword="true"/>. An array of available shipping options
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+    /// </param>
 	public async Task AnswerShippingQueryAsync(
         string shippingQueryId,
         IEnumerable<ShippingOption> shippingOptions,
@@ -4987,7 +5409,7 @@ public partial class TelegramBotClient
             await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), shipping_options:
                 shippingOptions.Select(so => new TL.ShippingOption { id = so.Id, title = so.Title, prices = so.Prices.LabeledPrices() }).ToArray());
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5015,7 +5437,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5040,7 +5462,7 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), success: true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5069,9 +5491,9 @@ public partial class TelegramBotClient
         {
             await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), error: errorMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
-#endregion Payments
+    #endregion Payments
 
     #region Games
 
@@ -5080,26 +5502,26 @@ public partial class TelegramBotClient
     /// </summary>
     /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
     /// <param name="chatId">Unique identifier for the target chat</param>
-    /// <param name="gameShortName">
     /// <param name="messageThreadId">
     /// Unique identifier for the target message thread (topic) of the forum; for forum supergroups only
     /// </param>
+    /// <param name="gameShortName">
     /// Short name of the game, serves as the unique identifier for the game. Set up your games via
-    /// <a href="https://t.me/botfather">@Botfather</a>
+    /// <a href="https://t.me/botfather">@BotFather</a>
     /// </param>
     /// <param name="disableNotification">
     /// Sends the message silently. Users will receive a notification with no sound
     /// </param>
     /// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
-    /// <param name="replyToMessageId">If the message is a reply, ID of the original message</param>
-    /// <param name="allowSendingWithoutReply">
-    /// Pass <see langword="true"/>, if the message should be sent even if the specified replied-to message is not found
-    /// </param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">
     /// Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
     /// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
     /// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
     /// <see cref="ForceReplyMarkup">force a reply</see> from the user
+    /// </param>
+    /// <param name="businessConnectionId">
+    /// Unique identifier of the business connection on behalf of which the message will be sent
     /// </param>
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
@@ -5111,24 +5533,24 @@ public partial class TelegramBotClient
         int? messageThreadId = default,
         bool? disableNotification = default,
         bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
+        ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             var peer = await InputPeerChat(chatId);
-            var replyToMessage = await GetReplyToMessage(peer, replyToMessageId, allowSendingWithoutReply);
-            var reply_to = ITelegramBotClient.MakeReplyTo(replyToMessageId, messageThreadId, peer);
+            var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+            var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
             var media = new InputMediaGame
             { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
-            return await PostedMsg(Client.Messages_SendMedia(peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
+            return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5172,7 +5594,7 @@ public partial class TelegramBotClient
             if (editUpdate != null) return (await MakeMessage(editUpdate.message))!;
             else return await PostedMsg(Task.FromResult(updates), peer);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5210,7 +5632,7 @@ public partial class TelegramBotClient
             var id = inlineMessageId.ParseInlineMsgID();
             await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force == true);
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5245,7 +5667,7 @@ public partial class TelegramBotClient
             return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore
             { Position = hs.pos, User = await UserOrResolve(hs.user_id), Score = hs.score }));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
@@ -5278,7 +5700,7 @@ public partial class TelegramBotClient
             return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore
             { Position = hs.pos, User = await UserOrResolve(hs.user_id), Score = hs.score }));
         }
-        catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
+        catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
     #endregion Games
 }

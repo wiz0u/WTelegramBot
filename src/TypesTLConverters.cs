@@ -66,6 +66,7 @@ public static class TypesTLConverters
 			result.CanJoinGroups = !user.flags.HasFlag(TL.User.Flags.bot_nochats);
 			result.CanReadAllGroupMessages = user.flags.HasFlag(TL.User.Flags.bot_chat_history);
 			result.SupportsInlineQueries = user.flags.HasFlag(TL.User.Flags.has_bot_inline_placeholder);
+			result.CanConnectToBusiness = user.flags2.HasFlag(TL.User.Flags2.bot_business);
 		}
 		return result;
 	}
@@ -128,6 +129,7 @@ public static class TypesTLConverters
 				//CanManageTopics: set only for supergroups
 				CanPromoteMembers = false,
 				CanManageVideoChats = true,
+				//CanPostStories, CanEditStories, CanDeleteStories: set only for channels
 				IsAnonymous = false,
 			},
 			ChatParticipant => new ChatMemberMember { User = user },
@@ -143,8 +145,8 @@ public static class TypesTLConverters
 			{
 				User = user,
 				CustomTitle = cpa.rank,
-				IsAnonymous = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.anonymous),
 				CanBeEdited = cpa.flags.HasFlag(ChannelParticipantAdmin.Flags.can_edit),
+				IsAnonymous = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.anonymous),
 				CanManageChat = cpa.admin_rights.flags != 0,
 				CanPostMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_messages),
 				CanEditMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_messages),
@@ -156,6 +158,9 @@ public static class TypesTLConverters
 				CanInviteUsers = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.invite_users),
 				CanPinMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.pin_messages),
 				CanManageTopics = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics),
+				CanPostStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_stories),
+				CanEditStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
+				CanDeleteStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 			},
 			ChannelParticipantBanned cpb =>
 				cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.view_messages)
@@ -292,11 +297,6 @@ public static class TypesTLConverters
 		bytes[12] = (byte)(type?[0] ?? 0);
 		file.FileUniqueId = ToBase64(bytes.AsSpan(3, 10));
 		return file;
-		// fileType = 0 for web, or FileTypeClass+1 (see D:\Repos\telegram-bot-api\td\td\telegram\files\FileType.cpp)
-		// fileId
-		// 0 for Type 'a', 1 for Type 'c', or Type char + 5
-		//byte type = Type switch { "a" => 0, "c" => 1, _ => (byte)(Type[0] + 5) };
-		//Convert.ToBase64String(BitConverter.GetBytes(photoId).Prepend(fileType).Append(type).EncodeZero().ToArray());
 	}
 
 	/// <summary>Decode FileId into TL.InputFileLocation</summary>
@@ -427,6 +427,9 @@ public static class TypesTLConverters
 			| (rights.CanEditMessages == true ? TL.ChatAdminRights.Flags.edit_messages : 0)
 			| (rights.CanPinMessages == true ? TL.ChatAdminRights.Flags.pin_messages : 0)
 			| (rights.CanManageTopics == true ? TL.ChatAdminRights.Flags.manage_topics : 0)
+			| (rights.CanPostStories == true ? TL.ChatAdminRights.Flags.post_stories : 0)
+			| (rights.CanEditStories == true ? TL.ChatAdminRights.Flags.edit_stories : 0)
+			| (rights.CanDeleteStories == true ? TL.ChatAdminRights.Flags.delete_stories : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
@@ -443,7 +446,10 @@ public static class TypesTLConverters
 			CanPostMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_messages),
 			CanEditMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_messages),
 			CanPinMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.pin_messages),
-			CanManageTopics = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics)
+			CanManageTopics = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_topics),
+			CanPostStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_stories),
+			CanEditStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
+			CanDeleteStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 		};
 
 	[return: NotNullIfNotNull(nameof(maskPosition))]
@@ -527,4 +533,65 @@ public static class TypesTLConverters
 
 	private static Passport.PassportFile PassportFile(this SecureFile file)
 		=> new Passport.PassportFile { FileSize = file.size, FileDate = file.date }.SetFileIds(file.ToFileLocation(), file.dc_id);
+
+	internal static SharedUser ToSharedUser(this RequestedPeer peer) => peer is not RequestedPeerUser rpu ? null! :
+		new SharedUser { UserId = rpu.user_id, FirstName = rpu.first_name, LastName = rpu.last_name, Username = rpu.username, Photo = rpu.photo.PhotoSizes() };
+
+	internal static ChatShared? ToSharedChat(this RequestedPeer peer, int requestId) => peer switch
+	{
+		RequestedPeerChat rpc => new ChatShared { RequestId = requestId, ChatId = rpc.chat_id, Title = rpc.title, Photo = rpc.photo.PhotoSizes() },
+		RequestedPeerChannel rpch => new ChatShared { RequestId = requestId, ChatId = rpch.channel_id, Title = rpch.title, Username = rpch.username, Photo = rpch.photo.PhotoSizes() },
+		_ => null
+	};
+
+	internal static Reaction Reaction(this ReactionType reaction) => reaction switch
+	{
+		ReactionTypeEmoji rte => new ReactionEmoji { emoticon = rte.Emoji },
+		ReactionTypeCustomEmoji rtce => new ReactionCustomEmoji { document_id = long.Parse(rtce.CustomEmojiId) },
+		_ => throw new ApiRequestException("Unrecognized ReactionType")
+	};
+	internal static ReactionType ReactionType(this Reaction reaction) => reaction switch
+	{
+		ReactionEmoji rte => new ReactionTypeEmoji { Emoji = rte.emoticon },
+		ReactionCustomEmoji rce => new ReactionTypeCustomEmoji { CustomEmojiId = rce.document_id.ToString() },
+		_ => throw new ApiRequestException("Unrecognized Reaction")
+	};
+
+	internal static InputMediaWebPage? InputMediaWebPage(this LinkPreviewOptions? lpo) => lpo?.Url == null ? null : new InputMediaWebPage
+	{
+		url = lpo.Url,
+		flags = TL.InputMediaWebPage.Flags.optional
+			| (lpo.PreferLargeMedia == true ? TL.InputMediaWebPage.Flags.force_large_media : 0)
+			| (lpo.PreferSmallMedia == true ? TL.InputMediaWebPage.Flags.force_small_media : 0)
+	};
+
+	internal static LinkPreviewOptions? LinkPreviewOptions(this MessageMedia? mm, bool invert_media)
+		=> mm == null ? new LinkPreviewOptions { IsDisabled = true } : mm is not MessageMediaWebPage mmwp ? null : new LinkPreviewOptions
+		{
+			Url = mmwp.webpage.Url,
+			PreferLargeMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_large_media),
+			PreferSmallMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_small_media),
+			ShowAboveText = invert_media
+		};
+
+	internal static Birthday? Birthday(this TL.Birthday? birthday) => birthday == null ? null : new Birthday
+	{
+		Day = birthday.day,
+		Month = birthday.month,
+		Year = birthday.flags.HasFlag(TL.Birthday.Flags.has_year) ? birthday.year : null
+	};
+
+	internal static BusinessLocation? BusinessLocation(this TL.BusinessLocation? loc) => loc == null ? null : new BusinessLocation
+	{
+		Address = loc.address,
+		Location = loc.geo_point.Location()
+	};
+
+	internal static BusinessOpeningHours? BusinessOpeningHours(this TL.BusinessWorkHours? hours) => hours == null ? null : new BusinessOpeningHours
+	{
+		TimeZoneName = hours.timezone_id,
+		OpeningHours = hours.weekly_open.Select(wo =>
+			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute}).ToArray()
+	};
+
 }
