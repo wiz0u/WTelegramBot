@@ -12,7 +12,6 @@ global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
 global using Update = Telegram.Bot.Types.Update;
 global using User = Telegram.Bot.Types.User;
 global using MessageEntity = TL.MessageEntity;
-using JetBrains.Annotations;
 using System.Data.Common;
 using System.Reflection;
 using Telegram.Bot.Exceptions;
@@ -25,7 +24,6 @@ namespace Telegram.Bot;
 /// <summary>
 /// A client to use the Telegram Bot API
 /// </summary>
-[PublicAPI]
 public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 {
     readonly TelegramBotClientOptions _options;

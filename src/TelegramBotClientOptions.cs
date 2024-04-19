@@ -1,14 +1,12 @@
 ﻿using System.Data.Common;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace Telegram.Bot;
 
 /// <summary>
 /// This class is used to provide configuration for <see cref="TelegramBotClient"/>
 /// </summary>
-[PublicAPI]
 public class TelegramBotClientOptions
 {
     /// <summary>

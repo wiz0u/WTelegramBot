@@ -1,0 +1,96 @@
+using Telegram.Bot.Types.Enums;
+
+namespace Telegram.Bot.Types
+{
+	public partial class Update
+	{
+		/// <summary>The corresponding Client API update structure</summary>
+		public TL.Update? RawUpdate;
+	}
+
+	public partial class Chat
+	{
+		/// <summary>Client API access_hash of the chat</summary>
+		public long AccessHash { get; set; }
+		/// <summary>Useful operator for Client API calls</summary>
+		public static implicit operator TL.InputPeer(Chat chat) => chat.Type switch
+		{
+			ChatType.Private => new TL.InputPeerUser(-chat.Id, chat.AccessHash),
+			ChatType.Group => new TL.InputPeerChat(-chat.Id),
+			_ => new TL.InputPeerChannel(-1000000000000 - chat.Id, chat.AccessHash),
+		};
+	}
+
+	public partial class User
+	{
+		/// <summary>Client API access_hash of the user</summary>
+		public long AccessHash { get; set; }
+		/// <summary>Useful operator for Client API calls</summary>
+		[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
+		public static implicit operator TL.InputPeerUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
+		/// <summary>Useful operator for Client API calls</summary>
+		[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(user))]
+		public static implicit operator TL.InputUser?(User? user) => user == null ? null : new(user.Id, user.AccessHash);
+	}
+
+	public partial class InputFile
+	{
+		/// <summary>Implicit operator, same as <see cref="InputFile.FromStream"/></summary>
+		public static implicit operator InputFile(Stream stream) => FromStream(stream);
+		/// <summary>Implicit operator, same as <see cref="InputFile.FromString"/></summary>
+		public static implicit operator InputFile(string urlOrFileId) => FromString(urlOrFileId);
+	}
+
+	/// <summary>Type of a <see cref="MessageEntity"/></summary>
+	public static class MessageEntityType // litterals are suffix of MessageEntity* classes
+	{
+		/// <summary>A mentioned <see cref="User"/></summary>
+		public const string Mention = "Mention";
+		/// <summary>A searchable Hashtag</summary>
+		public const string Hashtag = "Hashtag";
+		/// <summary>A Bot command</summary>
+		public const string BotCommand = "BotCommand";
+		/// <summary>An URL</summary>
+		public const string Url = "Url";
+		/// <summary>An email</summary>
+		public const string Email = "Email";
+		/// <summary>Bold text</summary>
+		public const string Bold = "Bold";
+		/// <summary>Italic text</summary>
+		public const string Italic = "Italic";
+		/// <summary>Monowidth string</summary>
+		public const string Code = "Code";
+		/// <summary>Monowidth block</summary>
+		public const string Pre = "Pre";
+		/// <summary>Clickable text URLs</summary>
+		public const string TextLink = "TextUrl";
+		/// <summary>Mentions for a <see cref="User"/> without <see cref="User.Username"/></summary>
+		public const string TextMention = "MentionName";
+		/// <summary>Phone number</summary>
+		public const string PhoneNumber = "Phone";
+		/// <summary>A cashtag (e.g. $EUR, $USD) - $ followed by the short currency code</summary>
+		public const string Cashtag = "Cashtag";
+		/// <summary>Underlined text</summary>
+		public const string Underline = "Underline";
+		/// <summary>Strikethrough text</summary>
+		public const string Strikethrough = "Strike";
+		/// <summary>Spoiler message</summary>
+		public const string Spoiler = "Spoiler";
+		/// <summary>Inline custom emoji stickers</summary>
+		public const string CustomEmoji = "CustomEmoji";
+		/// <summary>Block quotation</summary>
+		public const string Blockquote = "Blockquote";
+	}
+}
+
+#pragma warning disable CS9113
+namespace Telegram.Bot.Requests
+{
+	/// <summary>Represents an API request</summary>
+	public class RequestBase<TResponse>(string methodName) : Abstractions.IRequest<TResponse> { }
+}
+namespace Telegram.Bot.Requests.Abstractions
+{
+	interface IRequest<TResponse> { } 
+}
+#pragma warning restore CS9113
