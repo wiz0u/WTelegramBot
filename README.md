@@ -51,6 +51,19 @@ If your code used it a lot, you might find it useful to add this line at the top
 If you want to store a message text with entities, I recommend you [convert it to/from HTML/Markdown](https://wiz0u.github.io/WTelegramClient/EXAMPLES#markdown), using WTelegramClient helper classes `HtmlText` & `Markdown`
 - Texts in Markdown (V1) will be parsed as MarkdownV2. some discrepancy or error may arise due to reserved characters
 
+### Making the library more easy to use, backward-compatibility friendly
+
+As versions goes, the Telegram.Bot library has tend to break existing code.  
+I've tried to restore what use to make the Telegram.Bot library attractive
+
+- Implicit/easiers constructors to simplify your code:
+  - `int` instead of `ReplyParameters` when you just want to reply to a message
+  - `int`/`string`/`Stream` for `InputFile`, instead of having to call complex construction methods
+  - `InputFile` instead of `InputMedia*` when you don't need to associate caption or such
+- no more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
+- Removing some unjustified [Obsolete] tags
+- Not pushing you towards silly Request-based constructors
+
 
 ## How to access the advanced features?
 
@@ -64,3 +77,4 @@ You can read that [library's documentation](https://wiz0u.github.io/WTelegramCli
 Note that you need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 In the future, I might add some of these advanced methods directly as TelegramBotClient methods to make it more easy.
+

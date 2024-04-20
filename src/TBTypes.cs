@@ -1,5 +1,18 @@
 using Telegram.Bot.Types.Enums;
 
+
+#pragma warning disable CS9113
+namespace Telegram.Bot.Requests
+{
+	/// <summary>Represents an API request</summary>
+	public class RequestBase<TResponse>(string methodName) : Abstractions.IRequest<TResponse> { }
+}
+namespace Telegram.Bot.Requests.Abstractions
+{
+	interface IRequest<TResponse> { }
+}
+#pragma warning restore CS9113
+
 namespace Telegram.Bot.Types
 {
 	public partial class Update
@@ -39,6 +52,18 @@ namespace Telegram.Bot.Types
 		public static implicit operator InputFile(Stream stream) => FromStream(stream);
 		/// <summary>Implicit operator, same as <see cref="InputFile.FromString"/></summary>
 		public static implicit operator InputFile(string urlOrFileId) => FromString(urlOrFileId);
+	}
+
+	public partial class InputFileId
+	{
+		/// <summary>Implicit operator, same as <see cref="InputFileId(string)"/></summary>
+		public static implicit operator InputFileId(string fileId) => new(fileId);
+	}
+
+	public partial class InputFileStream
+	{
+		/// <summary>Implicit operator, same as <see cref="InputFileStream(Stream)"/></summary>
+		public static implicit operator InputFileStream(Stream stream) => new(stream);
 	}
 
 	/// <summary>Type of a <see cref="MessageEntity"/></summary>
@@ -81,16 +106,10 @@ namespace Telegram.Bot.Types
 		/// <summary>Block quotation</summary>
 		public const string Blockquote = "Blockquote";
 	}
-}
 
-#pragma warning disable CS9113
-namespace Telegram.Bot.Requests
-{
-	/// <summary>Represents an API request</summary>
-	public class RequestBase<TResponse>(string methodName) : Abstractions.IRequest<TResponse> { }
+	public partial class ReplyParameters
+	{
+		/// <summary>Implicit operator when you just want to reply to a message in same chat/></summary>
+		public static implicit operator ReplyParameters(int replyToMessageId) => new() { MessageId = replyToMessageId };
+	}
 }
-namespace Telegram.Bot.Requests.Abstractions
-{
-	interface IRequest<TResponse> { } 
-}
-#pragma warning restore CS9113

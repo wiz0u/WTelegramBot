@@ -23,7 +23,6 @@ public partial class InputMediaPhoto :
     /// </summary>
     /// <param name="media">File to send</param>
     [SetsRequiredMembers]
-    [Obsolete("Use parameterless constructor with required properties")]
     public InputMediaPhoto(InputFile media)
         : base(media)
     { }

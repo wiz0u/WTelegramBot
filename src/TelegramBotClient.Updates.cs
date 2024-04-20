@@ -404,26 +404,26 @@ public partial class TelegramBotClient
 	{
 		var updates = await updatesTask;
 		updates.UserOrChat(_collector);
-		int[] msgIds = new int[nbMsg];
-		var result = new Message[nbMsg];
+		var result = new List<Message>(nbMsg);
 		foreach (var update in updates.UpdateList)
 		{
+			Message? msg = null;
 			switch (update)
 			{
-				case UpdateMessageID updMsgId: msgIds[(int)(updMsgId.random_id - startRandomId)] = updMsgId.id; break;
-				case UpdateNewMessage { message: TL.Message message }: result[Array.IndexOf(msgIds, message.id)] = (await MakeMessageAndReply(message, replyToMessage))!; break;
-				case UpdateNewScheduledMessage { message: TL.Message schedMsg }: result[Array.IndexOf(msgIds, schedMsg.id)] = (await MakeMessageAndReply(schedMsg, replyToMessage))!; break;
+				case UpdateNewMessage { message: TL.Message message }: msg = await MakeMessageAndReply(message, replyToMessage); break;
+				case UpdateNewScheduledMessage { message: TL.Message schedMsg }: msg = await MakeMessageAndReply(schedMsg, replyToMessage); break;
 			}
+			if (msg != null) result.Add(msg);
 		}
-		return result;
+		return result.OrderBy(msg => msg.MessageId).ToArray();
 	}
 
 	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message and assign the ReplyToMessage/ExternalReply</summary>
 	protected async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null)
 	{
 		var msg = await MakeMessage(msgBase);
-		if (msg == null) return null;
-		if (msgBase?.ReplyTo is MessageReplyHeader reply_to)
+		if (msg == null || msgBase?.ReplyTo == null) return msg;
+		if (msgBase.ReplyTo is MessageReplyHeader reply_to)
 		{
 			if (replyToMessage != null)
 				msg.ReplyToMessage = replyToMessage;
@@ -459,7 +459,7 @@ public partial class TelegramBotClient
 			if (msg.IsTopicMessage ??= reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic))
 				msg.MessageThreadId = reply_to.reply_to_top_id > 0 ? reply_to.reply_to_top_id : reply_to.reply_to_msg_id;
 		}
-		else if (msgBase?.ReplyTo is MessageReplyStoryHeader mrsh)
+		else if (msgBase.ReplyTo is MessageReplyStoryHeader mrsh)
 			msg.ReplyToStory = new Story
 			{
 				Chat = await ChatFromPeer(mrsh.peer, true),

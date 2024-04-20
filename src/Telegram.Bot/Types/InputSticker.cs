@@ -56,9 +56,11 @@ public partial class InputSticker
     /// <param name="emojiList">
     /// List of 1-20 emoji associated with the sticker
     /// </param>
+    /// <param name="format">Format of the added sticker</param>
     [SetsRequiredMembers]
-    public InputSticker(InputFile sticker, IEnumerable<string> emojiList)
+    public InputSticker(InputFile sticker, IEnumerable<string> emojiList, StickerFormat format)
     {
+        Format = format;
         Sticker = sticker;
         EmojiList = emojiList;
     }

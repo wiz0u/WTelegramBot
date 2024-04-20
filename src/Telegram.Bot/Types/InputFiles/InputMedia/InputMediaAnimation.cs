@@ -41,7 +41,6 @@ public partial class InputMediaAnimation :
     /// </summary>
     /// <param name="media">File to send</param>
     [SetsRequiredMembers]
-    [Obsolete("Use parameterless constructor with required properties")]
     public InputMediaAnimation(InputFile media)
         : base(media)
     { }

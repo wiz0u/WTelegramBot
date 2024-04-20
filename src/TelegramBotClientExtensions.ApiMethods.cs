@@ -570,17 +570,47 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             var reply_to = await MakeReplyTo(null, messageThreadId, peer);
             var msgIds = new List<MessageId>();
+            long cur_grouped_id = 0;
+            long start_random_id = WTelegram.Helpers.RandomLong(), random_id = start_random_id;
+            List<InputSingleMedia>? multiMedia = null;
             foreach (var msg in msgs.Messages.OfType<TL.Message>())
             {
+                if (removeCaption == true && msg.media is not null and not MessageMediaWebPage) { msg.message = null; msg.entities = null; }
+                if (msg.grouped_id != 0)
+                {
+                    if (msg.grouped_id != cur_grouped_id && multiMedia != null) await FlushMediaGroup();
+                    (multiMedia ??= []).Add(new InputSingleMedia
+                    {
+                        media = msg.media?.ToInputMedia(),
+                        random_id = random_id++,
+                        message = msg.message,
+                        entities = msg.entities,
+                        flags = msg.entities != null ? InputSingleMedia.Flags.has_entities : 0
+                    });
+                    cur_grouped_id = msg.grouped_id;
+                    continue;
+                }
+                if (multiMedia != null) await FlushMediaGroup();
+                cur_grouped_id = 0;
                 var task = msg.media == null
-                    ? Client.Messages_SendMessage(peer, msg.message, WTelegram.Helpers.RandomLong(), reply_to,
+                    ? Client.Messages_SendMessage(peer, msg.message, random_id++, reply_to, entities: msg.entities,
                         no_webpage: true, silent: disableNotification == true, noforwards: protectContent == true)
-                    : Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), removeCaption == true ? null : msg.message, WTelegram.Helpers.RandomLong(), reply_to,
+                    : Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to, entities: msg.entities,
                         silent: disableNotification == true, noforwards: protectContent == true);
                 var postedMsg = await PostedMsg(task, peer);
                 msgIds.Add(new MessageId { Id = postedMsg.MessageId });
             }
+            if (multiMedia != null) await FlushMediaGroup();
             return [.. msgIds];
+
+            async Task FlushMediaGroup()
+            {
+                var postedMsgs = await PostedMsgs(Client.Messages_SendMultiMedia(peer, multiMedia?.ToArray(), reply_to,
+                    silent: disableNotification == true, noforwards: protectContent == true),
+                    multiMedia!.Count, multiMedia[0].random_id, null);
+                msgIds.AddRange(postedMsgs.Select(m => new MessageId { Id = m.MessageId }));
+                multiMedia = null;
+            }
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
@@ -2929,7 +2959,7 @@ public partial class TelegramBotClient
                 var user = userFull.users[userId];
                 var chat = user.Chat();
                 chat.Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto();
-                chat.ActiveUsernames = user.ActiveUsernames.ToArray();
+                chat.ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray();
                 chat.Birthday = full.birthday.Birthday();
                 chat.BusinessIntro = await MakeBusinessIntro(full.business_intro);
                 chat.BusinessLocation = full.business_location.BusinessLocation();
@@ -2961,7 +2991,7 @@ public partial class TelegramBotClient
                 chat.Photo = full.ChatPhoto.ChatPhoto();
                 chat.AvailableReactions = full.AvailableReactions switch
                 {
-                    null => [],
+                    /*chatReactionsNone*/null => [],
                     ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
                     /*ChatReactionsAll*/_ => null,
                 };
@@ -2973,17 +3003,17 @@ public partial class TelegramBotClient
                 chat.AccentColorId = (int)(tlChat.ID % 7);
                 if (tlChat is TL.Channel channel)
                 {
-                    chat.ActiveUsernames = channel.ActiveUsernames.ToArray();
+                    var channelFull = (ChannelFull)full;
+                    chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : channel.ActiveUsernames.ToArray();
                     if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
                     if (channel.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = channel.color.background_emoji_id.ToString();
                     if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = channel.profile_color.color;
                     if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = channel.profile_color.background_emoji_id.ToString();
                     chat.EmojiStatusCustomEmojiId = channel.emoji_status?.document_id.ToString();
                     chat.EmojiStatusExpirationDate = (channel.emoji_status as EmojiStatusUntil)?.until;
-                    chat.JoinToSendMessages = channel.flags.HasFlag(Channel.Flags.join_to_send);
+					chat.JoinToSendMessages = channel.flags.HasFlag(Channel.Flags.join_to_send) || !channel.flags.HasFlag(Channel.Flags.megagroup) || channelFull.linked_chat_id == 0;
                     chat.JoinByRequest = channel.flags.HasFlag(Channel.Flags.join_request);
                     chat.Permissions = (channel.banned_rights ?? channel.default_banned_rights).ChatPermissions();
-                    var channelFull = (ChannelFull)full;
                     chat.SlowModeDelay = channelFull.slowmode_seconds == 0 ? null : channelFull.slowmode_seconds;
                     chat.UnrestrictBoostCount = channelFull.boosts_unrestrict == 0 ? null : channelFull.boosts_unrestrict;
                     chat.HasAggressiveAntiSpamEnabled = channelFull.flags2.HasFlag(ChannelFull.Flags2.antispam);
@@ -2993,7 +3023,7 @@ public partial class TelegramBotClient
                     chat.StickerSetName = channelFull.stickerset?.short_name;
                     chat.CanSetStickerSet = channelFull.flags.HasFlag(ChannelFull.Flags.can_set_stickers);
                     chat.CustomEmojiStickerSetName = channelFull.emojiset?.short_name;
-                    chat.LinkedChatId = channelFull.linked_chat_id == 0 ? 0 : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
+                    chat.LinkedChatId = channelFull.linked_chat_id == 0 ? null : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
                     chat.Location = channelFull.location.ChatLocation();
                 }
                 else if (tlChat is TL.Chat basicChat)
@@ -4675,9 +4705,6 @@ public partial class TelegramBotClient
     /// <param name="stickers">
     /// A JSON-serialized list of 1-50 initial stickers to be added to the sticker set
     /// </param>
-    /// <param name="stickerFormat">
-    /// Format of stickers in the set.
-    /// </param>
     /// <param name="stickerType">
     /// Type of stickers in the set.
     /// By default, a regular sticker set is created.
@@ -4696,7 +4723,6 @@ public partial class TelegramBotClient
         string name,
         string title,
         IEnumerable<InputSticker> stickers,
-        StickerFormat stickerFormat, // no longer used
         StickerType? stickerType = default,
         bool? needsRepainting = default,
         CancellationToken cancellationToken = default
@@ -5544,8 +5570,7 @@ public partial class TelegramBotClient
             var peer = await InputPeerChat(chatId);
             var replyToMessage = await GetReplyToMessage(peer, replyParameters);
             var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
-            var media = new InputMediaGame
-            { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
+            var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
             return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, WTelegram.Helpers.RandomLong(), reply_to,
                 await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
                 peer, null, replyToMessage);
