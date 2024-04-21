@@ -861,4 +861,14 @@ public partial class TelegramBotClient
 		Message = intro.description,
 		Sticker = intro.sticker is TL.Document doc ? await MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>()) : null
 	};
+
+	private async Task<BusinessConnection> MakeBusinessConnection(BotBusinessConnection bbc) => new BusinessConnection
+	{
+		Id = bbc.connection_id,
+		User = await UserOrResolve(bbc.user_id),
+		UserChatId = bbc.user_id,
+		Date = bbc.date,
+		CanReply = bbc.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
+		IsEnabled = !bbc.flags.HasFlag(BotBusinessConnection.Flags.disabled)
+	};
 }

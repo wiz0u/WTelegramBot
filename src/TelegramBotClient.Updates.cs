@@ -193,31 +193,19 @@ public partial class TelegramBotClient
 				};
 			case TL.UpdateBotBusinessConnect ubbc:
 				if (NotAllowed(UpdateType.BusinessConnection)) return null;
-				return new Update
-				{
-					BusinessConnection = new BusinessConnection
-					{
-						Id = ubbc.connection.connection_id,
-						User = await UserOrResolve(ubbc.connection.user_id),
-						UserChatId = ubbc.connection.user_id,
-						Date = ubbc.connection.date,
-						CanReply = ubbc.connection.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
-						IsEnabled = !ubbc.connection.flags.HasFlag(BotBusinessConnection.Flags.disabled),
-					},
-					RawUpdate = update
-				};
+				return new Update { BusinessConnection = await MakeBusinessConnection(ubbc.connection), RawUpdate = update };
 			case TL.UpdateBotNewBusinessMessage ubnbm:
 				if (NotAllowed(UpdateType.BusinessMessage)) return null;
-				message = await MakeMessageAndReply(ubnbm.message);
-				if (message == null) return null;
-				message.BusinessConnectionId = ubnbm.connection_id;
-				return new Update { BusinessMessage = message, RawUpdate = update };
+				var replyToMessage = await MakeMessage(ubnbm.reply_to_message);
+				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubnbm.connection_id;
+				message = await MakeMessageAndReply(ubnbm.message, replyToMessage, ubnbm.connection_id);
+				return message == null ? null : new Update { BusinessMessage = message, RawUpdate = update };
 			case TL.UpdateBotEditBusinessMessage ubebm:
 				if (NotAllowed(UpdateType.EditedBusinessMessage)) return null;
-				message = await MakeMessageAndReply(ubebm.message);
-				if (message == null) return null;
-				message.BusinessConnectionId = ubebm.connection_id;
-				return new Update { EditedBusinessMessage = message, RawUpdate = update };
+				replyToMessage = await MakeMessage(ubebm.reply_to_message);
+				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubebm.connection_id;
+				message = await MakeMessageAndReply(ubebm.message, replyToMessage, ubebm.connection_id);
+				return message == null ? null : new Update { EditedBusinessMessage = message, RawUpdate = update };
 			case TL.UpdateBotDeleteBusinessMessage ubdbm:
 				if (NotAllowed(UpdateType.DeletedBusinessMessages)) return null;
 				return new Update
@@ -395,6 +383,7 @@ public partial class TelegramBotClient
 				case UpdateNewMessage { message: { } message }: return (await MakeMessageAndReply(message, replyToMessage))!;
 				case UpdateNewScheduledMessage { message: { } schedMsg }: return (await MakeMessageAndReply(schedMsg, replyToMessage))!;
 				case UpdateEditMessage { message: { } editMsg }: return (await MakeMessageAndReply(editMsg, replyToMessage))!;
+				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: return (await MakeMessageAndReply(bizMsg, replyToMessage, biz.connection_id))!;
 			}
 		}
 		throw new ApiRequestException("Failed to retrieve sent message");
@@ -412,6 +401,7 @@ public partial class TelegramBotClient
 			{
 				case UpdateNewMessage { message: TL.Message message }: msg = await MakeMessageAndReply(message, replyToMessage); break;
 				case UpdateNewScheduledMessage { message: TL.Message schedMsg }: msg = await MakeMessageAndReply(schedMsg, replyToMessage); break;
+				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: msg = await MakeMessageAndReply(bizMsg, replyToMessage, biz.connection_id); break;
 			}
 			if (msg != null) result.Add(msg);
 		}
@@ -419,10 +409,12 @@ public partial class TelegramBotClient
 	}
 
 	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message and assign the ReplyToMessage/ExternalReply</summary>
-	protected async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null)
+	protected async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null, string? bConnId = null)
 	{
 		var msg = await MakeMessage(msgBase);
-		if (msg == null || msgBase?.ReplyTo == null) return msg;
+		if (msg == null) return null;
+		msg.BusinessConnectionId = bConnId;
+		if (msgBase?.ReplyTo == null) return msg;
 		if (msgBase.ReplyTo is MessageReplyHeader reply_to)
 		{
 			if (replyToMessage != null)
@@ -486,13 +478,11 @@ public partial class TelegramBotClient
 					ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
 					SenderBoostCount = message.from_boosts_applied > 0 ? message.from_boosts_applied : null,
 					SenderBusinessBot = User(message.via_business_bot_id),
-					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
-					LinkPreviewOptions = message.media.LinkPreviewOptions(message.flags.HasFlag(TL.Message.Flags.invert_media))
+					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline) ? true : null,
 				};
 				if (message.fwd_from is { } fwd)
 				{
 					msg.ForwardOrigin = await MakeOrigin(fwd);
-					if (msg.ForwardOrigin != null) msg.ForwardOrigin.Date = fwd.date;
 					msg.IsAutomaticForward = msg.Chat.Type == ChatType.Supergroup && await ChatFromPeer(fwd.saved_from_peer) is Chat { Type: ChatType.Channel } && fwd.saved_from_msg_id != 0;
 				}
 				await FixMsgFrom(msg, message.from_id, message.peer_id);
@@ -500,7 +490,7 @@ public partial class TelegramBotClient
 				if (message.edit_date != default) msg.EditDate = message.edit_date;
 				if (message.flags.HasFlag(TL.Message.Flags.noforwards)) msg.HasProtectedContent = true;
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
-				return await FillTextAndMedia(msg, message.message, message.entities, message.media);
+				return await FillTextAndMedia(msg, message.message, message.entities, message.media, message.flags.HasFlag(TL.Message.Flags.invert_media));
 			case TL.MessageService msgSvc:
 				msg = new Message
 				{
@@ -550,25 +540,36 @@ public partial class TelegramBotClient
 		}
 	}
 
-	private async Task<MessageOrigin?> MakeOrigin(MessageFwdHeader fwd) => fwd.from_id switch
+	private async Task<MessageOrigin?> MakeOrigin(MessageFwdHeader fwd)
 	{
-		PeerUser pu => new MessageOriginUser { SenderUser = await UserOrResolve(pu.user_id) },
-		PeerChat pc => new MessageOriginChat { SenderChat = await ChatOrResolve(pc.chat_id), AuthorSignature = fwd.post_author },
-		PeerChannel pch => new MessageOriginChannel
+		MessageOrigin? origin = fwd.from_id switch
 		{
-			Chat = await ChannelOrResolve(pch.channel_id),
-			AuthorSignature = fwd.post_author,
-			MessageId = fwd.channel_post
-		},
-		_ => fwd.from_name != null ? new MessageOriginHiddenUser { SenderUserName = fwd.from_name } : null
-	};
+			PeerUser pu => new MessageOriginUser { SenderUser = await UserOrResolve(pu.user_id) },
+			PeerChat pc => new MessageOriginChat { SenderChat = await ChatOrResolve(pc.chat_id), AuthorSignature = fwd.post_author },
+			PeerChannel pch => new MessageOriginChannel
+			{
+				Chat = await ChannelOrResolve(pch.channel_id),
+				AuthorSignature = fwd.post_author,
+				MessageId = fwd.channel_post
+			},
+			_ => fwd.from_name != null ? new MessageOriginHiddenUser { SenderUserName = fwd.from_name } : null
+		};
+		if (origin != null) origin.Date = fwd.date;
+		return origin;
+	}
 
-	private async Task<Message> FillTextAndMedia(Message msg, string? text, MessageEntity[] entities, MessageMedia media)
+	private async Task<Message> FillTextAndMedia(Message msg, string? text, MessageEntity[] entities, MessageMedia media, bool invert_media = false)
 	{
 		switch (media)
 		{
-			case MessageMediaWebPage:
 			case null:
+				if (entities?.Any(e => e is MessageEntityUrl or MessageEntityTextUrl) == true)
+					msg.LinkPreviewOptions = new LinkPreviewOptions { IsDisabled = true };
+				msg.Text = text;
+				msg.Entities = entities;
+				return msg;
+			case MessageMediaWebPage mmwp:
+				msg.LinkPreviewOptions = mmwp.LinkPreviewOptions(invert_media);
 				msg.Text = text;
 				msg.Entities = entities;
 				return msg;

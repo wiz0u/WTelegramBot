@@ -565,14 +565,13 @@ public static class TypesTLConverters
 			| (lpo.PreferSmallMedia == true ? TL.InputMediaWebPage.Flags.force_small_media : 0)
 	};
 
-	internal static LinkPreviewOptions? LinkPreviewOptions(this MessageMedia? mm, bool invert_media)
-		=> mm == null ? new LinkPreviewOptions { IsDisabled = true } : mm is not MessageMediaWebPage mmwp ? null : new LinkPreviewOptions
-		{
-			Url = mmwp.webpage.Url,
-			PreferLargeMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_large_media),
-			PreferSmallMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_small_media),
-			ShowAboveText = invert_media
-		};
+	internal static LinkPreviewOptions LinkPreviewOptions(this MessageMediaWebPage mmwp, bool invert_media) => new()
+	{
+		Url = mmwp.webpage.Url,
+		PreferLargeMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_large_media),
+		PreferSmallMedia = mmwp.flags.HasFlag(MessageMediaWebPage.Flags.force_small_media),
+		ShowAboveText = invert_media
+	};
 
 	internal static Birthday? Birthday(this TL.Birthday? birthday) => birthday == null ? null : new Birthday
 	{

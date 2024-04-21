@@ -64,6 +64,11 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	/// <summary>Cache used by <see cref="GetMessage"/></summary>
 	protected Dictionary<(long peerId, int msgId), Message?> CachedMessages = [];
 
+	/// <summary>Special value meaning "all UpdateTypes" accepted</summary>
+	public static IEnumerable<UpdateType> AllUpdateTypes = [(UpdateType)(-1)];
+	private const int DefaultAllowedUpdates = 0b111_1110_0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13, MessageReaction=15, MessageReactionCount=16
+	private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
+	private State _state = new();
 	internal class State
 	{
 		public List<Update> PendingUpdates = [];
@@ -71,9 +76,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		public int LastUpdateId;
 		public int AllowedUpdates = DefaultAllowedUpdates;
 	}
-	private const int DefaultAllowedUpdates = 0b0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13
-	private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
-	private State _state = new();
 
     /// <summary>
     /// Create a new <see cref="TelegramBotClient"/> instance.
@@ -174,36 +176,43 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	/// <returns>An Array of <see cref="Update"/> objects is returned.</returns>
 	public async Task<Update[]> GetUpdates(int offset = 0, int limit = 100, int timeout = 0, IEnumerable<UpdateType>? allowedUpdates = null, CancellationToken cancellationToken = default)
 	{
-		if (allowedUpdates != null)
+		try
 		{
-			var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
-			_state.AllowedUpdates = bitset != 0 ? bitset : DefaultAllowedUpdates;
-		}
-		Update[] result;
-		limit = Math.Clamp(limit, 1, 100);
-		timeout *= 1000;
-		for (int maxWait = 0; ; maxWait = timeout)
-		{
-			if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
-				lock (_state.PendingUpdates)
-				{
-					if (offset < 0)
-						_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
-					else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
-						_state.PendingUpdates.RemoveRange(0, index);
-					else
-						_state.PendingUpdates.Clear();
-					if (_state.PendingUpdates.Count != 0)
+			if (allowedUpdates != null)
+			{
+				var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
+				_state.AllowedUpdates = bitset == 0 ? DefaultAllowedUpdates : bitset < 0 ? -1 : bitset;
+			}
+			Update[] result;
+			limit = Math.Clamp(limit, 1, 100);
+			timeout *= 1000;
+			for (int maxWait = 0; ; maxWait = timeout)
+			{
+				if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
+					lock (_state.PendingUpdates)
 					{
-						_pendingCounter.Release();
-						result = new Update[Math.Min(limit, _state.PendingUpdates.Count)];
-						_state.PendingUpdates.CopyTo(0, result, 0, result.Length);
-						return result;
+						if (offset < 0)
+							_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
+						else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
+							_state.PendingUpdates.RemoveRange(0, index);
+						else
+							_state.PendingUpdates.Clear();
+						if (_state.PendingUpdates.Count != 0)
+						{
+							_pendingCounter.Release();
+							result = new Update[Math.Min(limit, _state.PendingUpdates.Count)];
+							_state.PendingUpdates.CopyTo(0, result, 0, result.Length);
+							return result;
+						}
 					}
-				}
-			if (maxWait == timeout) break;
+				if (maxWait == timeout) break;
+			}
+			return [];
 		}
-		return [];
+		finally
+		{
+			SaveState();
+		}
 	}
 
 	private async Task OnUpdate(TL.Update update)

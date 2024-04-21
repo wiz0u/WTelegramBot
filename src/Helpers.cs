@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using System.Reflection;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Telegram.Bot;
 
@@ -55,5 +57,14 @@ public static class Helpers
 			WTelegram.Helpers.Log(4, $"{ex.GetType().Name} while saving to DB: {ex.Message} ");
 		}
 	}
+
+	/// <summary>For serializing indented Json with enums as string</summary>
+	public static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+	{
+		WriteIndented = true,
+		Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+	};
+
 }
 

@@ -424,7 +424,7 @@ public partial class TelegramBotClient
             var msgs = await PostedMsgs(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), ids, random_ids, peer,
                 top_msg_id: messageThreadId, silent: disableNotification == true, noforwards: protectContent == true),
                 ids.Length, random_id, null);
-            return msgs.Select(m => new MessageId { Id = m.MessageId }).ToArray();
+            return msgs.Select(m => (MessageId)m).ToArray();
 
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
@@ -509,7 +509,7 @@ public partial class TelegramBotClient
                     await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
                     silent: disableNotification == true, noforwards: protectContent == true);
             var postedMsg = await PostedMsg(task, peer, text);
-            return new MessageId { Id = postedMsg.MessageId };
+            return postedMsg;
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
@@ -598,7 +598,7 @@ public partial class TelegramBotClient
                     : Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to, entities: msg.entities,
                         silent: disableNotification == true, noforwards: protectContent == true);
                 var postedMsg = await PostedMsg(task, peer);
-                msgIds.Add(new MessageId { Id = postedMsg.MessageId });
+                msgIds.Add(postedMsg);
             }
             if (multiMedia != null) await FlushMediaGroup();
             return [.. msgIds];
@@ -608,7 +608,7 @@ public partial class TelegramBotClient
                 var postedMsgs = await PostedMsgs(Client.Messages_SendMultiMedia(peer, multiMedia?.ToArray(), reply_to,
                     silent: disableNotification == true, noforwards: protectContent == true),
                     multiMedia!.Count, multiMedia[0].random_id, null);
-                msgIds.AddRange(postedMsgs.Select(m => new MessageId { Id = m.MessageId }));
+                msgIds.AddRange(postedMsgs.Select(m => (MessageId)m));
                 multiMedia = null;
             }
         }
@@ -2017,7 +2017,7 @@ public partial class TelegramBotClient
         {
             var peer = await InputPeerChat(chatId);
             reaction ??= [];
-            await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig == true);
+            var updates = await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig == true);
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
@@ -3657,15 +3657,7 @@ public partial class TelegramBotClient
             var updates = await Client.Account_GetBotBusinessConnection(businessConnectionId);
             updates.UserOrChat(_collector);
             var conn = updates.UpdateList.OfType<UpdateBotBusinessConnect>().First().connection;
-            return new BusinessConnection
-            {
-                Id = conn.connection_id,
-                User = await UserOrResolve(conn.user_id),
-                UserChatId = conn.user_id,
-                Date = conn.date,
-                CanReply = conn.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
-                IsEnabled = !conn.flags.HasFlag(BotBusinessConnection.Flags.disabled)
-            };
+            return await MakeBusinessConnection(conn);
         }
         catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }

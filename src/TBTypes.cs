@@ -109,7 +109,26 @@ namespace Telegram.Bot.Types
 
 	public partial class ReplyParameters
 	{
-		/// <summary>Implicit operator when you just want to reply to a message in same chat/></summary>
+		/// <summary>Implicit operator when you just want to reply to a message in same chat</summary>
 		public static implicit operator ReplyParameters(int replyToMessageId) => new() { MessageId = replyToMessageId };
+	}
+
+	public partial class MessageId
+	{
+		/// <summary>Implicit operator to int</summary>
+		public static implicit operator int(MessageId msgID) => msgID.Id;
+		/// <summary>Implicit operator from int</summary>
+		public static implicit operator MessageId(int id) => new() { Id = id };
+		/// <summary>Implicit operator from Message</summary>
+		public static implicit operator MessageId(Message msg) => new() { Id = msg.MessageId };
+	}
+
+	public abstract partial class ReactionType
+	{
+		/// <summary>Implicit operator ReactionTypeEmoji from string</summary>
+		public static implicit operator ReactionType(string emoji) => new ReactionTypeEmoji { Emoji = emoji };
+		/// <summary>Implicit operator ReactionTypeCustomEmoji from long customEmojiId</summary>
+		public static implicit operator ReactionType(long customEmojiId) => new ReactionTypeCustomEmoji { CustomEmojiId = customEmojiId.ToString() };
+
 	}
 }

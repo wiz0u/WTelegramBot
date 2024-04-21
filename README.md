@@ -54,16 +54,21 @@ If you want to store a message text with entities, I recommend you [convert it t
 ### Making the library more easy to use, backward-compatibility friendly
 
 As versions goes, the Telegram.Bot library has tend to break existing code.  
-I've tried to restore what use to make the Telegram.Bot library attractive
+I believe backward-compatibility is very important to gain the trust of users of my library.  
+So I've tried to restore what got broken over time and used to make the Telegram.Bot library simple and attractive to use:
 
 - Implicit/easiers constructors to simplify your code:
-  - `int` instead of `ReplyParameters` when you just want to reply to a message
-  - `int`/`string`/`Stream` for `InputFile`, instead of having to call complex construction methods
-  - `InputFile` instead of `InputMedia*` when you don't need to associate caption or such
+  - `ReplyParameters`: just pass an `int` when you just want to reply to a message
+  - `InputFile`: just pass a `string`/`Stream` for file_id/url/stream content
+  - `InputMedia*`: just pass an `InputFile` when you don't need to associate caption or such
+  - `MessageId`: auto-converts to/from `int` (and also from `Message`)
+  - `ReactionType`: just pass a `string` when you want to send an emoji
+  - `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
 - no more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
 - Removing some unjustified [Obsolete] tags
-- Not pushing you towards silly Request-based constructors
+- Not pushing you towards using silly Request-based constructors (seriously!?)
 
+You can use TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
 
 ## How to access the advanced features?
 
