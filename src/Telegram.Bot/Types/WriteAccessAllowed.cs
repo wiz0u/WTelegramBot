@@ -13,7 +13,7 @@ public partial class WriteAccessAllowed
     /// from a Web App sent by the method
     /// <a href="https://core.telegram.org/bots/webapps#initializing-mini-apps">requestWriteAccess</a>
     /// </summary>
-    public bool? FromRequest { get; set; }
+    public bool FromRequest { get; set; }
 
     /// <summary>
     /// Optional. Name of the Web App which was launched from a link
@@ -24,5 +24,5 @@ public partial class WriteAccessAllowed
     /// Optional. <see langword="true"/>, if the access was granted when the bot was added to the attachment
     /// or side menu
     /// </summary>
-    public bool? FromAttachmentMenu  { get; set; }
+    public bool FromAttachmentMenu  { get; set; }
 }

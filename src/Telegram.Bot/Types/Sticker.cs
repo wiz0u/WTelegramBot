@@ -73,5 +73,5 @@ public partial class Sticker : FileBase
     /// status, white color on <see cref="ChatPhoto">chat photos</see>, or another appropriate
     /// color in other places
     /// </summary>
-    public bool? NeedsRepainting { get; set; }
+    public bool NeedsRepainting { get; set; }
 }

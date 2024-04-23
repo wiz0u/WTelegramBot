@@ -37,7 +37,7 @@ public partial class KeyboardButtonRequestChat
     /// Optional. Pass <see langword="true" /> to request a chat owned by the user. Otherwise, no additional
     /// restrictions are applied.
     /// </summary>
-    public bool? ChatIsCreated { get; set; }
+    public bool ChatIsCreated { get; set; }
 
     /// <summary>
     /// Optional. A JSON-serialized object listing the required administrator rights of the user in the chat.
@@ -56,22 +56,22 @@ public partial class KeyboardButtonRequestChat
     /// Optional. Pass <see langword="true" /> to request a chat with the bot as a member. Otherwise, no additional
     /// restrictions are applied.
     /// </summary>
-    public bool? BotIsMember { get; set; }
+    public bool BotIsMember { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true" /> to request the chat's title
     /// </summary>
-    public bool? RequestTitle { get; set; }
+    public bool RequestTitle { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true" /> to request the chat's username
     /// </summary>
-    public bool? RequestUsername { get; set; }
+    public bool RequestUsername { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true" /> to request the chat's photo
     /// </summary>
-    public bool? RequestPhoto { get; set; }
+    public bool RequestPhoto { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyboardButtonRequestChat"/> class with requestId and chatIsChannel

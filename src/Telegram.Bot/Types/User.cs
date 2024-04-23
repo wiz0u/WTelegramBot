@@ -39,36 +39,36 @@ public partial class User
     /// <summary>
     /// Optional. <see langword="true"/>, if this user is a Telegram Premium user
     /// </summary>
-    public bool? IsPremium { get; set; }
+    public bool IsPremium { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if this user added the bot to the attachment menu
     /// </summary>
-    public bool? AddedToAttachmentMenu { get; set; }
+    public bool AddedToAttachmentMenu { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the bot can be invited to groups.
     /// Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
-    public bool? CanJoinGroups { get; set; }
+    public bool CanJoinGroups { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if privacy mode is disabled for the bot.
     /// Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
-    public bool? CanReadAllGroupMessages { get; set; }
+    public bool CanReadAllGroupMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the bot supports inline queries.
     /// Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
-    public bool? SupportsInlineQueries { get; set; }
+    public bool SupportsInlineQueries { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the bot can be connected to a Telegram Business account to receive its
     /// messages. Returned only in <see cref="Requests.GetMeRequest"/>
     /// </summary>
-    public bool? CanConnectToBusiness { get; set; }
+    public bool CanConnectToBusiness { get; set; }
 
     /// <inheritdoc/>
     public override string ToString() =>

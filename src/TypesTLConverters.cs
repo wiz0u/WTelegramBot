@@ -82,7 +82,7 @@ public static class TypesTLConverters
 			Type = channel == null ? ChatType.Group : channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
 			Title = chat.Title,
 			Username = channel?.MainUsername,
-			IsForum = channel?.flags.HasFlag(Channel.Flags.forum),
+			IsForum = channel?.flags.HasFlag(Channel.Flags.forum) ?? false,
 			AccessHash = channel?.access_hash ?? 0
 		};
 	}

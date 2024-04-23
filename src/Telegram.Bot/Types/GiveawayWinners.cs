@@ -49,12 +49,12 @@ public partial class GiveawayWinners
     /// <summary>
     /// Optional. <see langword="true"/>, if only users who had joined the chats after the giveaway started were eligible to win
     /// </summary>
-    public bool? OnlyNewMembers { get; set; }
+    public bool OnlyNewMembers { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the giveaway was canceled because the payment for it was refunded
     /// </summary>
-    public bool? WasRefunded { get; set; }
+    public bool WasRefunded { get; set; }
 
     /// <summary>
     /// Optional. Description of additional giveaway prize

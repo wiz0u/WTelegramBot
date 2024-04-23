@@ -76,7 +76,7 @@ public partial class ExternalReplyInfo
     /// <summary>
     /// Optional. <see langword="true"/>, if the message media is covered by a spoiler animation
     /// </summary>
-    public bool? HasMediaSpoiler { get; set; }
+    public bool HasMediaSpoiler { get; set; }
 
     /// <summary>
     /// Optional. Message is a shared contact, information about the contact

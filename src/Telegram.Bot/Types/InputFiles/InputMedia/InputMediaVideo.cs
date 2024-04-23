@@ -35,12 +35,12 @@ public partial class InputMediaVideo :
     /// <summary>
     /// Optional. Pass True, if the uploaded video is suitable for streaming
     /// </summary>
-    public bool? SupportsStreaming { get; set; }
+    public bool SupportsStreaming { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/> if the video needs to be covered with a spoiler animation
     /// </summary>
-    public bool? HasSpoiler { get; set; }
+    public bool HasSpoiler { get; set; }
 
     /// <summary>
     /// Initializes a new video media to send with an <see cref="InputFile"/>

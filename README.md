@@ -43,7 +43,6 @@ After changing the dependency on Telegram.Bot nuget package to WTelegramBot, her
     ```csharp
     global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
     ```
-- Some nullable properties may be assigned to the default type value instead of `null` (like `false` for `bool?`)
 - Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_
   Use the direct async methods instead
 - There is no support for Webhooks or HTTP (see [support for ASP.NET apps])
@@ -78,9 +77,10 @@ _(so the new linkPreviewOptions: parameter behaves the same as the old disableWe
 - `MessageId`: auto-converts to/from `int` (and also from `Message`)
 - `ReactionType`: just pass a `string` when you want to send an emoji
 - `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
-- no more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
+- No more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
 - Not using `MaybeInaccessibleMessage`, you would just get a `Message` of type Unknown with default Date if inaccessible
-- Removing some unjustified [Obsolete] tags
+- Removed some unjustified [Obsolete] tags
+- Turned most `bool?` into simple `bool`, as null already meant false
 - Not pushing you towards using silly Request-based constructors (seriously!?)
 
 These should make migration from previous versions of Telegram.Bot more easy

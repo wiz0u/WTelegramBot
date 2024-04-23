@@ -21,7 +21,7 @@ public partial class ReplyParameters
     /// Optional. Pass <see langword="true"/> if the message should be sent even if the specified message
     /// to be replied to is not found; can be used only for replies in the same chat and forum topic.
     /// </summary>
-    public bool? AllowSendingWithoutReply { get; set; }
+    public bool AllowSendingWithoutReply { get; set; }
 
     /// <summary>
     /// Optional. Quoted part of the message to be replied to; 0-1024 characters after entities parsing.

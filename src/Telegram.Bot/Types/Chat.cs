@@ -44,7 +44,7 @@ public partial class Chat
     /// <summary>
     /// Optional. <see langword="true"/>, if the supergroup chat is a forum (has topics enabled)
     /// </summary>
-    public bool? IsForum { get; set; }
+    public bool IsForum { get; set; }
 
     /// <summary>
     /// Optional. Chat photo. Returned only in <see cref="Requests.GetChatRequest"/>.
@@ -142,26 +142,26 @@ public partial class Chat
     /// <c>tg://user?id=&lt;user_id&gt;</c> links only in chats with the user.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasPrivateForwards { get; set; }
+    public bool HasPrivateForwards { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the privacy settings of the other party restrict sending voice
     /// and video note messages in the private chat.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasRestrictedVoiceAndVideoMessages { get; set; }
+    public bool HasRestrictedVoiceAndVideoMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if users need to join the supergroup before they can send messages.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? JoinToSendMessages { get; set; }
+    public bool JoinToSendMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if all users directly joining the supergroup need to be approved by supergroup administrators.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? JoinByRequest { get; set; }
+    public bool JoinByRequest { get; set; }
 
     /// <summary>
     /// Optional. Description, for groups, supergroups and channel chats.
@@ -209,25 +209,25 @@ public partial class Chat
     /// Optional. <see langword="true"/>, if aggressive anti-spam checks are enabled in the supergroup. The field is
     /// only available to chat administrators. Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasAggressiveAntiSpamEnabled { get; set; }
+    public bool HasAggressiveAntiSpamEnabled { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if non-administrators can only get the list of bots and administrators in
     /// the chat. Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasHiddenMembers { get; set; }
+    public bool HasHiddenMembers { get; set; }
 
     /// <summary>
     /// Optional.  <see langword="true"/>, if new chat members will have access to old messages; available only to chat administrators.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasVisibleHistory { get; set; }
+    public bool HasVisibleHistory { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if messages from the chat can't be forwarded to other chats.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasProtectedContent { get; set; }
+    public bool HasProtectedContent { get; set; }
 
     /// <summary>
     /// Optional. For supergroups, name of group sticker set.
@@ -239,7 +239,7 @@ public partial class Chat
     /// Optional. True, if the bot can change the group sticker set.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? CanSetStickerSet { get; set; }
+    public bool CanSetStickerSet { get; set; }
 
     /// <summary>
     /// Optional. For supergroups, the name of the group's custom emoji sticker set. Custom emoji from this set can be

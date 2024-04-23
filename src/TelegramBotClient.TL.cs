@@ -267,7 +267,7 @@ public partial class TelegramBotClient
 	}
 
 	/// <summary>Return TL structure for the photo InputFile. Upload the file for InputFileStream</summary>
-	public async Task<TL.InputMedia> InputMediaPhoto(InputFile file, bool? hasSpoiler = false)
+	public async Task<TL.InputMedia> InputMediaPhoto(InputFile file, bool hasSpoiler = false)
 	{
 		switch (file.FileType)
 		{
@@ -289,7 +289,7 @@ public partial class TelegramBotClient
 	}
 
 	/// <summary>Return TL structure for the document InputFile. Upload the file for InputFileStream</summary>
-	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, bool? hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
+	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, bool hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
 	{
 		switch (file.FileType)
 		{
@@ -379,7 +379,7 @@ public partial class TelegramBotClient
 				YShift = (float)sticker.mask_coords.y,
 				Scale = (float)sticker.mask_coords.zoom
 			},
-			NeedsRepainting = customEmoji?.flags.HasFlag(DocumentAttributeCustomEmoji.Flags.text_color),
+			NeedsRepainting = customEmoji?.flags.HasFlag(DocumentAttributeCustomEmoji.Flags.text_color) ?? false,
 			CustomEmojiId = customEmoji != null ? doc.id.ToString() : null
 		}.SetFileIds(doc.ToFileLocation(), doc.dc_id);
 		if (doc.video_thumbs?.OfType<VideoSize>().FirstOrDefault(vs => vs.type == "f") != null)
@@ -747,8 +747,8 @@ public partial class TelegramBotClient
 	private static InputMediaInvoice InputMediaInvoice(string title, string description, string payload, string providerToken,
 		string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
 		string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
-		bool? needName, bool? needPhoneNumber, bool? needEmail, bool? needShippingAddress,
-		bool? sendPhoneNumberToProvider, bool? sendEmailToProvider, bool? isFlexible) => new()
+		bool needName, bool needPhoneNumber, bool needEmail, bool needShippingAddress,
+		bool sendPhoneNumberToProvider, bool sendEmailToProvider, bool isFlexible) => new()
 		{
 			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0),
 			title = title,

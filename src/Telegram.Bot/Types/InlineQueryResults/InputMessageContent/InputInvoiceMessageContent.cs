@@ -92,37 +92,37 @@ public partial class InputInvoiceMessageContent : InputMessageContent
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if you require the user's full name to complete the order
     /// </summary>
-    public bool? NeedName { get; set; }
+    public bool NeedName { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if you require the user's phone number to complete the order
     /// </summary>
-    public bool? NeedPhoneNumber { get; set; }
+    public bool NeedPhoneNumber { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if you require the user's email address to complete the order
     /// </summary>
-    public bool? NeedEmail { get; set; }
+    public bool NeedEmail { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if you require the user's shipping address to complete the order
     /// </summary>
-    public bool? NeedShippingAddress { get; set; }
+    public bool NeedShippingAddress { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if user's phone number should be sent to provider
     /// </summary>
-    public bool? SendPhoneNumberToProvider { get; set; }
+    public bool SendPhoneNumberToProvider { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if user's email address should be sent to provider
     /// </summary>
-    public bool? SendEmailToProvider { get; set; }
+    public bool SendEmailToProvider { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if the final price depends on the shipping method
     /// </summary>
-    public bool? IsFlexible { get; set; }
+    public bool IsFlexible { get; set; }
 
     /// <summary>
     /// Initializes with title, description, payload, providerToken, currency and an array of

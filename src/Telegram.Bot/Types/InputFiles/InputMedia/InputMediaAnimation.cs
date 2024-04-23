@@ -34,7 +34,7 @@ public partial class InputMediaAnimation :
     /// <summary>
     /// Optional. Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation
     /// </summary>
-    public bool? HasSpoiler { get; set; }
+    public bool HasSpoiler { get; set; }
 
     /// <summary>
     /// Initializes a new animation media to send with an <see cref="InputFile"/>

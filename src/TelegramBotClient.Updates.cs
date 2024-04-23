@@ -448,7 +448,7 @@ public partial class TelegramBotClient
 					Position = reply_to.quote_offset,
 					IsManual = reply_to.flags.HasFlag(MessageReplyHeader.Flags.quote)
 				};
-			if (msg.IsTopicMessage ??= reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic))
+			if (msg.IsTopicMessage |= reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic))
 				msg.MessageThreadId = reply_to.reply_to_top_id > 0 ? reply_to.reply_to_top_id : reply_to.reply_to_msg_id;
 		}
 		else if (msgBase.ReplyTo is MessageReplyStoryHeader mrsh)
@@ -478,7 +478,7 @@ public partial class TelegramBotClient
 					ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
 					SenderBoostCount = message.from_boosts_applied > 0 ? message.from_boosts_applied : null,
 					SenderBusinessBot = User(message.via_business_bot_id),
-					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline) ? true : null,
+					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
 				};
 				if (message.fwd_from is { } fwd)
 				{

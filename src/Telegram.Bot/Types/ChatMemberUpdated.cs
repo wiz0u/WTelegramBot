@@ -40,5 +40,5 @@ public partial class ChatMemberUpdated
     /// <summary>
     /// Optional. <see langword="true"/>, if the user joined the chat via a chat folder invite link
     /// </summary>
-    public bool? ViaChatFolderInviteLink { get; set; }
+    public bool ViaChatFolderInviteLink { get; set; }
 }

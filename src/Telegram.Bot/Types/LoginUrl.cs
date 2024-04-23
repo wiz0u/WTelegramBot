@@ -45,5 +45,5 @@ public partial class LoginUrl
     /// <summary>
     /// Optional. Pass <see langword="true"/> to request the permission for your bot to send messages to the user
     /// </summary>
-    public bool? RequestWriteAccess { get; set; }
+    public bool RequestWriteAccess { get; set; }
 }

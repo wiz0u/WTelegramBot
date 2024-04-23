@@ -21,7 +21,7 @@ public partial class InputMediaDocument :
     /// Optional. Disables automatic server-side content type detection for files uploaded using
     /// multipart/form-data. Always true, if the document is sent as part of an album.
     /// </summary>
-    public bool? DisableContentTypeDetection { get; set; }
+    public bool DisableContentTypeDetection { get; set; }
 
     /// <summary>
     /// Initializes a new document media to send with an <see cref="InputMedia"/>

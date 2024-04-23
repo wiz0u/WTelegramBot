@@ -52,36 +52,36 @@ public partial class ChatAdministratorRights
     /// <summary>
     /// Optional. <see langword="true"/>, if the administrator can post in the channel; channels only
     /// </summary>
-    public bool? CanPostMessages { get; set; }
+    public bool CanPostMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the administrator can edit messages of other users and can pin messages;
     /// channels only
     /// </summary>
-    public bool? CanEditMessages { get; set; }
+    public bool CanEditMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the user is allowed to pin messages; groups and supergroups only
     /// </summary>
-    public bool? CanPinMessages { get; set; }
+    public bool CanPinMessages { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the administrator can post stories in the channel; channels only
     /// </summary>
-    public bool? CanPostStories { get; set; }
+    public bool CanPostStories { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the administrator can edit stories posted by other users; channels only
     /// </summary>
-    public bool? CanEditStories { get; set; }
+    public bool CanEditStories { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the administrator can delete stories posted by other users; channels only
     /// </summary>
-    public bool? CanDeleteStories { get; set; }
+    public bool CanDeleteStories { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the user is allowed to create, rename, close, and reopen forum topics; supergroups only
     /// </summary>
-    public bool? CanManageTopics { get; set; }
+    public bool CanManageTopics { get; set; }
 }

@@ -24,12 +24,12 @@ public partial class Giveaway
     /// <summary>
     /// Optional. <see langword="true"/>, if only users who join the chats after the giveaway started should be eligible to win
     /// </summary>
-    public bool? OnlyNewMembers { get; set; }
+    public bool OnlyNewMembers { get; set; }
 
     /// <summary>
     /// Optional.<see langword="true"/>, if the list of giveaway winners will be visible to everyone
     /// </summary>
-    public bool? HasPublicWinners { get; set; }
+    public bool HasPublicWinners { get; set; }
 
     /// <summary>
     /// Optional. Description of additional giveaway prize

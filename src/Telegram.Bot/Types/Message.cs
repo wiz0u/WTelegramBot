@@ -114,13 +114,13 @@ public partial class Message : MaybeInaccessibleMessage
     /// <summary>
     /// Optional. <see langword="true"/>, if the message is sent to a forum topic
     /// </summary>
-    public bool? IsTopicMessage { get; set; }
+    public bool IsTopicMessage { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the message is a channel post that was automatically forwarded to the connected
     /// discussion group
     /// </summary>
-    public bool? IsAutomaticForward { get; set; }
+    public bool IsAutomaticForward { get; set; }
 
     /// <summary>
     /// Optional. For replies, the original message. Note that the <see cref="Message"/> object in this field
@@ -158,13 +158,13 @@ public partial class Message : MaybeInaccessibleMessage
     /// Optional. <see langword="true"/>, if messages from the chat can't be forwarded to other chats.
     /// Returned only in <see cref="Requests.GetChatRequest"/>.
     /// </summary>
-    public bool? HasProtectedContent { get; set; }
+    public bool HasProtectedContent { get; set; }
 
     /// <summary>
     /// Optional. <see langword="true"/>, if the message was sent by an implicit action, for example, as an away or a
     /// greeting business message, or as a scheduled message
     /// </summary>
-    public bool? IsFromOffline { get; set; }
+    public bool IsFromOffline { get; set; }
 
     /// <summary>
     /// Optional. The unique identifier of a media message group this message belongs to
@@ -276,7 +276,7 @@ public partial class Message : MaybeInaccessibleMessage
     /// <summary>
     /// Optional. <see langword="true"/>, if the message media is covered by a spoiler animation
     /// </summary>
-    public bool? HasMediaSpoiler { get; set; }
+    public bool HasMediaSpoiler { get; set; }
 
     /// <summary>
     /// Optional. Message is a shared contact, information about the contact

@@ -81,7 +81,7 @@ public partial class InlineKeyboardButton : IKeyboardButton
     /// <remarks>
     /// <b>NOTE:</b> This type of button <b>must</b> always be the first button in the first row.
     /// </remarks>
-    public bool? Pay { get; set; }
+    public bool Pay { get; set; }
 
     /// <summary>
     /// Instantiates new Inline Keyboard object

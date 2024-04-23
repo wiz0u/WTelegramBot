@@ -30,7 +30,7 @@ public partial class InlineQueryResultArticle : InlineQueryResult
     /// <summary>
     /// Optional. Pass <see langword="true"/>, if you don't want the URL to be shown in the message.
     /// </summary>
-    public bool? HideUrl { get; set; }
+    public bool HideUrl { get; set; }
 
     /// <summary>
     /// Optional. Short description of the result.

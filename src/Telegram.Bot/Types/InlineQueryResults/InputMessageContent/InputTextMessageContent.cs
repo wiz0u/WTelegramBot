@@ -36,9 +36,9 @@ public partial class InputTextMessageContent : InputMessageContent
     /// Disables link previews for links in this message
     /// </summary>
     [Obsolete($"This property is deprecated, use {nameof(LinkPreviewOptions)} instead")]
-    public bool? DisableWebPagePreview
+    public bool DisableWebPagePreview
     {
-        get => LinkPreviewOptions?.IsDisabled;
+        get => LinkPreviewOptions?.IsDisabled ?? false;
         set
         {
             LinkPreviewOptions ??= new();

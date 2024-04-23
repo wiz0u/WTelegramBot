@@ -76,5 +76,5 @@ public partial class ChatBoostSourceGiveaway : ChatBoostSource
     /// <summary>
     /// Optional. <see langword="true"/>, if the giveaway was completed, but there was no user to win the prize
     /// </summary>
-    public bool? IsUnclaimed { get; set; }
+    public bool IsUnclaimed { get; set; }
 }

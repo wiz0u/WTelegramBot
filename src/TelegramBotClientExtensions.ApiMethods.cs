@@ -142,7 +142,7 @@ public partial class TelegramBotClient
         string? ipAddress = default,
         int? maxConnections = default,
         IEnumerable<UpdateType>? allowedUpdates = default,
-        bool? dropPendingUpdates = default,
+        bool dropPendingUpdates = default,
         string? secretToken = default,
         CancellationToken cancellationToken = default
     )
@@ -171,7 +171,7 @@ public partial class TelegramBotClient
     /// </param>
     /// <returns>Returns true on success</returns>
     public async Task DeleteWebhookAsync(
-        bool? dropPendingUpdates = default,
+        bool dropPendingUpdates = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -302,8 +302,8 @@ public partial class TelegramBotClient
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default,
         LinkPreviewOptions? linkPreviewOptions = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -358,8 +358,8 @@ public partial class TelegramBotClient
          ChatId fromChatId,
          int messageId,
          int? messageThreadId = default,
-         bool? disableNotification = default,
-         bool? protectContent = default,
+         bool disableNotification = default,
+         bool protectContent = default,
          CancellationToken cancellationToken = default
      )
     {
@@ -409,8 +409,8 @@ public partial class TelegramBotClient
         ChatId fromChatId,
         IEnumerable<int> messageIds,
         int? messageThreadId = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -485,8 +485,8 @@ public partial class TelegramBotClient
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
@@ -557,9 +557,9 @@ public partial class TelegramBotClient
         ChatId fromChatId,
         int[] messageIds,
         int? messageThreadId = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
-        bool? removeCaption = default,
+        bool disableNotification = default,
+        bool protectContent = default,
+        bool removeCaption = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -673,9 +673,9 @@ public partial class TelegramBotClient
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
-        bool? hasSpoiler = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool hasSpoiler = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -705,12 +705,12 @@ public partial class TelegramBotClient
         string? defaultFilename = null,
         Action<InputMediaUploadedDocument>? prepareDoc = default,
         InputFile? thumbnail = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
-        bool? hasSpoiler = default,
+        bool hasSpoiler = default,
         int? messageThreadId = default,
         CancellationToken cancellationToken = default
     )
@@ -801,8 +801,8 @@ public partial class TelegramBotClient
         string? performer = default,
         string? title = default,
         InputFile? thumbnail = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -813,7 +813,7 @@ public partial class TelegramBotClient
             doc => doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
                 duration = duration ?? 0, performer = performer, title = title,
                 flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }],
-            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -882,9 +882,9 @@ public partial class TelegramBotClient
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
-        bool? disableContentTypeDetection = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableContentTypeDetection = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -893,7 +893,7 @@ public partial class TelegramBotClient
     {
         return await SendDocument(chatId, document, caption, parseMode, captionEntities, "document",
             doc => { if (disableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file; },
-            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -969,10 +969,10 @@ public partial class TelegramBotClient
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
-        bool? hasSpoiler = default,
-        bool? supportsStreaming = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool hasSpoiler = default,
+        bool supportsStreaming = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1058,9 +1058,9 @@ public partial class TelegramBotClient
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
-        bool? hasSpoiler = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool hasSpoiler = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1138,8 +1138,8 @@ public partial class TelegramBotClient
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         int? duration = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1153,7 +1153,7 @@ public partial class TelegramBotClient
                     duration = duration ?? 0, flags = DocumentAttributeAudio.Flags.voice }];
                 if (doc.mime_type is not "audio/ogg" and not "audio/mpeg" and not "audio/mp4") doc.mime_type = "audio/ogg";
             },
-            null, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
+            null, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -1207,8 +1207,8 @@ public partial class TelegramBotClient
         int? duration = default,
         int? length = default,
         InputFile? thumbnail = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1222,7 +1222,7 @@ public partial class TelegramBotClient
                 doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
                     flags = DocumentAttributeVideo.Flags.round_message, duration = duration ?? 0, w = length ?? 384, h = length ?? 384 }];
             },
-            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, null, messageThreadId, cancellationToken);
+            thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId, cancellationToken);
     }
 
     /// <summary>
@@ -1254,8 +1254,8 @@ public partial class TelegramBotClient
         ChatId chatId,
         IEnumerable<IAlbumInputMedia> media,
         int? messageThreadId = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
@@ -1373,8 +1373,8 @@ public partial class TelegramBotClient
         int? livePeriod = default,
         int? heading = default,
         int? proximityAlertRadius = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1618,8 +1618,8 @@ public partial class TelegramBotClient
         string? foursquareType = default,
         string? googlePlaceId = default,
         string? googlePlaceType = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1696,8 +1696,8 @@ public partial class TelegramBotClient
         int? messageThreadId = default,
         string? lastName = default,
         string? vCard = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1795,18 +1795,18 @@ public partial class TelegramBotClient
         string question,
         IEnumerable<string> options,
         int? messageThreadId = default,
-        bool? isAnonymous = default,
+        bool isAnonymous = default,
         PollType? type = default,
-        bool? allowsMultipleAnswers = default,
+        bool allowsMultipleAnswers = default,
         int? correctOptionId = default,
         string? explanation = default,
         ParseMode? explanationParseMode = default,
         IEnumerable<MessageEntity>? explanationEntities = default,
         int? openPeriod = default,
         DateTime? closeDate = default,
-        bool? isClosed = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool isClosed = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -1888,8 +1888,8 @@ public partial class TelegramBotClient
         ChatId chatId,
         int? messageThreadId = default,
         Emoji? emoji = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -2009,7 +2009,7 @@ public partial class TelegramBotClient
         ChatId chatId,
         int messageId,
         IEnumerable<ReactionType>? reaction,
-        bool? isBig,
+        bool isBig,
         CancellationToken cancellationToken = default
     )
     {
@@ -2117,7 +2117,7 @@ public partial class TelegramBotClient
     /// <summary>
     /// Use this method to ban a user in a group, a supergroup or a channel. In the case of supergroups and
     /// channels, the user will not be able to return to the chat on their own using invite links, etc., unless
-    /// <see cref="UnbanChatMemberAsync(ITelegramBotClient, ChatId, long, bool?, CancellationToken)">unbanned</see>
+    /// <see cref="UnbanChatMemberAsync(ITelegramBotClient, ChatId, long, bool, CancellationToken)">unbanned</see>
     /// first. The bot must be an administrator in the chat for this to work and must have the appropriate
     /// admin rights.
     /// </summary>
@@ -2143,7 +2143,7 @@ public partial class TelegramBotClient
         ChatId chatId,
         long userId,
         DateTime? untilDate = default,
-        bool? revokeMessages = default,
+        bool revokeMessages = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2154,7 +2154,7 @@ public partial class TelegramBotClient
             switch (peer)
             {
                 case InputPeerChat chat:
-                    await Client.Messages_DeleteChatUser(chat.chat_id, user, revokeMessages ?? false);
+                    await Client.Messages_DeleteChatUser(chat.chat_id, user, revokeMessages);
                     break;
                 case InputPeerChannel channel:
                     await Client.Channels_EditBanned(channel, user,
@@ -2186,7 +2186,7 @@ public partial class TelegramBotClient
     public async Task UnbanChatMemberAsync(
         ChatId chatId,
         long userId,
-        bool? onlyIfBanned = default,
+        bool onlyIfBanned = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2244,7 +2244,7 @@ public partial class TelegramBotClient
         ChatId chatId,
         long userId,
         ChatPermissions permissions,
-        bool? useIndependentChatPermissions = default,
+        bool useIndependentChatPermissions = default,
         DateTime? untilDate = default,
         CancellationToken cancellationToken = default
     )
@@ -2326,21 +2326,21 @@ public partial class TelegramBotClient
     public async Task PromoteChatMemberAsync(
         ChatId chatId,
         long userId,
-        bool? isAnonymous = default,
-        bool? canManageChat = default,
-        bool? canPostMessages = default,
-        bool? canEditMessages = default,
-        bool? canDeleteMessages = default,
-        bool? canPostStories = default,
-        bool? canEditStories = default,
-        bool? canDeleteStories = default,
-        bool? canManageVideoChats = default,
-        bool? canRestrictMembers = default,
-        bool? canPromoteMembers = default,
-        bool? canChangeInfo = default,
-        bool? canInviteUsers = default,
-        bool? canPinMessages = default,
-        bool? canManageTopic = default,
+        bool isAnonymous = default,
+        bool canManageChat = default,
+        bool canPostMessages = default,
+        bool canEditMessages = default,
+        bool canDeleteMessages = default,
+        bool canPostStories = default,
+        bool canEditStories = default,
+        bool canDeleteStories = default,
+        bool canManageVideoChats = default,
+        bool canRestrictMembers = default,
+        bool canPromoteMembers = default,
+        bool canChangeInfo = default,
+        bool canInviteUsers = default,
+        bool canPinMessages = default,
+        bool canManageTopic = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2492,7 +2492,7 @@ public partial class TelegramBotClient
     public async Task SetChatPermissionsAsync(
         ChatId chatId,
         ChatPermissions permissions,
-        bool? useIndependentChatPermissions = default,
+        bool useIndependentChatPermissions = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2563,7 +2563,7 @@ public partial class TelegramBotClient
         string? name = default,
         DateTime? expireDate = default,
         int? memberLimit = default,
-        bool? createsJoinRequest = default,
+        bool createsJoinRequest = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2606,7 +2606,7 @@ public partial class TelegramBotClient
         string? name = default,
         DateTime? expireDate = default,
         int? memberLimit = default,
-        bool? createsJoinRequest = default,
+        bool createsJoinRequest = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -2831,7 +2831,7 @@ public partial class TelegramBotClient
     public async Task PinChatMessageAsync(
         ChatId chatId,
         int messageId,
-        bool? disableNotification = default,
+        bool disableNotification = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -3593,7 +3593,7 @@ public partial class TelegramBotClient
 	public async Task AnswerCallbackQueryAsync(
         string callbackQueryId,
         string? text = default,
-        bool? showAlert = default,
+        bool showAlert = default,
         string? url = default,
         int? cacheTime = default,
         CancellationToken cancellationToken = default
@@ -3995,7 +3995,7 @@ public partial class TelegramBotClient
     /// </param>
     public async Task SetMyDefaultAdministratorRightsAsync(
         ChatAdministratorRights? rights = default,
-        bool? forChannels = default,
+        bool forChannels = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -4023,7 +4023,7 @@ public partial class TelegramBotClient
     /// </param>
     /// <returns>Default or channel <see cref="ChatAdministratorRights"/> </returns>
     public async Task<ChatAdministratorRights> GetMyDefaultAdministratorRightsAsync(
-        bool? forChannels = default,
+        bool forChannels = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -4526,8 +4526,8 @@ public partial class TelegramBotClient
         InputFile sticker,
         int? messageThreadId = default,
         string? emoji = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -4716,7 +4716,7 @@ public partial class TelegramBotClient
         string title,
         IEnumerable<InputSticker> stickers,
         StickerType? stickerType = default,
-        bool? needsRepainting = default,
+        bool needsRepainting = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -5125,7 +5125,7 @@ public partial class TelegramBotClient
         string inlineQueryId,
         IEnumerable<InlineQueryResult> results,
         int? cacheTime = default,
-        bool? isPersonal = default,
+        bool isPersonal = default,
         string? nextOffset = default,
         InlineQueryResultsButton? button = default,
         CancellationToken cancellationToken = default
@@ -5276,15 +5276,15 @@ public partial class TelegramBotClient
         int? photoSize = default,
         int? photoWidth = default,
         int? photoHeight = default,
-        bool? needName = default,
-        bool? needPhoneNumber = default,
-        bool? needEmail = default,
-        bool? needShippingAddress = default,
-        bool? sendPhoneNumberToProvider = default,
-        bool? sendEmailToProvider = default,
-        bool? isFlexible = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool needName = default,
+        bool needPhoneNumber = default,
+        bool needEmail = default,
+        bool needShippingAddress = default,
+        bool sendPhoneNumberToProvider = default,
+        bool sendEmailToProvider = default,
+        bool isFlexible = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
@@ -5382,13 +5382,13 @@ public partial class TelegramBotClient
         int? photoSize = default,
         int? photoWidth = default,
         int? photoHeight = default,
-        bool? needName = default,
-        bool? needPhoneNumber = default,
-        bool? needEmail = default,
-        bool? needShippingAddress = default,
-        bool? sendPhoneNumberToProvider = default,
-        bool? sendEmailToProvider = default,
-        bool? isFlexible = default,
+        bool needName = default,
+        bool needPhoneNumber = default,
+        bool needEmail = default,
+        bool needShippingAddress = default,
+        bool sendPhoneNumberToProvider = default,
+        bool sendEmailToProvider = default,
+        bool isFlexible = default,
         CancellationToken cancellationToken = default
     )
 	{
@@ -5549,8 +5549,8 @@ public partial class TelegramBotClient
         long chatId,
         string gameShortName,
         int? messageThreadId = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
+        bool disableNotification = default,
+        bool protectContent = default,
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
@@ -5597,8 +5597,8 @@ public partial class TelegramBotClient
         int score,
         long chatId,
         int messageId,
-        bool? force = default,
-        bool? disableEditMessage = default,
+        bool force = default,
+        bool disableEditMessage = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -5639,8 +5639,8 @@ public partial class TelegramBotClient
         long userId,
         int score,
         string inlineMessageId,
-        bool? force = default,
-        bool? disableEditMessage = default,
+        bool force = default,
+        bool disableEditMessage = default,
         CancellationToken cancellationToken = default
     )
     {
