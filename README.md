@@ -1,4 +1,4 @@
-# WTelegramBot
+﻿# WTelegramBot
 
 WTelegramBot is a full rewrite in pure C# of the Bot API server, presenting the same methods as library Telegram.Bot for easy [migration](#migration).
 
@@ -27,48 +27,66 @@ There are still a lot of restrictions to bots, even via Client API, so don't exp
 After changing the dependency on Telegram.Bot nuget package to WTelegramBot, here is what you should pay attention to when migrating existing code:
 
 ### Changes needed in your code:
-- `TelegramBotClient` is `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and won't save its state
-- You will need to provide ApiID/ApiHash (obtained from https://my.telegram.org/apps)
-- Error messages/code on `ApiRequestException` can differ from the Bot API errors
-- FileID/FileUniqueID are not compatible with official Bot API ones, they are to be used in WTelegramBot calls only.
+- On `TelegramBotClient` constructor (or options), you will need to provide ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
+  as well as a DbConnection, typically SqliteConnection:
+    ```csharp
+    // requires Nuget package: Microsoft.Data.Sqlite
+    var dbConnection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
+    ```
+    _MySQL, PosgreSQL, SQLServer are also supported_
+- `TelegramBotClient` is `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state
+    ℹ️ Remember to close/dispose the dbConnection as well
+- Error messages (and sometimes code) on `ApiRequestException` can differ from the usual Bot API errors
+- FileID/FileUniqueID are not compatible with official Bot API ones, they are to be used with this library only.
 - `ITelegramBotClient` can not be used. Use `TelegramBotClient` directly
-If your code used it a lot, you might find it useful to add this line at the top of one of your file:
+  If your existing code uses the interface a lot, you might find it useful to add this line at the top of one of your file:
     ```csharp
     global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
     ```
 - Some nullable properties may be assigned to the default type value instead of `null` (like `false` for `bool?`)
 - Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_
   Use the direct async methods instead
-- There is no support for Webhooks or HTTP
+- There is no support for Webhooks or HTTP (see [support for ASP.NET apps])
 - Methods DeleteWebhookAsync & LogOutAsync are forwarded to the Cloud Bot API. Use method CloseAsync to logout locally.
+- Serialization via Newtonsoft.Json is not supported, but you can use System.Text.Json serialization instead with `BotHelpers.JsonOptions`
 
 ### Changes about Text Entities:
-- Text entities are of type `TL.MessageEntity` instead `Telegram.Bot.Types.MessageEntity`
+- Text entities are of type `TL.MessageEntity` _(and derived classes)_ instead of `Telegram.Bot.Types.MessageEntity`
+  If your existing code used MessageEntity a lot, you might find it useful to add this line at the top of one of your file:
+    ```csharp
+    global using MessageEntity = TL.MessageEntity;
+    ```
 - To access `entity.Url`, use `entity.Url()`
 - To access `entity.User`, use `entity.User(botClient)` ; or `entity.UserId()` if you only need the ID
 - `MessageEntityType` are constant strings instead of enum, but you can test `entity.Type == MessageEntityType.Something` in the same way as before
-- `TL.MessageEntity` is not serializable to Json like other Telegram.Bot classes.
-If you want to store a message text with entities, I recommend you [convert it to/from HTML/Markdown](https://wiz0u.github.io/WTelegramClient/EXAMPLES#markdown), using WTelegramClient helper classes `HtmlText` & `Markdown`
+- WTelegramClient includes two helper classes to [convert entities to/from HTML/Markdown](https://wiz0u.github.io/WTelegramClient/EXAMPLES#markdown): `HtmlText` & `Markdown`
 - Texts in Markdown (V1) will be parsed as MarkdownV2. some discrepancy or error may arise due to reserved characters
 
 ### Making the library more easy to use, backward-compatibility friendly
 
 As versions goes, the Telegram.Bot library has tend to break existing code.  
 I believe backward-compatibility is very important to gain the trust of users of my library.  
-So I've tried to restore what got broken over time and used to make the Telegram.Bot library simple and attractive to use:
 
-- Implicit/easiers constructors to simplify your code:
-  - `ReplyParameters`: just pass an `int` when you just want to reply to a message
-  - `InputFile`: just pass a `string`/`Stream` for file_id/url/stream content
-  - `InputMedia*`: just pass an `InputFile` when you don't need to associate caption or such
-  - `MessageId`: auto-converts to/from `int` (and also from `Message`)
-  - `ReactionType`: just pass a `string` when you want to send an emoji
-  - `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
+So I've tried to restore what got broken over time and used to make the Telegram.Bot library simple and attractive to use, like helpers or implicit constructors for parameters:
+
+- `ReplyParameters`: just pass an `int` when you just want to reply to a message
+_(so the new replyParameters: parameter behaves the same as the old replyToMessageId: parameter)_
+- `LinkPreviewOptions`: just pass a `bool` (true) to disable link preview
+_(so the new linkPreviewOptions: parameter behaves the same as the old disableWebPagePreview: parameter)_
+- `InputFile`: just pass a `string`/`Stream` for file_id/url/stream content (as was possible in previous version of Telegram.Bot)
+- `InputMedia*`: just pass an `InputFile` when you don't need to associate caption or such
+- `MessageId`: auto-converts to/from `int` (and also from `Message`)
+- `ReactionType`: just pass a `string` when you want to send an emoji
+- `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
 - no more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
+- Not using `MaybeInaccessibleMessage`, you would just get a `Message` of type Unknown with default Date if inaccessible
 - Removing some unjustified [Obsolete] tags
 - Not pushing you towards using silly Request-based constructors (seriously!?)
 
-You can use TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
+These should make migration from previous versions of Telegram.Bot more easy
+
+Additional helpers:
+- TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
 
 ## How to access the advanced features?
 
@@ -82,4 +100,18 @@ You can read that [library's documentation](https://wiz0u.github.io/WTelegramCli
 Note that you need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 In the future, I might add some of these advanced methods directly as TelegramBotClient methods to make it more easy.
+
+
+## Support for ASP.NET apps
+
+If your app is written as an ASP.NET app using webhooks, you can still use this library using background Polling:
+
+```csharp
+// instead of calling SetWebhookAsync, run the following code once your app starts:
+BotClient.StartReceiving(HandleUpdate, HandlePollingError);
+```
+
+You should make sure your hosting service won't stop/recycle your app after some HTTP inactivity timeout.
+
+(some host providers have an "always on" option, or alternatively you can ping your service with an HTTP request every 5 min to keep it alive)
 

@@ -186,11 +186,11 @@ public partial class TelegramBotClient
 		return null;
 	}
 
-	private async Task<MaybeInaccessibleMessage?> GetMIMessage(InputPeer peer, int messageId)
+	private async Task<Message?> GetMIMessage(InputPeer peer, int messageId)
 	{
 		var msg = await GetMessage(peer, messageId);
 		if (msg != null && msg.Date != default) return msg;
-		return new InaccessibleMessage { Chat = await ChatFromPeer(peer), MessageId = messageId };
+		return new Message { Chat = await ChatFromPeer(peer), MessageId = messageId };
 	}
 
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
@@ -304,7 +304,7 @@ public partial class TelegramBotClient
 				{
 					string? fileExt = Path.GetExtension(stream.FileName); // ?? defaultFilename (if we want to behave exactly like Telegram.Bot)
 					fileExt ??= Path.GetExtension((stream.Content as FileStream)?.Name);
-					mimeType = string.IsNullOrEmpty(fileExt) ? null : Helpers.ExtToMimeType.GetValueOrDefault(fileExt);
+					mimeType = string.IsNullOrEmpty(fileExt) ? null : BotHelpers.ExtToMimeType.GetValueOrDefault(fileExt);
 				}
 				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
 		}

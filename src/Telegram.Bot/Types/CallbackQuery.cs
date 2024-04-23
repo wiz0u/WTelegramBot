@@ -30,7 +30,7 @@ public partial class CallbackQuery
     /// <summary>
     /// Optional. Message sent by the bot with the callback button that originated the query
     /// </summary>
-    public MaybeInaccessibleMessage? Message { get; set; }
+    public Message? Message { get; set; }
 
     /// <summary>
     /// Optional. Identifier of the message sent via the bot in inline mode, that originated the query

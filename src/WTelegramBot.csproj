@@ -44,6 +44,6 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WTelegramClient" Version="4.0.1-dev.5" />
+    <PackageReference Include="WTelegramClient" Version="4.0.1-dev.6" />
   </ItemGroup>
 </Project>

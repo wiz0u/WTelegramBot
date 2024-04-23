@@ -105,7 +105,7 @@ namespace Telegram.Bot
 			using var reader = _cmd[LoadUpdates].ExecuteReader();
 			while (reader.Read())
 				using (var breader = new BinaryReader(reader.GetStream(1)))
-					yield return (reader.GetInt32(0), (TL.Update)breader.ReadTL(0));
+					yield return (reader.GetInt32(0), (TL.Update)breader.ReadTLObject(0));
 		}
 
 		internal void SaveTLUpdates(IEnumerable<Update> updates)

@@ -40,6 +40,7 @@ public partial class InlineQueryResultsButton
     /// <param name="text">
     /// Label text on the button
     /// </param>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     public InlineQueryResultsButton(string text)
     {
         Text = text;

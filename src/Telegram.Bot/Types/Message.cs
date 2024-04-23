@@ -374,7 +374,7 @@ public partial class Message : MaybeInaccessibleMessage
     /// Optional. Specified message was pinned. Note that the <see cref="Message"/> object in this field
     /// will not contain further <see cref="ReplyToMessage"/> fields even if it itself is a reply.
     /// </summary>
-    public MaybeInaccessibleMessage? PinnedMessage { get; set; }
+    public Message? PinnedMessage { get; set; }
 
     /// <summary>
     /// Optional. Message is an invoice for a

@@ -129,6 +129,11 @@ namespace Telegram.Bot.Types
 		public static implicit operator ReactionType(string emoji) => new ReactionTypeEmoji { Emoji = emoji };
 		/// <summary>Implicit operator ReactionTypeCustomEmoji from long customEmojiId</summary>
 		public static implicit operator ReactionType(long customEmojiId) => new ReactionTypeCustomEmoji { CustomEmojiId = customEmojiId.ToString() };
+	}
 
+	public partial class LinkPreviewOptions
+	{
+		/// <summary>To get the same behaviour as previous parameter <c>disableWebPagePreview:</c></summary>
+		public static implicit operator LinkPreviewOptions(bool disabled) => new() { IsDisabled = disabled };
 	}
 }

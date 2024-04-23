@@ -405,7 +405,7 @@ public partial class TelegramBotClient
 			}
 			if (msg != null) result.Add(msg);
 		}
-		return result.OrderBy(msg => msg.MessageId).ToArray();
+		return [.. result.OrderBy(msg => msg.MessageId)];
 	}
 
 	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message and assign the ReplyToMessage/ExternalReply</summary>

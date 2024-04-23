@@ -275,4 +275,19 @@ public enum MessageType
     /// The <see cref="Message"/> contains a <see cref="Message.BoostAdded"/>
     /// </summary>
     BoostAdded,
+
+#pragma warning disable CS1591
+	WebsiteConnected = ConnectedWebsite,
+	ChatMembersAdded = NewChatMembers,
+	ChatMemberLeft = LeftChatMember,
+	ChatTitleChanged = NewChatTitle,
+	ChatPhotoChanged = NewChatPhoto,
+	MessagePinned = PinnedMessage,
+	ChatPhotoDeleted = DeleteChatPhoto,
+	GroupCreated = GroupChatCreated,
+	SupergroupCreated = SupergroupChatCreated,
+	ChannelCreated = ChannelChatCreated,
+	MigratedToSupergroup = MigrateFromChatId,
+	MigratedFromGroup = MigrateToChatId,
+#pragma warning restore CS1591
 }
