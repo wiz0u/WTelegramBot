@@ -28,8 +28,8 @@ public static class TypesTLConverters
 	/// <summary>
 	/// Optional. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
 	/// </summary>
-	public static User? User(this MessageEntity entity, TelegramBotClient botClient)
-		=> entity.UserId() is long userId ? botClient.User(userId) ?? new User { Id = userId, FirstName = "" } : null;
+	public static User? User(this MessageEntity entity, ITelegramBotClient botClient)
+		=> entity.UserId() is long userId ? botClient.Bot.User(userId) ?? new User { Id = userId, FirstName = "" } : null;
 
 	/// <summary>
 	/// Optional. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text

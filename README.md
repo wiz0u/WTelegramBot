@@ -4,7 +4,10 @@ WTelegramBot is a full rewrite in pure C# of the Bot API server, presenting the 
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
 
-## Advantages of WTelegramBot
+## Advantages of WTelegram.Bot
+
+Using class `WTelegram.Bot` you have access to a clean set of developer-friendly methods to easily access the Bot API
+
 You can also call Client API methods that are possible for bots but not accessible from Bot API
 Some examples:
 - get past messages of group/channel
@@ -24,7 +27,10 @@ There are still a lot of restrictions to bots, even via Client API, so don't exp
 
 <a name="migration"></a>
 ## Migration of existing Telegram.Bot code
-After changing the dependency on Telegram.Bot nuget package to WTelegramBot, here is what you should pay attention to when migrating existing code:
+The library contains a compatibility layer as `Telegram.Bot.TelegramBotClient` around WTelegram.Bot.
+
+Basically, you just need to change the nuget package dependency from Telegram.Bot to WTelegramBot.  
+After that, here are the points you should pay attention to when migrating existing code:
 
 ### Changes needed in your code:
 - On `TelegramBotClient` constructor (or options), you will need to provide ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
@@ -36,18 +42,13 @@ After changing the dependency on Telegram.Bot nuget package to WTelegramBot, her
     _MySQL, PosgreSQL, SQLServer are also supported_
 - `TelegramBotClient` is `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state
     ℹ️ Remember to close/dispose the dbConnection as well
-- Error messages (and sometimes code) on `ApiRequestException` can differ from the usual Bot API errors
+- Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
 - FileID/FileUniqueID are not compatible with official Bot API ones, they are to be used with this library only.
-- `ITelegramBotClient` can not be used. Use `TelegramBotClient` directly
-  If your existing code uses the interface a lot, you might find it useful to add this line at the top of one of your file:
-    ```csharp
-    global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
-    ```
 - Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_
   Use the direct async methods instead
-- There is no support for Webhooks or HTTP (see [support for ASP.NET apps])
+- There is no support for HTTP / Webhooks (see [support for ASP.NET apps])
 - Methods DeleteWebhookAsync & LogOutAsync are forwarded to the Cloud Bot API. Use method CloseAsync to logout locally.
-- Serialization via Newtonsoft.Json is not supported, but you can use System.Text.Json serialization instead with `BotHelpers.JsonOptions`
+- Serialization via Newtonsoft.Json is not supported, but you can use System.Text.Json serialization instead with `WTelegram.BotHelpers.JsonOptions`
 
 ### Changes about Text Entities:
 - Text entities are of type `TL.MessageEntity` _(and derived classes)_ instead of `Telegram.Bot.Types.MessageEntity`
@@ -88,6 +89,16 @@ These should make migration from previous versions of Telegram.Bot more easy
 Additional helpers:
 - TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
 
+## Difference between classes `WTelegram.Bot` and `TelegramBotClient`
+
+The method names don't have the Async suffix (even though they should still be invoked with `await`) so they are more close to official [Bot API method names](https://core.telegram.org/bots/api#available-methods).
+
+The orders of parameters can differ, presenting a more logical order for developers, with the more rarely used optional parameters near the end.
+
+There is no CancellationToken parameter because there is no mechanism to "abort" a request sent to Telegram Client API.
+
+In case of an error, it will throw TL.RpcException showing the raw Telegram error instead of an ApiRequestException
+
 ## How to access the advanced features?
 
 On each Update you receive, there is an extra field named "RawUpdate" that contains the matching raw TL.Update, which may contain extra information not transcribed into the Bot API Update
@@ -115,3 +126,15 @@ You should make sure your hosting service won't stop/recycle your app after some
 
 (some host providers have an "always on" option, or alternatively you can ping your service with an HTTP request every 5 min to keep it alive)
 
+## Help with the library
+
+This library is still quite new but I tested it extensively to make sure it covers all of the Bot API successfully.
+
+If you have questions about the Bot API methods from TelegramBotClient, you can ask them in Telegram.Bot support chat:
+https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA
+
+If your question is more specific to WTelegram.Bot, or an issue with library behaviour, you can ask them in https://t.me/WTelegramClient
+
+If you like this library, you can [buy me a coffee](https://www.buymeacoffee.com/wizou) ❤ This will help the project keep going.
+
+© 2024 Olivier Marcoux

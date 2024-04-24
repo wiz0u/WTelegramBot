@@ -7,9 +7,9 @@ using TL;
 using KeyboardButton = Telegram.Bot.Types.ReplyMarkups.KeyboardButton;
 using ReplyKeyboardMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyKeyboardMarkup;
 
-namespace Telegram.Bot;
+namespace WTelegram;
 
-public partial class TelegramBotClient
+public partial class Bot
 {
 	private async Task<ReplyMarkup?> MakeReplyMarkup(IReplyMarkup? replyMarkup) => replyMarkup switch
 	{
@@ -386,7 +386,7 @@ public partial class TelegramBotClient
 		{
 			var premiumLocation = doc.ToFileLocation();
 			premiumLocation.thumb_size = "f";
-			result.PremiumAnimation = new Types.File { FileSize = doc.size }.SetFileIds(premiumLocation, doc.dc_id, "f");
+			result.PremiumAnimation = new Telegram.Bot.Types.File { FileSize = doc.size }.SetFileIds(premiumLocation, doc.dc_id, "f");
 			result.PremiumAnimation.FilePath = result.PremiumAnimation.FileId + "/Sticker_" + result.PremiumAnimation.FileUniqueId;
 		}
 		if (doc.GetAttribute<DocumentAttributeImageSize>() is { } imageSize) { result.Width = imageSize.w; result.Height = imageSize.h; }
@@ -702,41 +702,7 @@ public partial class TelegramBotClient
 			_ => throw new NotImplementedException()
 		};
 	}
-
-	/// <summary>Convert WTelegram Exception into ApiRequestException</summary>
-	protected static ApiRequestException MakeException(WTelegram.WTException ex)
-	{
-		if (ex is not RpcException rpcEx) return new ApiRequestException(ex.Message, ex);
-		var msg = ex.Message switch
-		{
-			"MESSAGE_NOT_MODIFIED" => "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message",
-			"WC_CONVERT_URL_INVALID" or "EXTERNAL_URL_INVALID" => "Wrong HTTP URL specified",
-			"WEBPAGE_CURL_FAILED" => "Failed to get HTTP URL content",
-			"WEBPAGE_MEDIA_EMPTY" => "Wrong type of the web page content",
-			"MEDIA_GROUPED_INVALID" => "Can't use the media of the specified type in the album",
-			"REPLY_MARKUP_TOO_LONG" => "reply markup is too long",
-			"INPUT_USER_DEACTIVATED" => "user is deactivated", // 403
-			"USER_IS_BLOCKED" => "bot was blocked by the user", // 403
-			"USER_ADMIN_INVALID" => "user is an administrator of the chat",
-			"File generation failed" => "can't upload file by URL",
-			"CHAT_ABOUT_NOT_MODIFIED" => "chat description is not modified",
-			"PACK_SHORT_NAME_INVALID" => "invalid sticker set name is specified",
-			"PACK_SHORT_NAME_OCCUPIED" => "sticker set name is already occupied",
-			"STICKER_EMOJI_INVALID" => "invalid sticker emojis",
-			"QUERY_ID_INVALID" => "query is too old and response timeout expired or query ID is invalid",
-			"MESSAGE_DELETE_FORBIDDEN" => "message can't be deleted",
-			_ => ex.Message,
-		};
-		msg = rpcEx.Code switch
-		{
-			401 => "Unauthorized: " + msg,
-			403 => "Forbidden: " + msg,
-			500 => "Internal Server Error: " + msg,
-			_ => "Bad Request: " + msg,
-		};
-		return new ApiRequestException(msg, rpcEx.Code, ex);
-	}
-
+	
 	private static string MimeType(StickerFormat stickerFormat) => stickerFormat switch
 	{
 		StickerFormat.Animated => "application/x-tgsticker",
@@ -855,7 +821,7 @@ public partial class TelegramBotClient
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	internal async Task<Types.BusinessIntro?> MakeBusinessIntro(TL.BusinessIntro? intro) => intro == null ? null : new()
+	internal async Task<Telegram.Bot.Types.BusinessIntro?> MakeBusinessIntro(TL.BusinessIntro? intro) => intro == null ? null : new()
 	{
 		Title = intro.title,
 		Message = intro.description,

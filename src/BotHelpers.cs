@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Text;
 
-namespace Telegram.Bot;
+namespace WTelegram;
 
 /// <summary>Helpers methods</summary>
 public static class BotHelpers
@@ -55,7 +55,7 @@ public static class BotHelpers
 		}
 		catch (Exception ex)
 		{
-			WTelegram.Helpers.Log(4, $"{ex.GetType().Name} while saving to DB: {ex.Message} ");
+			Helpers.Log(4, $"{ex.GetType().Name} while saving to DB: {ex.Message} ");
 		}
 	}
 
@@ -173,4 +173,3 @@ public static class BotHelpers
 		}
 	}
 }
-

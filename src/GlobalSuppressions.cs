@@ -3,6 +3,19 @@
 // Project-level suppressions either have no target or are given
 // a specific target and scoped to a namespace, type, member, etc.
 
+global using Telegram.Bot.Types;
+global using BotCommand = Telegram.Bot.Types.BotCommand;
+global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
+global using Chat = Telegram.Bot.Types.Chat;
+global using ForumTopic = Telegram.Bot.Types.ForumTopic;
+global using InputFile = Telegram.Bot.Types.InputFile;
+global using InputMedia = Telegram.Bot.Types.InputMedia;
+global using Message = Telegram.Bot.Types.Message;
+global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
+global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
+global using Update = Telegram.Bot.Types.Update;
+global using User = Telegram.Bot.Types.User;
+global using MessageEntity = TL.MessageEntity;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 

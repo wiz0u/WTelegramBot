@@ -1,48 +1,23 @@
-﻿global using Telegram.Bot.Types;
-global using ITelegramBotClient = Telegram.Bot.TelegramBotClient;
-global using BotCommand = Telegram.Bot.Types.BotCommand;
-global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
-global using Chat = Telegram.Bot.Types.Chat;
-global using ForumTopic = Telegram.Bot.Types.ForumTopic;
-global using InputFile = Telegram.Bot.Types.InputFile;
-global using InputMedia = Telegram.Bot.Types.InputMedia;
-global using Message = Telegram.Bot.Types.Message;
-global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
-global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
-global using Update = Telegram.Bot.Types.Update;
-global using User = Telegram.Bot.Types.User;
-global using MessageEntity = TL.MessageEntity;
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Reflection;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using TL;
 
-namespace Telegram.Bot;
+namespace WTelegram;
 
 /// <summary>
 /// A client to use the Telegram Bot API
 /// </summary>
-public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
+public partial class Bot : IDisposable
 {
-    readonly TelegramBotClientOptions _options;
-
 	/// <summary>This gives you access to the underlying Client API</summary>
-	public WTelegram.Client Client { get; }
+	public Client Client { get; }
 	/// <summary>The underlying UpdateManager (can be useful as Peer resolver for Client API calls)</summary>
-	public readonly WTelegram.UpdateManager Manager;
+	public readonly UpdateManager Manager;
 
     /// <inheritdoc/>
-    public long BotId => _options.BotId;
-
-    /// <inheritdoc />
-    public bool LocalBotServer => _options.LocalBotServer;
-
-    /// <summary>
-    /// Timeout for requests
-    /// </summary>
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(100);
+    public long BotId { get; }
 
 	/// <summary>
 	/// Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.RawUpdate"/>)
@@ -53,12 +28,13 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	static readonly User GroupAnonymousBot = new() { Id = 1087968824, Username = "GroupAnonymousBot", FirstName = "Group", IsBot = true };
 	static readonly User ServiceNotification = new() { Id = 777000, FirstName = "Telegram" };
 
-	private readonly Task<TL.User> _initTask;
+	/// <summary>Task launched from constructor</summary>
+	protected readonly Task<TL.User> _initTask;
 	private readonly Database _database;
-	private readonly Database.CachedTable<Chat> _chats;
-	private readonly Database.CachedTable<User> _users;
+	internal readonly Database.CachedTable<Chat> _chats;
+	internal readonly Database.CachedTable<User> _users;
 	private readonly BotCollectorPeer _collector;
-	private SemaphoreSlim _pendingCounter = new(0);
+	private readonly SemaphoreSlim _pendingCounter = new(0);
 	/// <summary>Cache StickerSet ID => Name</summary>
 	protected Dictionary<long, string> StickerSetNames = [];
 	/// <summary>Cache used by <see cref="GetMessage"/></summary>
@@ -68,7 +44,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	public static readonly IEnumerable<UpdateType> AllUpdateTypes = [(UpdateType)(-1)];
 	private const int DefaultAllowedUpdates = 0b111_1110_0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13, MessageReaction=15, MessageReactionCount=16
 	private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
-	private State _state = new();
+	private readonly State _state = new();
 	internal class State
 	{
 		public List<Update> PendingUpdates = [];
@@ -77,66 +53,69 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		public int AllowedUpdates = DefaultAllowedUpdates;
 	}
 
-    /// <summary>
-    /// Create a new <see cref="TelegramBotClient"/> instance.
-    /// </summary>
-    /// <param name="options">Configuration for <see cref="TelegramBotClient" /></param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="options"/> is <c>null</c>
-    /// </exception>
-    public TelegramBotClient(
-        TelegramBotClientOptions options)
+	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
+	/// <param name="token">The bot token</param>
+	/// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
+	/// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
+	/// <param name="dbConnection">DB connection for storage and later resume</param>
+    /// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
+	public Bot(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect) : this(
+		what => what switch
+		{
+			"api_id" => apiId.ToString(),
+			"api_hash" => apiHash,
+			"bot_token" => token,
+			"device_model" => "server",
+			_ => null
+		},
+		dbConnection,
+		sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands])
+	{ }
+
+	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
+	/// <param name="configProvider">Configuration callback</param>
+	/// <param name="dbConnection">DB connection for storage and later resume</param>
+	/// <param name="sqlCommands">SQL queries for your specific DB engine (null for auto-detect)</param>
+	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
+	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true)
 	{
-		_options = options ?? throw new ArgumentNullException(nameof(options));
+		var token = configProvider("bot_token") ?? throw new ArgumentNullException("bot_token");
+		BotId = long.Parse(token[0..token.IndexOf(':')]);
+		sqlCommands ??= Database.DefaultSqlCommands[(int)Database.DetectType(dbConnection)];
 		_collector = new(this);
 		var version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-		WTelegram.Helpers.Log(1, $"WTelegramBot {version} using {options.DbConnection.GetType().Name} {options.DbConnection.DataSource}");
-		_database = new Database(options.DbConnection, options.SqlCommands, _state);
+		Helpers.Log(1, $"WTelegramBot {version} using {dbConnection.GetType().Name} {dbConnection.DataSource}");
+		_database = new Database(dbConnection, sqlCommands, _state);
 		_database.GetTables(out _users, out _chats);
-		Client = new WTelegram.Client(_options.WTCConfig, _database.LoadSessionState());
+		Client = new Client(configProvider, _database.LoadSessionState());
 		Manager = Client.WithUpdateManager(OnUpdate, _database.LoadMBoxStates(), _collector);
-		_initTask = InitLogin(_options.Token);
-		if (_options.WaitForLogin) _initTask.Wait(); //TODO: test on winforms
+		_initTask = InitLogin();
+		if (waitForLogin) _initTask.Wait(); //TODO: test on winforms
 	}
 
-	private async Task<TL.User> InitLogin(string token)
+	private async Task<TL.User> InitLogin()
 	{
+		var me = await Client.LoginBotIfNeeded();
 		try
 		{
-			var me = await Client.LoginBotIfNeeded(_options.Token);
-			try
+			foreach (var (id, update) in _database.LoadTLUpdates().ToList())
 			{
-				foreach (var (id, update) in _database.LoadTLUpdates().ToList())
-				{
-					var botUpdate = await MakeUpdate(update);
-					botUpdate ??= new Types.Update { RawUpdate = update };
-					botUpdate.Id = id;
-					_state.PendingUpdates.Add(botUpdate);
-				}
-				Manager.Log(1, $"Connected as @{me.username} ({me.id}) | LastUpdateId = {_state.LastUpdateId} | {_state.PendingUpdates.Count} pending updates");
-
-				if (_state.PendingUpdates.Count != 0)
-				{
-					_state.LastUpdateId = Math.Max(_state.LastUpdateId, _state.PendingUpdates[^1].Id);
-					_pendingCounter.Release();
-				}
+				var botUpdate = await MakeUpdate(update);
+				botUpdate ??= new Update { RawUpdate = update };
+				botUpdate.Id = id;
+				_state.PendingUpdates.Add(botUpdate);
 			}
-			catch { } // we can't reconstruct the PendingUpdates, too bad ¯\_(ツ)_/¯
-			return me;
-		}
-		catch (WTelegram.WTException ex) { throw ITelegramBotClient.MakeException(ex); }
-	}
+			Manager.Log(1, $"Connected as @{me.username} ({me.id}) | LastUpdateId = {_state.LastUpdateId} | {_state.PendingUpdates.Count} pending updates");
 
-    /// <summary>
-    /// Create a new <see cref="TelegramBotClient"/> instance.
-    /// </summary>
-    /// <param name="token">The bot token</param>
-    /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
-    /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
-    /// <param name="dbConnection">DB connection for storage and later resume</param>
-    public TelegramBotClient(string token, int apiId, string apiHash, DbConnection dbConnection) :
-        this(new TelegramBotClientOptions(token, apiId, apiHash, dbConnection))
-    { }
+			if (_state.PendingUpdates.Count != 0)
+			{
+				_state.LastUpdateId = Math.Max(_state.LastUpdateId, _state.PendingUpdates[^1].Id);
+				_pendingCounter.Release();
+			}
+		}
+		catch { } // we can't reconstruct the PendingUpdates, too bad ¯\_(ツ)_/¯
+		return me;
+	}
 
 	/// <summary>You must call Dispose to properly save state, close connection and dispose resources</summary>
 	public void Dispose()
@@ -154,15 +133,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		_database.SaveSessionState();
 		lock (_state.PendingUpdates)
 			_database.SaveTLUpdates(_state.PendingUpdates);
-	}
-
-	/// <inheritdoc />
-	public virtual Task<Update[]> MakeRequestAsync(
-		GetUpdatesRequest request,
-		CancellationToken cancellationToken = default)
-	{
-		if (request is null) { throw new ArgumentNullException(nameof(request)); }
-		return GetUpdates(request.Offset ?? 0, request.Limit ?? 100, request.Timeout ?? 0, request.AllowedUpdates, cancellationToken);
 	}
 
 	/// <summary>Use this method to receive incoming updates using <a href="https://en.wikipedia.org/wiki/Push_technology#Long_polling">long polling</a></summary>
@@ -220,7 +190,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		try { await _initTask; } catch { }
 		var botUpdate = await MakeUpdate(update);
 		if (botUpdate == null && WantUnknownRawUpdates)
-			botUpdate = new Types.Update { RawUpdate = update };
+			botUpdate = new Update { RawUpdate = update };
 		if (botUpdate != null)
 		{
 			botUpdate.Id = ++_state.LastUpdateId;
@@ -234,7 +204,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 		}
 	}
 
-	/// <returns>User or null</returns>
+	/// <summary>Obtain a InputUser from username, or null if resolve failed</summary>
 	public async Task<InputUser?> InputUser(string username)
 	{
 		username = username.TrimStart('@');
@@ -257,7 +227,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	/// <summary>Obtain a InputPeerUser for this user (useful with Client API calls)</summary>
 	public InputPeerUser InputPeerUser(long userId) => User(userId) ?? new InputPeerUser(userId, 0);
 
-	/// <summary>return User if found in known users, or null</summary>
+	/// <summary>return User if found in known users (DB), or null</summary>
 	public User? User(long userId)
 	{
 		lock (_users)
@@ -270,7 +240,7 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 	public async Task<InputChannel> InputChannel(ChatId chatId) => chatId.Identifier is not long id || id < ZERO_CHANNEL_ID
 		? (InputPeerChannel)await InputPeerChat(chatId) : throw new ApiRequestException("Bad Request: method is available for supergroup and channel chats only", 400);
 
-	/// <summary>return Chat if found in known chats, or null</summary>
+	/// <summary>return Chat if found in known chats (DB), or null</summary>
 	public Chat? Chat(long chatId)
 	{
 		lock (_chats)
@@ -313,34 +283,6 @@ public partial class TelegramBotClient : IDisposable    // ITelegramBotClient
 			throw new ApiRequestException($"Chat {chatId} is unknown");
 		}
 	}
-
-    /// <summary>
-    /// Test the API token
-    /// </summary>
-    /// <returns><see langword="true"/> if token is valid</returns>
-    public async Task<bool> TestApiAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _initTask;
-            return true;
-        }
-        catch (ApiRequestException e)
-            when (e.ErrorCode is 400 or 401)
-        {
-            return false;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task DownloadFileAsync(
-        string filePath,
-        Stream destination,
-        CancellationToken cancellationToken = default)
-    {
-        int slash = filePath.IndexOf('/');
-        await GetInfoAndDownloadFileAsync(slash < 0 ? filePath : filePath[..slash], destination, cancellationToken);
-    }
 
 	/// <summary>Free up some memory by clearing internal caches that can be reconstructed automatically<para>Call this periodically for heavily used bots if you feel too much memory is used by TelegramBotClient</para></summary>
 	public void ClearCaches()

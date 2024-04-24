@@ -3,13 +3,12 @@ using TL;
 using Telegram.Bot.Types.Enums;
 using System.Diagnostics.CodeAnalysis;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types;
 
-namespace Telegram.Bot;
+namespace WTelegram;
 
-public partial class TelegramBotClient
+public partial class Bot
 {
-	/// <summary>Converts Client API TL.Update to Bot Types.Update</summary>
+	/// <summary>Converts Client API TL.Update to Bot Telegram.Bot.Types.Update</summary>
 	protected async Task<Update?> MakeUpdate(TL.Update update)
 	{
 		switch (update)
@@ -138,7 +137,7 @@ public partial class TelegramBotClient
 				if (NotAllowed(UpdateType.PollAnswer)) return null;
 				return new Update
 				{
-					PollAnswer = new Types.PollAnswer
+					PollAnswer = new Telegram.Bot.Types.PollAnswer
 					{
 						PollId = umpv.poll_id.ToString(),
 						VoterChat = umpv.peer is PeerChannel pc ? await ChannelOrResolve(pc.channel_id) : null,
@@ -151,7 +150,7 @@ public partial class TelegramBotClient
 				if (NotAllowed(UpdateType.ChatJoinRequest)) return null;
 				return new Update
 				{
-					ChatJoinRequest = new Types.ChatJoinRequest
+					ChatJoinRequest = new Telegram.Bot.Types.ChatJoinRequest
 					{
 						Chat = (await ChatFromPeer(ubcir.peer))!,
 						From = await UserOrResolve(ubcir.user_id),
@@ -166,7 +165,7 @@ public partial class TelegramBotClient
 				if (NotAllowed(UpdateType.ShippingQuery)) return null;
 				return new Update
 				{
-					ShippingQuery = new Types.Payments.ShippingQuery
+					ShippingQuery = new Telegram.Bot.Types.Payments.ShippingQuery
 					{
 						Id = ubsq.query_id.ToString(),
 						From = await UserOrResolve(ubsq.user_id),
@@ -179,7 +178,7 @@ public partial class TelegramBotClient
 				if (NotAllowed(UpdateType.PreCheckoutQuery)) return null;
 				return new Update
 				{
-					PreCheckoutQuery = new Types.Payments.PreCheckoutQuery
+					PreCheckoutQuery = new Telegram.Bot.Types.Payments.PreCheckoutQuery
 					{
 						Id = ubpq.query_id.ToString(),
 						From = await UserOrResolve(ubpq.user_id),
@@ -243,7 +242,7 @@ public partial class TelegramBotClient
 						Chat = await ChatFromPeer(ubmrs.peer, true),
 						MessageId = ubmrs.msg_id,
 						Date = ubmrs.date,
-						Reactions = ubmrs.reactions.Select(rc => new Types.ReactionCount { Type = rc.reaction.ReactionType(), TotalCount = rc.count }).ToArray(),
+						Reactions = ubmrs.reactions.Select(rc => new Telegram.Bot.Types.ReactionCount { Type = rc.reaction.ReactionType(), TotalCount = rc.count }).ToArray(),
 					},
 					RawUpdate = update
 				};
@@ -408,7 +407,7 @@ public partial class TelegramBotClient
 		return [.. result.OrderBy(msg => msg.MessageId)];
 	}
 
-	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message and assign the ReplyToMessage/ExternalReply</summary>
+	/// <summary>Converts Client API TL.MessageBase to Bot Telegram.Bot.Types.Message and assign the ReplyToMessage/ExternalReply</summary>
 	protected async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null, string? bConnId = null)
 	{
 		var msg = await MakeMessage(msgBase);
@@ -460,7 +459,7 @@ public partial class TelegramBotClient
 		return msg;
 	}
 	
-	/// <summary>Converts Client API TL.MessageBase to Bot Types.Message</summary>
+	/// <summary>Converts Client API TL.MessageBase to Bot Telegram.Bot.Types.Message</summary>
 	[return: NotNullIfNotNull(nameof(msgBase))]
 	protected async Task<Message?> MakeMessage(MessageBase? msgBase)
 	{
@@ -579,7 +578,7 @@ public partial class TelegramBotClient
 				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.voice))
 				{
 					var audio = document.GetAttribute<DocumentAttributeAudio>();
-					msg.Voice = new Types.Voice
+					msg.Voice = new Telegram.Bot.Types.Voice
 					{
 						FileSize = document.size,
 						Duration = (int)(audio?.duration + 0.5 ?? 0.0),
@@ -589,7 +588,7 @@ public partial class TelegramBotClient
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.round))
 				{
 					var video = document.GetAttribute<DocumentAttributeVideo>();
-					msg.VideoNote = new Types.VideoNote
+					msg.VideoNote = new Telegram.Bot.Types.VideoNote
 					{
 						FileSize = document.size,
 						Length = video?.w ?? 0,
@@ -600,7 +599,7 @@ public partial class TelegramBotClient
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
 				{
 					var video = document.GetAttribute<DocumentAttributeVideo>();
-					msg.Video = new Types.Video
+					msg.Video = new Telegram.Bot.Types.Video
 					{
 						FileSize = document.size,
 						Width = video?.w ?? 0,
@@ -613,7 +612,7 @@ public partial class TelegramBotClient
 				}
 				else if (document.GetAttribute<DocumentAttributeAudio>() is { } audio)
 				{
-					msg.Audio = new Types.Audio
+					msg.Audio = new Telegram.Bot.Types.Audio
 					{
 						FileSize = document.size,
 						Duration = (int)(audio?.duration + 0.5 ?? 0.0),
@@ -630,7 +629,7 @@ public partial class TelegramBotClient
 				}
 				else
 				{
-					msg.Document = new Types.Document
+					msg.Document = new Telegram.Bot.Types.Document
 					{
 						FileSize = document.size,
 						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
@@ -658,7 +657,7 @@ public partial class TelegramBotClient
 				};
 				break;
 			case MessageMediaContact mmc:
-				msg.Contact = new Types.Contact
+				msg.Contact = new Telegram.Bot.Types.Contact
 				{
 					PhoneNumber = mmc.phone_number,
 					FirstName = mmc.first_name,
@@ -683,7 +682,7 @@ public partial class TelegramBotClient
 				msg.Dice = new Dice { Emoji = mmd.emoticon, Value = mmd.value };
 				return msg;
 			case MessageMediaInvoice mmi:
-				msg.Invoice = new Types.Payments.Invoice
+				msg.Invoice = new Telegram.Bot.Types.Payments.Invoice
 				{
 					Title = mmi.title,
 					Description = mmi.description,
@@ -693,7 +692,7 @@ public partial class TelegramBotClient
 				};
 				return msg;
 			case MessageMediaGame mmg:
-				msg.Game = new Types.Game
+				msg.Game = new Telegram.Bot.Types.Game
 				{
 					Title = mmg.game.title,
 					Description = mmg.game.description,
@@ -704,7 +703,7 @@ public partial class TelegramBotClient
 				if (mmg.game.document is TL.Document doc && doc.GetAttribute<DocumentAttributeAnimated>() != null)
 				{
 					thumb = doc.LargestThumbSize;
-					var msgDoc = new Types.Document
+					var msgDoc = new Telegram.Bot.Types.Document
 					{
 						FileSize = doc.size,
 						Thumbnail = thumb?.PhotoSize(doc.ToFileLocation(thumb), doc.dc_id),
@@ -778,7 +777,7 @@ public partial class TelegramBotClient
 			MessageActionPinMessage macpm => msg.PinnedMessage = await GetMIMessage(
 				await ChatFromPeer(msgSvc.peer_id, allowUser: true), msgSvc.reply_to is MessageReplyHeader mrh ? mrh.reply_to_msg_id : 0),
 			MessageActionChatJoinedByLink or MessageActionChatJoinedByRequest => msg.NewChatMembers = [msg.From!],
-			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Types.Payments.SuccessfulPayment
+			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Telegram.Bot.Types.Payments.SuccessfulPayment
 			{
 				Currency = mapsm.currency,
 				TotalAmount = (int)mapsm.total_amount,
@@ -835,7 +834,7 @@ public partial class TelegramBotClient
 		};
 	}
 
-	private static Animation MakeAnimation(Types.Document msgDoc, DocumentAttributeVideo video) => new()
+	private static Animation MakeAnimation(Telegram.Bot.Types.Document msgDoc, DocumentAttributeVideo video) => new()
 	{
 		FileSize = msgDoc.FileSize,
 		Width = video?.w ?? 0,
@@ -848,10 +847,10 @@ public partial class TelegramBotClient
 		FileUniqueId = msgDoc.FileUniqueId
 	};
 
-	private static Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
+	private static Telegram.Bot.Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
 	{
 		int correctOption = Array.FindIndex(pollResults.results, pav => pav.flags.HasFlag(PollAnswerVoters.Flags.correct));
-		return new Types.Poll
+		return new Telegram.Bot.Types.Poll
 		{
 			Id = poll.id.ToString(),
 			Question = poll.question,
