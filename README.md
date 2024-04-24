@@ -4,26 +4,28 @@ WTelegramBot is a full rewrite in pure C# of the Bot API server, presenting the 
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
 
+
 ## Advantages of WTelegram.Bot
 
 Using class `WTelegram.Bot` you have access to a clean set of developer-friendly methods to easily access the Bot API
 
-You can also call Client API methods that are possible for bots but not accessible from Bot API
+You can also call Client API methods that are possible for bots but not accessible from Bot API!
 Some examples:
-- get past messages of group/channel
-- get group/channel members list
-- resolve user/chat usernames
-- get full details of users/chats
-- send/receive big files
+- Get past messages of group/channel
+- Get group/channel members list
+- Resolve user/chat usernames
+- Get full details of users/chats
+- Send/receive big files
 
 You also get access to raw Updates information from Client API, in addition to the usual Bot API updates.
-They contain much more information than the limited set of Bot API updates
+They contain much more information than the limited set of Bot API updates!
 Some examples:
-- detect deletion of messages _(not always immediate)_
-- get info on the "preview" part of a message
-- notification when your messages were read in a group
+- Detect deletion of messages _(not always immediate)_
+- Get detailed info on the "preview" part of a message
+- Notification when your messages were read in a group
 
 There are still a lot of restrictions to bots, even via Client API, so don't expect to be able to do many fancy things
+
 
 <a name="migration"></a>
 ## Migration of existing Telegram.Bot code
@@ -33,19 +35,19 @@ Basically, you just need to change the nuget package dependency from Telegram.Bo
 After that, here are the points you should pay attention to when migrating existing code:
 
 ### Changes needed in your code:
-- On `TelegramBotClient` constructor (or options), you will need to provide ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
+- On `TelegramBotClient` constructor (or options), you will need to provide an ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
   as well as a DbConnection, typically SqliteConnection:
     ```csharp
     // requires Nuget package: Microsoft.Data.Sqlite
     var dbConnection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
     ```
     _MySQL, PosgreSQL, SQLServer are also supported_
-- `TelegramBotClient` is `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state
-    ℹ️ Remember to close/dispose the dbConnection as well
+- `TelegramBotClient` and `WTelegram.Bot` are `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state.  
+  ℹ️ Remember to close/dispose the dbConnection as well
 - Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
 - FileID/FileUniqueID are not compatible with official Bot API ones, they are to be used with this library only.
-- Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_
-  Use the direct async methods instead
+- Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_  
+  Use the direct async methods instead.
 - There is no support for HTTP / Webhooks (see [support for ASP.NET apps])
 - Methods DeleteWebhookAsync & LogOutAsync are forwarded to the Cloud Bot API. Use method CloseAsync to logout locally.
 - Serialization via Newtonsoft.Json is not supported, but you can use System.Text.Json serialization instead with `WTelegram.BotHelpers.JsonOptions`
@@ -78,10 +80,12 @@ _(so the new linkPreviewOptions: parameter behaves the same as the old disableWe
 - `MessageId`: auto-converts to/from `int` (and also from `Message`)
 - `ReactionType`: just pass a `string` when you want to send an emoji
 - `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
+- Some other obvious implicit conversion operators for structures containing a single property
 - No more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API (before passing it to API)
 - Not using `MaybeInaccessibleMessage`, you would just get a `Message` of type Unknown with default Date if inaccessible
-- Removed some unjustified [Obsolete] tags
-- Turned most `bool?` into simple `bool`, as null already meant false
+- Removed many [Obsolete] tags for things that still simplify your code
+- Turned many nullable (like `bool?`) into normal type (like `bool`) when `null` meant the same as the default value (like `false`)
+- Turned some `ParseMode?` back into `ParseMode` (restoring the old `ParseMode.Default`)
 - Not pushing you towards using silly Request-based constructors (seriously!?)
 
 These should make migration from previous versions of Telegram.Bot more easy
@@ -89,15 +93,20 @@ These should make migration from previous versions of Telegram.Bot more easy
 Additional helpers:
 - TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
 
+
 ## Difference between classes `WTelegram.Bot` and `TelegramBotClient`
+
+If you're creating a new bot rather than migrating existing code, it is recommended that you use WTelegram.Bot.
 
 The method names don't have the Async suffix (even though they should still be invoked with `await`) so they are more close to official [Bot API method names](https://core.telegram.org/bots/api#available-methods).
 
 The orders of parameters can differ, presenting a more logical order for developers, with the more rarely used optional parameters near the end.
 
-There is no CancellationToken parameter because there is no mechanism to "abort" a request sent to Telegram Client API.
+There is no CancellationToken parameter because it doesn't make sense to abort an immediate TCP request to Client API.  
+_(Even with HTTP Bot API, it didn't make much sense: You can use cancellationToken.ThrowIfCancellationRequested() at various points of your own code if you want it to be cancellable)_
 
 In case of an error, it will throw TL.RpcException showing the raw Telegram error instead of an ApiRequestException
+
 
 ## How to access the advanced features?
 
@@ -126,14 +135,14 @@ You should make sure your hosting service won't stop/recycle your app after some
 
 (some host providers have an "always on" option, or alternatively you can ping your service with an HTTP request every 5 min to keep it alive)
 
+
 ## Help with the library
 
 This library is still quite new but I tested it extensively to make sure it covers all of the Bot API successfully.
 
-If you have questions about the Bot API methods from TelegramBotClient, you can ask them in Telegram.Bot support chat:
-https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA
+If you have questions about the Bot API methods from TelegramBotClient, you can ask them [in Telegram.Bot support chat](https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA).
 
-If your question is more specific to WTelegram.Bot, or an issue with library behaviour, you can ask them in https://t.me/WTelegramClient
+If your question is more specific to WTelegram.Bot, or an issue with library behaviour, you can ask them in [@WTelegramClient](https://t.me/WTelegramClient).
 
 If you like this library, you can [buy me a coffee](https://www.buymeacoffee.com/wizou) ❤ This will help the project keep going.
 

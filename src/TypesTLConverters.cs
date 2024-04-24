@@ -209,12 +209,16 @@ public static class TypesTLConverters
 		CanManageTopics = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics)
 	};
 
-	internal static void LegacyMode(this ChatPermissions permissions)
+	internal static ChatPermissions LegacyMode(this ChatPermissions permissions, bool? useIndependentChatPermissions)
 	{
-		if (permissions.CanSendPolls == true) permissions.CanSendMessages = true;
-		if (permissions.CanSendOtherMessages == true || permissions.CanAddWebPagePreviews == true)
-			permissions.CanSendAudios = permissions.CanSendDocuments = permissions.CanSendPhotos = permissions.CanSendVideos =
-				permissions.CanSendVideoNotes = permissions.CanSendVoiceNotes = permissions.CanSendMessages = true;
+		if (useIndependentChatPermissions != true)
+		{
+			if (permissions.CanSendPolls == true) permissions.CanSendMessages = true;
+			if (permissions.CanSendOtherMessages == true || permissions.CanAddWebPagePreviews == true)
+				permissions.CanSendAudios = permissions.CanSendDocuments = permissions.CanSendPhotos = permissions.CanSendVideos =
+					permissions.CanSendVideoNotes = permissions.CanSendVoiceNotes = permissions.CanSendMessages = true;
+		}
+		return permissions;
 	}
 
 	internal static ChatBannedRights ToChatBannedRights(this ChatPermissions permissions, DateTime? untilDate = default) => new()
@@ -289,7 +293,7 @@ public static class TypesTLConverters
 		{
 			writer.WriteTLObject(location);
 			writer.Write((byte)dc_id);
-			writer.Write((int)(file.FileSize ?? 0));
+			writer.Write((int)file.FileSize);
 			writer.Write((byte)42);
 		}
 		var bytes = memStream.ToArray();

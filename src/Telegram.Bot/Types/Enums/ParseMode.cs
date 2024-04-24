@@ -16,6 +16,12 @@ namespace Telegram.Bot.Types.Enums;
 public enum ParseMode
 {
     /// <summary>
+    /// <see cref="Message.Text"/> is plain text
+    /// </summary>
+    [Display(Name = "Default")]
+    Default = 0,
+
+    /// <summary>
     /// Markdown-formatted A <see cref="Message.Text"/>
     /// </summary>
     /// <remarks>

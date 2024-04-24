@@ -312,7 +312,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendTextMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId, entities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendTextMessage(chatId, text, parseMode ?? default, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to forward messages of any kind. Service messages can't be forwarded.
@@ -348,7 +348,7 @@ public static partial class TelegramBotClientExtensions
         bool protectContent = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to forward multiple messages of any kind. If some of the specified messages can't be found
@@ -391,7 +391,7 @@ public static partial class TelegramBotClientExtensions
         bool protectContent = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).ForwardMessages(chatId, fromChatId, messageIds, messageThreadId, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).ForwardMessages(chatId, fromChatId, messageIds, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to copy messages of any kind. Service messages and invoice messages can't be copied.
@@ -455,7 +455,7 @@ public static partial class TelegramBotClientExtensions
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId, captionEntities, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to copy messages of any kind. If some of the specified messages can't be found or copied,
@@ -506,7 +506,7 @@ public static partial class TelegramBotClientExtensions
         bool removeCaption = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CopyMessages(chatId, fromChatId, messageIds, messageThreadId, disableNotification, protectContent, removeCaption).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CopyMessages(chatId, fromChatId, messageIds, messageThreadId ?? 0, disableNotification, protectContent, removeCaption).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send photos.
@@ -575,7 +575,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display them in the music player.
@@ -652,7 +652,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration, performer, title, thumbnail, messageThreadId, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendAudio(chatId, audio, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send general files. Bots can currently send files of any type of up to 50 MB in size,
@@ -729,7 +729,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId, captionEntities, disableNotification, protectContent, disableContentTypeDetection, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode ?? default, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, disableContentTypeDetection, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as
@@ -814,7 +814,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration, width, height, thumbnail, messageThreadId, captionEntities, disableNotification, protectContent, hasSpoiler, supportsStreaming, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, supportsStreaming, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). Bots can currently
@@ -897,7 +897,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration, width, height, thumbnail, messageThreadId, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display the file as a playable voice
@@ -963,7 +963,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration, messageThreadId, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVoice(chatId, voice, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients
@@ -1024,7 +1024,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration, length, thumbnail, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio
@@ -1062,7 +1062,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send point on the map.
@@ -1124,7 +1124,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, horizontalAccuracy, livePeriod, heading, proximityAlertRadius, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, horizontalAccuracy, livePeriod, heading, proximityAlertRadius, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit live location messages. A location can be edited until its
@@ -1329,7 +1329,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send phone contacts.
@@ -1379,7 +1379,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vCard, replyParameters, replyMarkup, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vCard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send a native poll.
@@ -1471,7 +1471,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type, replyParameters, replyMarkup, messageThreadId, allowsMultipleAnswers, correctOptionId, explanation, explanationParseMode, explanationEntities, openPeriod, closeDate, isClosed, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type, replyParameters, replyMarkup, messageThreadId ?? 0, allowsMultipleAnswers, correctOptionId, explanation, explanationParseMode ?? default, explanationEntities, openPeriod, closeDate, isClosed, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send an animated emoji that will display a random value.
@@ -1522,7 +1522,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendDice(chatId, emoji, replyParameters, replyMarkup, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendDice(chatId, emoji, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method when you need to tell the user that something is happening on the bot’s side. The status is
@@ -1577,7 +1577,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendChatAction(chatId, chatAction, messageThreadId, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendChatAction(chatId, chatAction, messageThreadId ?? 0, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to change the chosen reactions on a message. Service messages can't be reacted to.
@@ -1678,12 +1678,9 @@ public static partial class TelegramBotClientExtensions
         this ITelegramBotClient botClient,
         string fileId,
         Stream destination,
-        CancellationToken cancellationToken = default)
-    {
-        var (file, location, dc_id) = fileId.ParseFileId(true);
-        await botClient.Bot(cancellationToken).Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) => cancellationToken.ThrowIfCancellationRequested()).ThrowAsApi();
-        return file;
-    }
+        CancellationToken cancellationToken = default
+    ) =>
+        await botClient.Bot(cancellationToken).GetInfoAndDownloadFile(fileId, destination).ThrowAsApi();
 
     /// <summary>
     /// Use this method to ban a user in a group, a supergroup or a channel. In the case of supergroups and
@@ -1718,7 +1715,7 @@ public static partial class TelegramBotClientExtensions
         bool revokeMessages = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).BanChatMember(chatId, userId, untilDate, revokeMessages).ThrowAsApi();
+        await botClient.Bot(cancellationToken).BanChatMember(chatId, userId, untilDate ?? default, revokeMessages).ThrowAsApi();
 
     /// <summary>
     /// Use this method to unban a previously banned user in a supergroup or channel. The user will <b>not</b>
@@ -1781,7 +1778,7 @@ public static partial class TelegramBotClientExtensions
         DateTime? untilDate = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).RestrictChatMember(chatId, userId, permissions, useIndependentChatPermissions, untilDate).ThrowAsApi();
+        await botClient.Bot(cancellationToken).RestrictChatMember(chatId, userId, permissions.LegacyMode(useIndependentChatPermissions), untilDate).ThrowAsApi();
 
     /// <summary>
     /// Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in
@@ -1868,7 +1865,25 @@ public static partial class TelegramBotClientExtensions
         bool canManageTopic = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).PromoteChatMember(chatId, userId, isAnonymous, canManageChat, canPostMessages, canEditMessages, canDeleteMessages, canPostStories, canEditStories, canDeleteStories, canManageVideoChats, canRestrictMembers, canPromoteMembers, canChangeInfo, canInviteUsers, canPinMessages, canManageTopic).ThrowAsApi();
+        await botClient.Bot(cancellationToken).PromoteChatMember(chatId, userId,
+            new ChatAdministratorRights
+            {
+                IsAnonymous = isAnonymous,
+                CanChangeInfo = canChangeInfo,
+                CanPostMessages = canPostMessages,
+                CanEditMessages = canEditMessages,
+                CanDeleteMessages = canDeleteMessages,
+                CanRestrictMembers = canRestrictMembers,
+                CanInviteUsers = canInviteUsers,
+                CanPinMessages = canPinMessages,
+                CanPromoteMembers = canPromoteMembers,
+                CanManageVideoChats = canManageVideoChats,
+                CanManageChat = canManageChat,
+                CanManageTopics = canManageTopic,
+                CanPostStories = canPostStories,
+                CanEditStories = canEditStories,
+                CanDeleteStories = canDeleteStories,
+            }).ThrowAsApi();
 
     /// <summary>
     /// Use this method to set a custom title for an administrator in a supergroup promoted by the bot.
@@ -1914,7 +1929,7 @@ public static partial class TelegramBotClientExtensions
         long senderChatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).BanChatSenderChat(chatId, senderChatId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, true).ThrowAsApi();
 
     /// <summary>
     /// Use this method to unban a previously banned channel chat in a supergroup or channel. The bot must be
@@ -1935,7 +1950,7 @@ public static partial class TelegramBotClientExtensions
         long senderChatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).UnbanChatSenderChat(chatId, senderChatId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, false).ThrowAsApi();
 
     /// <summary>
     /// Use this method to set default chat permissions for all members. The bot must be an administrator
@@ -1967,7 +1982,7 @@ public static partial class TelegramBotClientExtensions
         bool useIndependentChatPermissions = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetChatPermissions(chatId, permissions, useIndependentChatPermissions).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetChatPermissions(chatId, permissions.LegacyMode(useIndependentChatPermissions)).ThrowAsApi();
 
     /// <summary>
     /// Use this method to generate a new primary invite link for a chat; any previously generated primary
@@ -2165,7 +2180,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).DeleteChatPhoto(chatId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetChatPhoto(chatId, null).ThrowAsApi();
 
     /// <summary>
     /// Use this method to change the title of a chat. Titles can't be changed for private chats. The bot
@@ -2235,7 +2250,7 @@ public static partial class TelegramBotClientExtensions
         bool disableNotification = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).PinChatMessage(chatId, messageId, disableNotification).ThrowAsApi();
+        await botClient.Bot(cancellationToken).PinUnpinChatMessage(chatId, messageId, true, disableNotification).ThrowAsApi();
 
     /// <summary>
     /// Use this method to remove a message from the list of pinned messages in a chat. If the chat is not
@@ -2261,7 +2276,7 @@ public static partial class TelegramBotClientExtensions
         int? messageId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).UnpinChatMessage(chatId, messageId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? 0, false).ThrowAsApi();
 
     /// <summary>
     /// Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat,
@@ -2282,7 +2297,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).UnpinAllChatMessages(chatId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).UnpinAllMessages(chatId).ThrowAsApi();
 
     /// <summary>
     /// Use this method for your bot to leave a group, supergroup or channel.
@@ -2429,7 +2444,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).DeleteChatStickerSet(chatId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetChatStickerSet(chatId, null).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get custom emoji stickers, which can be used as a forum topic icon by any user.
@@ -2533,7 +2548,7 @@ public static partial class TelegramBotClientExtensions
         int messageThreadId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CloseForumTopic(chatId, messageThreadId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, true).ThrowAsApi();
 
     /// <summary>
     /// Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
@@ -2555,7 +2570,7 @@ public static partial class TelegramBotClientExtensions
         int messageThreadId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).ReopenForumTopic(chatId, messageThreadId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, false).ThrowAsApi();
 
     /// <summary>
     /// Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
@@ -2600,7 +2615,7 @@ public static partial class TelegramBotClientExtensions
         int messageThreadId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).UnpinAllForumTopicMessages(chatId, messageThreadId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).UnpinAllMessages(chatId, messageThreadId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an
@@ -2642,7 +2657,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CloseForumTopic(chatId, 1).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CloseReopenForumTopic(chatId, 1, true).ThrowAsApi();
 
     /// <summary>
     /// Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an
@@ -2663,7 +2678,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).ReopenForumTopic(chatId, 1).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CloseReopenForumTopic(chatId, 1, false).ThrowAsApi();
 
     /// <summary>
     /// Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
@@ -2723,7 +2738,7 @@ public static partial class TelegramBotClientExtensions
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).UnpinAllForumTopicMessages(chatId, 1).ThrowAsApi();
+        await botClient.Bot(cancellationToken).UnpinAllMessages(chatId, 1).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send answers to callback queries sent from
@@ -2766,7 +2781,7 @@ public static partial class TelegramBotClientExtensions
         string? text = default,
         bool showAlert = default,
         string? url = default,
-        int? cacheTime = default,
+        int cacheTime = default,
         CancellationToken cancellationToken = default
     ) =>
         await botClient.Bot(cancellationToken).AnswerCallbackQuery(callbackQueryId, text, showAlert, url, cacheTime).ThrowAsApi();
@@ -2907,11 +2922,11 @@ public static partial class TelegramBotClientExtensions
     /// </param>
     public static async Task SetMyNameAsync(
         this ITelegramBotClient botClient,
-        string? name = default,
+        string name,
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetMyName(name, languageCode).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetMyInfo(name: name, languageCode: languageCode).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get the current bot name for the given user language.
@@ -2931,7 +2946,7 @@ public static partial class TelegramBotClientExtensions
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).GetMyName(languageCode).ThrowAsApi();
+        (await botClient.Bot(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).name;
 
     /// <summary>
     /// Use this method to change the bot's description, which is shown in the chat
@@ -2951,11 +2966,11 @@ public static partial class TelegramBotClientExtensions
     /// </param>
     public static async Task SetMyDescriptionAsync(
         this ITelegramBotClient botClient,
-        string? description = default,
+        string description,
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetMyDescription(description, languageCode).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetMyInfo(description: description, languageCode: languageCode).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get the current <see cref="BotDescription">bot description</see>
@@ -2976,7 +2991,7 @@ public static partial class TelegramBotClientExtensions
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).GetMyDescription(languageCode).ThrowAsApi();
+        (await botClient.Bot(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).description;
 
     /// <summary>
     /// Use this method to change the bot's short description,which is shown on
@@ -2997,11 +3012,11 @@ public static partial class TelegramBotClientExtensions
     /// <returns></returns>
     public static async Task SetMyShortDescriptionAsync(
         this ITelegramBotClient botClient,
-        string? shortDescription = default,
+        string shortDescription,
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetMyShortDescription(shortDescription, languageCode).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetMyInfo(shortDescription: shortDescription, languageCode: languageCode).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get the current bot <see cref="BotShortDescription">short description</see>
@@ -3022,7 +3037,7 @@ public static partial class TelegramBotClientExtensions
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).GetMyShortDescription(languageCode).ThrowAsApi();
+        (await botClient.Bot(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).shortDescription;
 
     /// <summary>
     /// Use this method to change the bot’s menu button in a private chat, or the default menu button.
@@ -3153,7 +3168,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageText(chatId, messageId, text, parseMode ?? default, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit text and game messages.
@@ -3190,7 +3205,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageText(inlineMessageId, text, parseMode ?? default, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit captions of messages.
@@ -3231,7 +3246,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode ?? default, captionEntities, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit captions of messages.
@@ -3266,7 +3281,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode ?? default, captionEntities, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit animation, audio, document, photo, or video messages. If a message is part of
@@ -3435,7 +3450,7 @@ public static partial class TelegramBotClientExtensions
         int messageId,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).DeleteMessage(chatId, messageId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).DeleteMessages(chatId, messageId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to delete multiple messages simultaneously.
@@ -3460,7 +3475,7 @@ public static partial class TelegramBotClientExtensions
         IEnumerable<int> messageIds,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).DeleteMessages(chatId, messageIds).ThrowAsApi();
+        await botClient.Bot(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi();
 
     #endregion Updating messages
 
@@ -3525,7 +3540,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get a sticker set.
@@ -3777,7 +3792,7 @@ public static partial class TelegramBotClientExtensions
         IEnumerable<string> emojiList,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetStickerEmojiList(sticker, emojiList).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetStickerInfo(sticker, emojiList: string.Concat(emojiList)).ThrowAsApi();
 
     /// <summary>
     /// Use this method to change search keywords assigned to a regular or custom emoji sticker.
@@ -3802,7 +3817,7 @@ public static partial class TelegramBotClientExtensions
         IEnumerable<string>? keywords = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetStickerKeywords(sticker, keywords).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetStickerInfo(sticker, keywords: keywords == null ? "" : string.Join(',', keywords)).ThrowAsApi();
 
     /// <summary>
     /// Use this method to change the mask position of a mask sticker.
@@ -3827,7 +3842,7 @@ public static partial class TelegramBotClientExtensions
         MaskPosition? maskPosition = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetStickerMaskPosition(sticker, maskPosition).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetStickerInfo(sticker, maskPosition: maskPosition).ThrowAsApi();
 
     /// <summary>
     /// Use this method to set the title of a created sticker set.
@@ -4122,7 +4137,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, providerToken, currency, prices, replyParameters, replyMarkup, messageThreadId, maxTipAmount, suggestedTipAmounts, startParameter, providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, providerToken, currency, prices, replyParameters, replyMarkup, messageThreadId ?? 0, maxTipAmount, suggestedTipAmounts, startParameter, providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to create a link for an invoice.
@@ -4232,7 +4247,7 @@ public static partial class TelegramBotClientExtensions
         IEnumerable<ShippingOption> shippingOptions,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).AnswerShippingQuery(shippingQueryId, shippingOptions).ThrowAsApi();
+        await botClient.Bot(cancellationToken).AnswerShippingQuery(shippingQueryId, shippingOptions: shippingOptions).ThrowAsApi();
 
     /// <summary>
     /// If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,
@@ -4255,7 +4270,7 @@ public static partial class TelegramBotClientExtensions
         string errorMessage,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).AnswerShippingQuery(shippingQueryId, errorMessage).ThrowAsApi();
+        await botClient.Bot(cancellationToken).AnswerShippingQuery(shippingQueryId, errorMessage: errorMessage).ThrowAsApi();
 
     /// <summary>
     /// Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation
@@ -4347,7 +4362,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to set the score of the specified user in a game.

@@ -20,17 +20,17 @@ public partial class InputMediaVideo :
     /// <summary>
     /// Optional. Video width
     /// </summary>
-    public int? Width { get; set; }
+    public int Width { get; set; }
 
     /// <summary>
     /// Optional. Video height
     /// </summary>
-    public int? Height { get; set; }
+    public int Height { get; set; }
 
     /// <summary>
     /// Optional. Video duration
     /// </summary>
-    public int? Duration { get; set; }
+    public int Duration { get; set; }
 
     /// <summary>
     /// Optional. Pass True, if the uploaded video is suitable for streaming

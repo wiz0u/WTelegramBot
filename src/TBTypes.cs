@@ -136,4 +136,28 @@ namespace Telegram.Bot.Types
 		/// <summary>To get the same behaviour as previous parameter <c>disableWebPagePreview:</c></summary>
 		public static implicit operator LinkPreviewOptions(bool disabled) => new() { IsDisabled = disabled };
 	}
+
+	public partial class BotName
+	{
+		/// <summary>implicit to string</summary>
+		public static implicit operator string(BotName bn) => bn.Name;
+		/// <summary>implicit from string</summary>
+		public static implicit operator BotName(string bn) => new() { Name = bn };
+	}
+
+	public partial class BotShortDescription
+	{
+		/// <summary>implicit to string</summary>
+		public static implicit operator string(BotShortDescription bsd) => bsd.ShortDescription;
+		/// <summary>implicit from string</summary>
+		public static implicit operator BotShortDescription(string bsd) => new() { ShortDescription = bsd };
+	}
+	
+	public partial class BotDescription
+	{
+		/// <summary>implicit to string</summary>
+		public static implicit operator string(BotDescription bd) => bd.Description;
+		/// <summary>implicit from string</summary>
+		public static implicit operator BotDescription(string bd) => new() { Description = bd };
+	}
 }

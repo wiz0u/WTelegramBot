@@ -157,7 +157,7 @@ public partial class Bot
 	}
 
 	/// <summary>Build the eventual InputReplyTo structure for sending a reply message</summary>
-	protected async Task<InputReplyTo?> MakeReplyTo(ReplyParameters? replied, int? messageThreadId, InputPeer? replyToPeer)
+	protected async Task<InputReplyTo?> MakeReplyTo(ReplyParameters? replied, int messageThreadId, InputPeer? replyToPeer)
 	{
 		if (replied?.MessageId > 0)
 		{
@@ -169,20 +169,20 @@ public partial class Bot
 			return new InputReplyToMessage
 			{
 				reply_to_msg_id = replied.MessageId,
-				top_msg_id = messageThreadId ?? 0,
-				reply_to_peer_id = messageThreadId.HasValue ? replyToPeer : null,
+				top_msg_id = messageThreadId,
+				reply_to_peer_id = messageThreadId != 0 ? replyToPeer : null,
 				quote_text = quote,
 				quote_entities = quoteEntities,
 				quote_offset = replied.QuotePosition ?? 0,
-				flags = (messageThreadId.HasValue ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
+				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (replied.ChatId is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (quote != null ? InputReplyToMessage.Flags.has_quote_text : 0)
 					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
 					| (replied.QuotePosition.HasValue ? InputReplyToMessage.Flags.has_quote_offset : 0)
 			};
 		}
-		else if (messageThreadId > 0)
-			return new InputReplyToMessage { reply_to_msg_id = messageThreadId.Value };
+		else if (messageThreadId != 0)
+			return new InputReplyToMessage { reply_to_msg_id = messageThreadId };
 		return null;
 	}
 
@@ -208,9 +208,9 @@ public partial class Bot
 	}
 
 	/// <summary>Apply ParseMode to text and entities</summary>
-	protected string? ApplyParse(ParseMode? parseMode, string? text, ref MessageEntity[]? entities)
+	protected string? ApplyParse(ParseMode parseMode, string? text, ref MessageEntity[]? entities)
 	{
-		if (parseMode == null) return text;
+		if (parseMode == default) return text;
 		IEnumerable<MessageEntity>? entities_ = entities;
 		ApplyParse(parseMode, ref text, ref entities_);
 		entities = (MessageEntity[]?)entities_;
@@ -218,9 +218,9 @@ public partial class Bot
 	}
 
 	/// <summary>Apply ParseMode to text and entities</summary>
-	protected void ApplyParse(ParseMode? parseMode, ref string? text, ref IEnumerable<MessageEntity>? entities)
+	protected void ApplyParse(ParseMode parseMode, ref string? text, ref IEnumerable<MessageEntity>? entities)
 	{
-		if (entities != null || text == null) return;
+		if (entities != null || text == null || parseMode == default) return;
 		switch (parseMode)
 		{
 			case ParseMode.Markdown:
@@ -481,13 +481,13 @@ public partial class Bot
 
 		return await (result switch
 		{
-			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, null, null,
+			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, default, null,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
 				r.Url, "text/html", url: r.HideUrl == true ? null : r.Url),
 			InlineQueryResultAudio r => MakeIbir(r, r.Title, r.Performer, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				null, null, 0, 0,
 				r.AudioUrl, "audio/mpeg", new DocumentAttributeAudio { duration = r.AudioDuration ?? 0, title = r.Title, performer = r.Performer, flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }),
-			InlineQueryResultContact r => MakeIbir(r, r.LastName == null ? r.FirstName : $"{r.FirstName} {r.LastName}", r.PhoneNumber, r.InputMessageContent, null, null, null,
+			InlineQueryResultContact r => MakeIbir(r, r.LastName == null ? r.FirstName : $"{r.FirstName} {r.LastName}", r.PhoneNumber, r.InputMessageContent, null, default, null,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
 			InlineQueryResultDocument r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
@@ -495,7 +495,7 @@ public partial class Bot
 			InlineQueryResultGif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				r.ThumbnailUrl, r.ThumbnailMimeType, 0, 0,
 				r.GifUrl, "image/gif", r.GifWidth + r.GifHeight > 0 ? new DocumentAttributeImageSize { w = r.GifWidth ?? 0, h = r.GifHeight ?? 0 } : null),
-			InlineQueryResultLocation r => MakeIbir(r, r.Title, $"{r.Latitude} {r.Longitude}", r.InputMessageContent, null, null, null,
+			InlineQueryResultLocation r => MakeIbir(r, r.Title, $"{r.Latitude} {r.Longitude}", r.InputMessageContent, null, default, null,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight, type: "geo"),
 			InlineQueryResultMpeg4Gif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				r.ThumbnailUrl, r.ThumbnailMimeType ?? "image/jpeg", 0, 0,
@@ -503,7 +503,7 @@ public partial class Bot
 			InlineQueryResultPhoto r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				r.ThumbnailUrl, "image/jpeg", 0, 0,
 				r.PhotoUrl, "image/jpeg", r.PhotoWidth + r.PhotoHeight > 0 ? new DocumentAttributeImageSize { w = r.PhotoWidth ?? 0, h = r.PhotoHeight ?? 0 } : null),
-			InlineQueryResultVenue r => MakeIbir(r, r.Title, r.Address, r.InputMessageContent, null, null, null,
+			InlineQueryResultVenue r => MakeIbir(r, r.Title, r.Address, r.InputMessageContent, null, default, null,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
 			InlineQueryResultVideo r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
 				r.ThumbnailUrl, "image/jpeg", 0, 0,
@@ -516,7 +516,7 @@ public partial class Bot
 	}
 
 	private async Task<InputBotInlineResult> MakeIbir(InlineQueryResult r, string? title, string? description,
-		InputMessageContent? imc, string? caption, ParseMode? parseMode, MessageEntity[]? captionEntities,
+		InputMessageContent? imc, string? caption, ParseMode parseMode, MessageEntity[]? captionEntities,
 		string? thumbnail_url = null, string? thumbnail_type = null, int? thumbWidth = 0, int? thumbHeight = 0,
 		string? content_url = null, string? content_type = null, DocumentAttribute? attribute = null,
 		string? type = null, string? url = null)
@@ -552,7 +552,7 @@ public partial class Bot
 	}
 
 	private async Task<InputBotInlineMessage> InputBotInlineMessage(InlineQueryResult iqr,
-		InputMessageContent? message, string? caption = null, ParseMode? parseMode = null, MessageEntity[]? captionEntities = null)
+		InputMessageContent? message, string? caption = null, ParseMode parseMode = default, MessageEntity[]? captionEntities = null)
 	{
 		if (message != null) captionEntities = null;
 		var reply_markup = await MakeReplyMarkup(iqr.ReplyMarkup);

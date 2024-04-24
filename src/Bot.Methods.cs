@@ -1,5 +1,4 @@
 ﻿using Telegram.Bot.Exceptions;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.Payments;
@@ -51,11 +50,11 @@ public partial class Bot
 	public async Task<Message> SendTextMessage(
 		ChatId chatId,
 		string text,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
 		LinkPreviewOptions? linkPreviewOptions = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
@@ -91,7 +90,7 @@ public partial class Bot
 		 ChatId chatId,
 		 ChatId fromChatId,
 		 int messageId,
-		 int? messageThreadId = default,
+		 int messageThreadId = default,
 		 bool disableNotification = default,
 		 bool protectContent = default
 	)
@@ -118,7 +117,7 @@ public partial class Bot
 		ChatId chatId,
 		ChatId fromChatId,
 		IEnumerable<int> messageIds,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default
 	)
@@ -164,10 +163,10 @@ public partial class Bot
 		ChatId fromChatId,
 		int messageId,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default
@@ -213,7 +212,7 @@ public partial class Bot
 		ChatId chatId,
 		ChatId fromChatId,
 		int[] messageIds,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		bool removeCaption = default
@@ -296,10 +295,10 @@ public partial class Bot
 		ChatId chatId,
 		InputFile photo,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
@@ -320,20 +319,19 @@ public partial class Bot
 	private async Task<Message> SendDocument(
 		ChatId chatId,
 		InputFile file,
-		string? caption = default,
-		ParseMode? parseMode = default,
-		IEnumerable<MessageEntity>? captionEntities = default,
-		string? defaultFilename = null,
-		Action<InputMediaUploadedDocument>? prepareDoc = default,
-		InputFile? thumbnail = default,
-		bool disableNotification = default,
-		bool protectContent = default,
-		ReplyParameters? replyParameters = default,
-		IReplyMarkup? replyMarkup = default,
-		string? businessConnectionId = default,
-		bool hasSpoiler = default,
-		int? messageThreadId = default
-	)
+		string? caption,
+		ParseMode parseMode,
+		ReplyParameters? replyParameters,
+		IReplyMarkup? replyMarkup,
+		InputFile? thumbnail,
+		int messageThreadId,
+		IEnumerable<MessageEntity>? captionEntities,
+		bool disableNotification,
+		bool protectContent,
+		string? businessConnectionId,
+		string? defaultFilename,
+		bool hasSpoiler,
+		Action<InputMediaUploadedDocument>? prepareDoc)
 	{
 		ApplyParse(parseMode, ref caption, ref captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -386,25 +384,25 @@ public partial class Bot
 		ChatId chatId,
 		InputFile audio,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? duration = default,
+		int duration = default,
 		string? performer = default,
 		string? title = default,
 		InputFile? thumbnail = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, audio, caption, parseMode, captionEntities, null,
-		doc => doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
-			duration = duration ?? 0, performer = performer, title = title,
-			flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }],
-		thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId);
+		return await SendDocument(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+			captionEntities, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
+				duration = duration, performer = performer, title = title,
+				flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }]);
 	}
 
 	/// <summary>Use this method to send general files. Bots can currently send files of any type of up to 50 MB in size,
@@ -441,11 +439,11 @@ public partial class Bot
 		ChatId chatId,
 		InputFile document,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
 		InputFile? thumbnail = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
@@ -453,9 +451,9 @@ public partial class Bot
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, document, caption, parseMode, captionEntities, "document",
-		doc => { if (disableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file; },
-		thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId);
+		return await SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+			captionEntities, disableNotification, protectContent, businessConnectionId, "document", default, doc =>
+			{ if (disableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file; });
 	}
 
 	/// <summary>Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as
@@ -496,14 +494,14 @@ public partial class Bot
 		ChatId chatId,
 		InputFile video,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? duration = default,
-		int? width = default,
-		int? height = default,
+		int duration = default,
+		int width = default,
+		int height = default,
 		InputFile? thumbnail = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
@@ -512,11 +510,11 @@ public partial class Bot
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, video, caption, parseMode, captionEntities, null,
-		doc => doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
-			duration = duration ?? 0, h = height ?? 0, w = width ?? 0,
-			flags = supportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }],
-		thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, hasSpoiler, messageThreadId);
+		return await SendDocument(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+			captionEntities, disableNotification, protectContent, businessConnectionId, default, hasSpoiler, doc =>
+			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
+				duration = duration, h = height, w = width,
+				flags = supportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }]);
 	}
 
 	/// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). Bots can currently
@@ -556,14 +554,14 @@ public partial class Bot
 		ChatId chatId,
 		InputFile animation,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? duration = default,
-		int? width = default,
-		int? height = default,
+		int duration = default,
+		int width = default,
+		int height = default,
 		InputFile? thumbnail = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
@@ -571,19 +569,18 @@ public partial class Bot
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, animation, caption, parseMode, captionEntities, "animation",
-		doc =>
-		{
-			doc.attributes ??= [];
-			if (doc.mime_type == "video/mp4")
-				doc.attributes = [.. doc.attributes, new DocumentAttributeVideo { duration = duration ?? 0, w = width ?? 0, h = height ?? 0 }];
-			else if (width > 0 && height > 0)
+		return await SendDocument(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+			captionEntities, disableNotification, protectContent, businessConnectionId, "animation", hasSpoiler, doc =>
 			{
-				if (doc.mime_type?.StartsWith("image/") != true) doc.mime_type = "image/gif";
-				doc.attributes = [.. doc.attributes, new DocumentAttributeImageSize { w = width ?? 0, h = height ?? 0 }];
-			}
-		},
-		thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, hasSpoiler, messageThreadId);
+				doc.attributes ??= [];
+				if (doc.mime_type == "video/mp4")
+					doc.attributes = [.. doc.attributes, new DocumentAttributeVideo { duration = duration, w = width, h = height }];
+				else if (width > 0 && height > 0)
+				{
+					if (doc.mime_type?.StartsWith("image/") != true) doc.mime_type = "image/gif";
+					doc.attributes = [.. doc.attributes, new DocumentAttributeImageSize { w = width, h = height }];
+				}
+			});
 	}
 
 	/// <summary>Use this method to send audio files, if you want Telegram clients to display the file as a playable voice
@@ -616,25 +613,24 @@ public partial class Bot
 		ChatId chatId,
 		InputFile voice,
 		string? caption = default,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? duration = default,
-		int? messageThreadId = default,
+		int duration = default,
+		int messageThreadId = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, voice, caption, parseMode, captionEntities, null,
-		doc =>
-		{
-			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
-				duration = duration ?? 0, flags = DocumentAttributeAudio.Flags.voice }];
-			if (doc.mime_type is not "audio/ogg" and not "audio/mpeg" and not "audio/mp4") doc.mime_type = "audio/ogg";
-		},
-		null, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId);
+		return await SendDocument(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
+			captionEntities, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			{
+				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
+					duration = duration, flags = DocumentAttributeAudio.Flags.voice }];
+				if (doc.mime_type is not "audio/ogg" and not "audio/mpeg" and not "audio/mp4") doc.mime_type = "audio/ogg";
+			});
 	}
 
 	/// <summary>As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients
@@ -666,23 +662,22 @@ public partial class Bot
 		InputFile videoNote,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? duration = default,
+		int duration = default,
 		int? length = default,
 		InputFile? thumbnail = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
 	)
 	{
-		return await SendDocument(chatId, videoNote, null, null, null, null,
-		doc =>
-		{
-			doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
-			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
-				flags = DocumentAttributeVideo.Flags.round_message, duration = duration ?? 0, w = length ?? 384, h = length ?? 384 }];
-		},
-		thumbnail, disableNotification, protectContent, replyParameters, replyMarkup, businessConnectionId, default, messageThreadId);
+		return await SendDocument(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
+			default, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			{
+				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
+				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
+					flags = DocumentAttributeVideo.Flags.round_message, duration = duration, w = length ?? 384, h = length ?? 384 }];
+			});
 	}
 
 	/// <summary>Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio
@@ -700,7 +695,7 @@ public partial class Bot
 		ChatId chatId,
 		IEnumerable<IAlbumInputMedia> media,
 		ReplyParameters? replyParameters = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -730,12 +725,12 @@ public partial class Bot
 					{
 						case Telegram.Bot.Types.InputMediaAudio ima:
 							doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
-							duration = ima.Duration ?? 0, performer = ima.Performer, title = ima.Title,
+							duration = ima.Duration, performer = ima.Performer, title = ima.Title,
 							flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }];
 							break;
 						case Telegram.Bot.Types.InputMediaVideo imv:
 							doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
-							duration = imv.Duration ?? 0, h = imv.Height ?? 0, w = imv.Width ?? 0,
+							duration = imv.Duration, h = imv.Height, w = imv.Width,
 							flags = imv.SupportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
 							break;
 						case Telegram.Bot.Types.InputMediaDocument imd:
@@ -793,7 +788,7 @@ public partial class Bot
 		int? livePeriod = default,
 		int? heading = default,
 		int? proximityAlertRadius = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -945,7 +940,7 @@ public partial class Bot
 		string? foursquareType = default,
 		string? googlePlaceId = default,
 		string? googlePlaceType = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -1002,7 +997,7 @@ public partial class Bot
 		string? vCard = default,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -1062,11 +1057,11 @@ public partial class Bot
 		PollType type = PollType.Regular,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool allowsMultipleAnswers = default,
 		int? correctOptionId = default,
 		string? explanation = default,
-		ParseMode? explanationParseMode = default,
+		ParseMode explanationParseMode = default,
 		IEnumerable<MessageEntity>? explanationEntities = default,
 		int? openPeriod = default,
 		DateTime? closeDate = default,
@@ -1130,7 +1125,7 @@ public partial class Bot
 		Emoji emoji = Emoji.Dice,
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -1176,7 +1171,7 @@ public partial class Bot
 	public async Task SendChatAction(
 		ChatId chatId,
 		ChatAction chatAction,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		string? businessConnectionId = default
 	)
 	{
@@ -1187,9 +1182,9 @@ public partial class Bot
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
 				new TL.Methods.Messages_SetTyping
 				{
-					flags = (TL.Methods.Messages_SetTyping.Flags)(messageThreadId != null ? 0x1 : 0),
+					flags = (TL.Methods.Messages_SetTyping.Flags)(messageThreadId != 0 ? 0x1 : 0),
 					peer = peer,
-					top_msg_id = messageThreadId.GetValueOrDefault(),
+					top_msg_id = messageThreadId,
 					action = chatAction.ChatAction(),
 				});
 	}
@@ -1209,7 +1204,7 @@ public partial class Bot
 		ChatId chatId,
 		int messageId,
 		IEnumerable<ReactionType>? reaction,
-		bool isBig
+		bool isBig = default
 	)
 	{
 		var peer = await InputPeerChat(chatId);
@@ -1249,10 +1244,8 @@ public partial class Bot
 	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
 	public Task<File> GetFile(
 		string fileId
-	)
-	{
-		return Task.FromResult(fileId.ParseFileId(true).file);
-	}
+	) =>
+		Task.FromResult(fileId.ParseFileId(true).file);
 
 	/// <summary>Use this method to get basic info about a file download it. For the moment, bots can download files
 	/// of up to 20MB in size.</summary>
@@ -1267,9 +1260,7 @@ public partial class Bot
 	)
 	{
 		var (file, location, dc_id) = fileId.ParseFileId(true);
-
-		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) => cancellationToken.ThrowIfCancellationRequested());
-
+		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize, (t, s) => cancellationToken.ThrowIfCancellationRequested());
 		return file;
 	}
 
@@ -1289,7 +1280,7 @@ public partial class Bot
 	public async Task BanChatMember(
 		ChatId chatId,
 		long userId,
-		DateTime? untilDate = default,
+		DateTime untilDate = default,
 		bool revokeMessages = default
 	)
 	{
@@ -1302,7 +1293,7 @@ public partial class Bot
 				break;
 			case InputPeerChannel channel:
 				await Client.Channels_EditBanned(channel, user,
-					new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages, until_date = untilDate ?? default });
+					new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages, until_date = untilDate });
 				break;
 			default: throw new ApiRequestException("can't ban members in private chats", 400);
 		}
@@ -1350,95 +1341,36 @@ public partial class Bot
 	/// (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="userId">Unique identifier of the target user</param>
 	/// <param name="permissions">New user permissions</param>
-	/// <param name="useIndependentChatPermissions">Pass <see langword="true"/> if chat permissions are set independently. Otherwise, the
-	/// <see cref="ChatPermissions.CanSendOtherMessages"/>, and <see cref="ChatPermissions.CanAddWebPagePreviews"/>
-	/// permissions will imply the <see cref="ChatPermissions.CanSendMessages"/>,
-	/// <see cref="ChatPermissions.CanSendAudios"/>, <see cref="ChatPermissions.CanSendDocuments"/>,
-	/// <see cref="ChatPermissions.CanSendPhotos"/>, <see cref="ChatPermissions.CanSendVideos"/>,
-	/// <see cref="ChatPermissions.CanSendVideoNotes"/>, and <see cref="ChatPermissions.CanSendVoiceNotes"/>
-	/// permissions; the <see cref="ChatPermissions.CanSendPolls"/> permission will imply the
-	/// <see cref="ChatPermissions.CanSendMessages"/> permission.</param>
 	/// <param name="untilDate">Date when restrictions will be lifted for this user; Unix time. If 0, then the user is restricted forever</param>
 	public async Task RestrictChatMember(
 		ChatId chatId,
 		long userId,
 		ChatPermissions permissions,
-		bool useIndependentChatPermissions = default,
 		DateTime? untilDate = default
 	)
 	{
 		var channel = await InputChannel(chatId);
 		var user = InputPeerUser(userId);
-		if (useIndependentChatPermissions != true) permissions.LegacyMode();
 		await Client.Channels_EditBanned(channel, user, permissions.ToChatBannedRights(untilDate));
 	}
 
 	/// <summary>Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in
-	/// the chat for this to work and must have the appropriate admin rights. Pass <c><see langword="false"/></c> for
-	/// all boolean parameters to demote a user.</summary>
+	/// the chat for this to work and must have the appropriate admin rights. Pass <c><see langword="null"/></c> rights to demote a user.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
 	/// <param name="userId">Unique identifier of the target user</param>
-	/// <param name="isAnonymous">Pass <see langword="true"/>, if the administrator's presence in the chat is hidden</param>
-	/// <param name="canManageChat">Pass <see langword="true"/>, if the administrator can access the chat event log, chat statistics, message
-	/// statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode.
-	/// Implied by any other administrator privilege</param>
-	/// <param name="canPostMessages">Pass <see langword="true"/>, if the administrator can create channel posts, channels only</param>
-	/// <param name="canEditMessages">Pass <see langword="true"/>, if the administrator can edit messages of other users, channels only</param>
-	/// <param name="canDeleteMessages">Pass <see langword="true"/>, if the administrator can delete messages of other users</param>
-	/// <param name="canPostStories">Pass <see langword="true"/> if the administrator can post stories in the channel; channels only</param>
-	/// <param name="canEditStories">Pass <see langword="true"/> if the administrator can edit stories posted by other users; channels only</param>
-	/// <param name="canDeleteStories">Pass <see langword="true"/> if the administrator can delete stories posted by other users; channels only</param>
-	/// <param name="canManageVideoChats">Pass <see langword="true"/>, if the administrator can manage voice chats, supergroups only</param>
-	/// <param name="canRestrictMembers">Pass <see langword="true"/>, if the administrator can restrict, ban or unban chat members</param>
-	/// <param name="canPromoteMembers">Pass <see langword="true"/>, if the administrator can add new administrators with a subset of his own
-	/// privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators
-	/// that were appointed by him)</param>
-	/// <param name="canChangeInfo">Pass <see langword="true"/>, if the administrator can change chat title, photo and other settings</param>
-	/// <param name="canInviteUsers">Pass <see langword="true"/>, if the administrator can invite new users to the chat</param>
-	/// <param name="canPinMessages">Pass <see langword="true"/>, if the administrator can pin messages, supergroups only</param>
-	/// <param name="canManageTopic">Pass <see langword="true"/> if the user is allowed to create, rename, close, and reopen forum topics,
-	/// supergroups only</param>
+	/// <param name="rights">An object describing new administrator rights.</param>
+	/// <param name="customTitle">Give an admin title to the user (exclusive!)</param>
 	public async Task PromoteChatMember(
 		ChatId chatId,
 		long userId,
-		bool isAnonymous = default,
-		bool canManageChat = default,
-		bool canPostMessages = default,
-		bool canEditMessages = default,
-		bool canDeleteMessages = default,
-		bool canPostStories = default,
-		bool canEditStories = default,
-		bool canDeleteStories = default,
-		bool canManageVideoChats = default,
-		bool canRestrictMembers = default,
-		bool canPromoteMembers = default,
-		bool canChangeInfo = default,
-		bool canInviteUsers = default,
-		bool canPinMessages = default,
-		bool canManageTopic = default
+		ChatAdministratorRights? rights,
+		string? customTitle = null
 	)
 	{
 		var channel = await InputChannel(chatId);
 		var user = InputPeerUser(userId);
-		await Client.Channels_EditAdmin(channel, user, new ChatAdminRights
-		{
-			flags = (isAnonymous == true ? ChatAdminRights.Flags.anonymous : 0)
-			| (canChangeInfo == true ? ChatAdminRights.Flags.change_info : 0)
-			| (canPostMessages == true ? ChatAdminRights.Flags.post_messages : 0)
-			| (canEditMessages == true ? ChatAdminRights.Flags.edit_messages : 0)
-			| (canDeleteMessages == true ? ChatAdminRights.Flags.delete_messages : 0)
-			| (canRestrictMembers == true ? ChatAdminRights.Flags.ban_users : 0)
-			| (canInviteUsers == true ? ChatAdminRights.Flags.invite_users : 0)
-			| (canPinMessages == true ? ChatAdminRights.Flags.pin_messages : 0)
-			| (canPromoteMembers == true ? ChatAdminRights.Flags.add_admins : 0)
-			| (canManageVideoChats == true ? ChatAdminRights.Flags.manage_call : 0)
-			| (canManageChat == true ? ChatAdminRights.Flags.other : 0)
-			| (canManageTopic == true ? ChatAdminRights.Flags.manage_topics : 0)
-			| (canPostStories == true ? ChatAdminRights.Flags.post_stories : 0)
-			| (canEditStories == true ? ChatAdminRights.Flags.edit_stories : 0)
-			| (canDeleteStories == true ? ChatAdminRights.Flags.delete_stories : 0)
-		}, null);
+		await Client.Channels_EditAdmin(channel, user, rights.ChatAdminRights(), customTitle);
 	}
 
 	/// <summary>Use this method to set a custom title for an administrator in a supergroup promoted by the bot.</summary>
@@ -1463,37 +1395,23 @@ public partial class Bot
 		await Client.Channels_EditAdmin(channel, user, admin.admin_rights, customTitle);
 	}
 
-	/// <summary>Use this method to ban a channel chat in a supergroup or a channel. The owner of the chat will not be
+	/// <summary>Use this method to ban (or unban) a channel chat in a supergroup or a channel. The owner of the chat will not be
 	/// able to send messages and join live streams on behalf of the chat, unless it is unbanned first. The bot
 	/// must be an administrator in the supergroup or channel for this to work and must have the appropriate
 	/// administrator rights. Returns <see langword="true"/> on success.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup
 	/// (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="senderChatId">Unique identifier of the target sender chat</param>
-	public async Task BanChatSenderChat(
+	/// <param name="ban">whether to ban or unban</param>
+	public async Task BanUnbanChatSenderChat(
 		ChatId chatId,
-		long senderChatId
+		long senderChatId,
+		bool ban = true
 	)
 	{
 		var channel = await InputChannel(chatId);
 		var senderChat = await InputPeerChat(senderChatId);
-		await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages });
-	}
-
-	/// <summary>Use this method to unban a previously banned channel chat in a supergroup or channel. The bot must be
-	/// an administrator for this to work and must have the appropriate administrator rights.
-	/// Returns <see langword="true"/> on success.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup
-	/// (in the format <c>@supergroupusername</c>)</param>
-	/// <param name="senderChatId">Unique identifier of the target sender chat</param>
-	public async Task UnbanChatSenderChat(
-		ChatId chatId,
-		long senderChatId
-	)
-	{
-		var channel = await InputChannel(chatId);
-		var senderChat = await InputPeerChat(senderChatId);
-		await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { });
+		await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { flags = ban ? ChatBannedRights.Flags.view_messages : 0 });
 	}
 
 	/// <summary>Use this method to set default chat permissions for all members. The bot must be an administrator
@@ -1501,24 +1419,14 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup
 	/// (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="permissions">New default chat permissions</param>
-	/// <param name="useIndependentChatPermissions">Pass <see langword="true"/> if chat permissions are set independently. Otherwise, the
-	/// <see cref="ChatPermissions.CanSendOtherMessages"/>, and <see cref="ChatPermissions.CanAddWebPagePreviews"/>
-	/// permissions will imply the <see cref="ChatPermissions.CanSendMessages"/>,
-	/// <see cref="ChatPermissions.CanSendAudios"/>, <see cref="ChatPermissions.CanSendDocuments"/>,
-	/// <see cref="ChatPermissions.CanSendPhotos"/>, <see cref="ChatPermissions.CanSendVideos"/>,
-	/// <see cref="ChatPermissions.CanSendVideoNotes"/>, and <see cref="ChatPermissions.CanSendVoiceNotes"/>
-	/// permissions; the <see cref="ChatPermissions.CanSendPolls"/> permission will imply the
-	/// <see cref="ChatPermissions.CanSendMessages"/> permission.</param>
 	public async Task SetChatPermissions(
 		ChatId chatId,
-		ChatPermissions permissions,
-		bool useIndependentChatPermissions = default
+		ChatPermissions permissions
 	)
 	{
 		var peer = await InputPeerChat(chatId);
 		try
 		{
-		if (useIndependentChatPermissions != true) permissions.LegacyMode();
 		await Client.Messages_EditChatDefaultBannedRights(peer, permissions.ToChatBannedRights());
 		}
 		catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
@@ -1613,7 +1521,7 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
 	/// <param name="userId">Unique identifier of the target user</param>
-	/// <param name="approved">Whether to approve or decline the chat join request</param>
+	/// <param name="approved">whether to approve or decline the chat join request</param>
 	public async Task<bool> HideChatJoinRequest(ChatId chatId, long userId, bool approved)
 	{
 		var peer = await InputPeerChat(chatId);
@@ -1622,30 +1530,19 @@ public partial class Bot
 		return true;
 	}
 
-	/// <summary>Use this method to set a new profile photo for the chat. Photos can't be changed for private chats.
+	/// <summary>Use this method to set (or delete) a new profile photo for the chat. Photos can't be changed for private chats.
 	/// The bot must be an administrator in the chat for this to work and must have the appropriate admin rights</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="photo">New chat photo, uploaded using multipart/form-data</param>
+	/// <param name="photo">New chat photo, or null to delete photo</param>
 	public async Task SetChatPhoto(
 		ChatId chatId,
-		InputFileStream photo
+		InputFileStream? photo
 	)
 	{
 		var peer = await InputPeerChat(chatId);
-		var inputPhoto = await InputChatPhoto(photo);
+		var inputPhoto = photo == null ? null : await InputChatPhoto(photo);
 		await Client.EditChatPhoto(peer, inputPhoto);
-	}
-
-	/// <summary>Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an
-	/// administrator in the chat for this to work and must have the appropriate admin rights</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format @channelusername)</param>
-	public async Task DeleteChatPhoto(
-		ChatId chatId
-	)
-	{
-		var peer = await InputPeerChat(chatId);
-		await Client.EditChatPhoto(peer, null);
 	}
 
 	/// <summary>Use this method to change the title of a chat. Titles can't be changed for private chats. The bot
@@ -1680,45 +1577,30 @@ public partial class Bot
 		await Client.Messages_EditChatAbout(peer, description);
 	}
 
-	/// <summary>Use this method to add a message to the list of pinned messages in a chat. If the chat is not a private
+	/// <summary>Use this method to add/remove a message to the list of pinned messages in a chat. If the chat is not a private
 	/// chat, the bot must be an administrator in the chat for this to work and must have the
 	/// '<see cref="ChatMemberAdministrator.CanPinMessages"/>' admin right in a supergroup or
 	/// '<see cref="ChatMemberAdministrator.CanEditMessages"/>' admin right in a channel</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of a message to pin</param>
+	/// <param name="messageId">Identifier of a message to pin or unpin. To unpin the most recent pinned message, pass 0</param>
+	/// <param name="pin">whether to pin (true) or unpin (false)</param>
 	/// <param name="disableNotification">Pass <c><see langword="true"/></c>, if it is not necessary to send a notification to all chat members about
 	/// the new pinned message. Notifications are always disabled in channels and private chats</param>
-	public async Task PinChatMessage(
+	public async Task PinUnpinChatMessage(
 		ChatId chatId,
 		int messageId,
+		bool pin = true,
 		bool disableNotification = default
 	)
 	{
 		var peer = await InputPeerChat(chatId);
-		await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification == true);
-	}
-
-	/// <summary>Use this method to remove a message from the list of pinned messages in a chat. If the chat is not
-	/// a private chat, the bot must be an administrator in the chat for this to work and must have the
-	/// '<see cref="ChatMemberAdministrator.CanPinMessages"/>' admin right in a supergroup or
-	/// '<see cref="ChatMemberAdministrator.CanEditMessages"/>' admin right in a channel</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of a message to unpin. If not specified, the most recent pinned message (by sending date)
-	/// will be unpinned</param>
-	public async Task UnpinChatMessage(
-		ChatId chatId,
-		int? messageId = default
-	)
-	{
-		var peer = await InputPeerChat(chatId);
-		if (messageId is null or 0)
+		if (!pin && messageId == 0)
 			if (peer is InputPeerUser user)
 				messageId = (await Client.Users_GetFullUser(user)).full_user.pinned_msg_id;
 			else
 				messageId = (await Client.GetFullChat(peer)).full_chat.PinnedMsg;
-		await Client.Messages_UpdatePinnedMessage(peer, messageId.Value, unpin: true);
+		await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification == true, unpin: !pin);
 	}
 
 	/// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat,
@@ -1727,12 +1609,15 @@ public partial class Bot
 	/// '<see cref="ChatMemberAdministrator.CanEditMessages"/>' admin right in a channel</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	public async Task UnpinAllChatMessages(
-		ChatId chatId
+	/// <param name="messageThreadId">(optional) if you want to target only a specific forum topic</param>
+	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
+	public async Task UnpinAllMessages(
+		ChatId chatId,
+		int? messageThreadId = default
 	)
 	{
 		var peer = await InputPeerChat(chatId);
-		await Client.Messages_UnpinAllMessages(peer);
+		await Client.Messages_UnpinAllMessages(peer, messageThreadId);
 	}
 
 	/// <summary>Use this method for your bot to leave a group, supergroup or channel.</summary>
@@ -1742,7 +1627,8 @@ public partial class Bot
 		ChatId chatId
 	)
 	{
-		await Client.LeaveChat(await InputPeerChat(chatId));
+		var peer = await InputPeerChat(chatId);
+		await Client.LeaveChat(peer);
 	}
 
 	/// <summary>Use this method to get up to date information about the chat (current name of the user for one-on-one
@@ -1912,36 +1798,21 @@ public partial class Bot
 	}
 
 
-	/// <summary>Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the
+	/// <summary>Use this method to delete or set a new group sticker set for a supergroup. The bot must be an administrator in the
 	/// chat for this to work and must have the appropriate admin rights. Use the field
 	/// <see cref="Chat.CanSetStickerSet"/> optionally returned in
 	/// <see cref="GetChat(GetChatRequest)"/> requests to check if the bot
 	/// can use this method.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="stickerSetName">Name of the sticker set to be set as the group sticker set</param>
+	/// <param name="stickerSetName">Name of the sticker set to be set as the group sticker set (null to delete)</param>
 	public async Task SetChatStickerSet(
 		ChatId chatId,
-		string stickerSetName
+		string? stickerSetName
 	)
 	{
 		var channel = await InputChannel(chatId);
 		await Client.Channels_SetStickers(channel, stickerSetName);
-	}
-
-	/// <summary>Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the
-	/// chat for this to work and must have the appropriate admin rights. Use the field
-	/// <see cref="Chat.CanSetStickerSet"/> optionally returned in
-	/// <see cref="GetChat(GetChatRequest)"/> requests to check if the bot
-	/// can use this method</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)</param>
-	public async Task DeleteChatStickerSet(
-		ChatId chatId
-	)
-	{
-		var channel = await InputChannel(chatId);
-		await Client.Channels_SetStickers(channel, null);
 	}
 
 	/// <summary>Use this method to get custom emoji stickers, which can be used as a forum topic icon by any user.</summary>
@@ -2003,36 +1874,22 @@ public partial class Bot
 			iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
 	}
 
-	/// <summary>Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat
+	/// <summary>Use this method to close or reopen a topic in a forum supergroup chat. The bot must be an administrator in the chat
 	/// for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator rights,
 	/// unless it is the creator of the topic. Returns <see langword="true"/> on success.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
+	/// <param name="closed">whether to close (true) or reopen (false) the topic</param>
 	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
-	public async Task CloseForumTopic(
+	public async Task CloseReopenForumTopic(
 		ChatId chatId,
-		int messageThreadId
+		int messageThreadId,
+		bool closed = true
 	)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, messageThreadId, closed: true);
-	}
-
-	/// <summary>Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the
-	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanManageTopics"/> administrator
-	/// rights, unless it is the creator of the topic. Returns <see langword="true"/> on success.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
-	public async Task ReopenForumTopic(
-		ChatId chatId,
-		int messageThreadId
-	)
-	{
-		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, messageThreadId, closed: false);
+		await Client.Channels_EditForumTopic(channel, messageThreadId, closed: closed);
 	}
 
 	/// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be
@@ -2049,22 +1906,6 @@ public partial class Bot
 	{
 		var channel = await InputChannel(chatId);
 		await Client.Channels_DeleteTopicHistory(channel, messageThreadId);
-	}
-
-	/// <summary>Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the
-	/// chat for this to work and must have the <see cref="ChatAdministratorRights.CanPinMessages"/> administrator
-	/// right in the supergroup. Returns <see langword="true"/> on success.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
-	public async Task UnpinAllForumTopicMessages(
-		ChatId chatId,
-		int messageThreadId
-	)
-	{
-		var channel = await InputChannel(chatId);
-		await Client.Messages_UnpinAllMessages(channel, messageThreadId);
 	}
 
 	/// <summary>Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the
@@ -2103,10 +1944,10 @@ public partial class Bot
 		string? text = default,
 		bool showAlert = default,
 		string? url = default,
-		int? cacheTime = default
+		int cacheTime = 0
 	)
 	{
-		await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime ?? 0, text, url, showAlert == true);
+		await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime, text, url, showAlert == true);
 	}
 
 	/// <summary>Use this method to get the list of boosts added to a chat by a user.
@@ -2183,80 +2024,31 @@ public partial class Bot
 		return commands.Select(TypesTLConverters.BotCommand).ToArray();
 	}
 
-	/// <summary>Use this method to change the bot's name.</summary>
-	/// <param name="name">New bot name; 0-64 characters. Pass an empty string to remove the dedicated name for the given language.</param>
+	/// <summary>Use this method to change the bot's name, short description (bio) or description (shown in empty chat).</summary>
+	/// <param name="name">New bot name; 0-64 characters. Unchanged if null. Pass an empty string to remove the dedicated name for the given language.</param>
+	/// <param name="shortDescription">New short description for the bot; 0-120 characters. Unchanged if null. Pass an empty string to remove the dedicated short description for the given language.</param>
+	/// <param name="description">New bot description; 0-512 characters. Unchanged if null. Pass an empty string to remove the dedicated description for the given language.</param>
 	/// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, the name will be shown to all users for whose language
 	/// there is no dedicated name.</param>
-	public async Task SetMyName(
+	public async Task SetMyInfo(
 		string? name = default,
+		string? shortDescription = default,
+		string? description = default,
 		string? languageCode = default
 	)
 	{
-		await Client.Bots_SetBotInfo(languageCode, name: name);
+		await Client.Bots_SetBotInfo(languageCode, name: name, about: shortDescription, description: description);
 	}
 
 	/// <summary>Use this method to get the current bot name for the given user language.</summary>
 	/// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
 	/// <returns>Returns <see cref="BotName"/> on success.</returns>
-	public async Task<BotName> GetMyName(
+	public async Task<(string name, string shortDescription, string description)> GetMyInfo(
 		string? languageCode = default
 	)
 	{
 		var botInfo = await Client.Bots_GetBotInfo(languageCode);
-		return new BotName { Name = botInfo.about };
-	}
-
-	/// <summary>Use this method to change the bot's description, which is shown in the chat
-	/// with the bot if the chat is empty.</summary>
-	/// <param name="description">New bot description; 0-512 characters. Pass an empty string to remove the
-	/// dedicated description for the given language.</param>
-	/// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, the description will be applied
-	/// to all users for whose language there is no dedicated description.</param>
-	public async Task SetMyDescription(
-		string? description = default,
-		string? languageCode = default
-	)
-	{
-		await Client.Bots_SetBotInfo(languageCode, description: description);
-	}
-
-	/// <summary>Use this method to get the current <see cref="BotDescription">bot description</see>
-	/// for the given <paramref name="languageCode">user language</paramref>.</summary>
-	/// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
-	/// <returns>Returns <see cref="BotDescription"/> on success.</returns>
-	public async Task<BotDescription> GetMyDescription(
-		string? languageCode = default
-	)
-	{
-		var botInfo = await Client.Bots_GetBotInfo(languageCode);
-		return new BotDescription { Description = botInfo.description };
-	}
-
-	/// <summary>Use this method to change the bot's short description,which is shown on
-	/// the bot's profile page and is sent together with the link when users share the bot.</summary>
-	/// <param name="shortDescription">New short description for the bot; 0-120 characters.
-	/// Pass an empty string to remove the dedicated short description for the given language.</param>
-	/// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, the short description will be
-	/// applied to all users for whose language there is no dedicated short description.</param>
-	/// <returns></returns>
-	public async Task SetMyShortDescription(
-		string? shortDescription = default,
-		string? languageCode = default
-	)
-	{
-		await Client.Bots_SetBotInfo(languageCode, about: shortDescription);
-	}
-
-	/// <summary>Use this method to get the current bot <see cref="BotShortDescription">short description</see>
-	/// for the given <paramref name="languageCode">user language</paramref>.</summary>
-	/// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
-	/// <returns>Returns <see cref="BotShortDescription"/> on success.</returns>
-	public async Task<BotShortDescription> GetMyShortDescription(
-		string? languageCode = default
-	)
-	{
-		var botInfo = await Client.Bots_GetBotInfo(languageCode);
-		return new BotShortDescription { ShortDescription = botInfo.about };
+		return (botInfo.name, botInfo.about, botInfo.description);
 	}
 
 	/// <summary>Use this method to change the bot’s menu button in a private chat, or the default menu button.</summary>
@@ -2287,8 +2079,7 @@ public partial class Bot
 	/// <summary>Use this method to change the default administrator rights requested by the bot when it's added as an
 	/// administrator to groups or channels. These rights will be suggested to users, but they are free to modify
 	/// the list before adding the bot.</summary>
-	/// <param name="rights">An object describing new default administrator rights. If not specified, the default administrator rights
-	/// will be cleared.</param>
+	/// <param name="rights">An object describing new default administrator rights. If not specified, the default administrator rights will be cleared.</param>
 	/// <param name="forChannels">Pass <see langword="true"/> to change the default administrator rights of the bot in channels. Otherwise, the default
 	/// administrator rights of the bot for groups and supergroups will be changed.</param>
 	public async Task SetMyDefaultAdministratorRights(
@@ -2338,7 +2129,7 @@ public partial class Bot
 		ChatId chatId,
 		int messageId,
 		string text,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? entities = default,
 		LinkPreviewOptions? linkPreviewOptions = default,
 		InlineKeyboardMarkup? replyMarkup = default
@@ -2367,7 +2158,7 @@ public partial class Bot
 	public async Task EditMessageText(
 		string inlineMessageId,
 		string text,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? entities = default,
 		LinkPreviewOptions? linkPreviewOptions = default,
 		InlineKeyboardMarkup? replyMarkup = default
@@ -2399,7 +2190,7 @@ public partial class Bot
 		ChatId chatId,
 		int messageId,
 		string? caption,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		InlineKeyboardMarkup? replyMarkup = default
 	)
@@ -2425,7 +2216,7 @@ public partial class Bot
 	public async Task EditMessageCaption(
 		string inlineMessageId,
 		string? caption,
-		ParseMode? parseMode = default,
+		ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? captionEntities = default,
 		InlineKeyboardMarkup? replyMarkup = default
 	)
@@ -2552,36 +2343,19 @@ public partial class Bot
 	/// <item>If the bot has can_delete_messages permission in a supergroup or a channel, it can delete any message there</item></list></summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to delete</param>
-	public async Task DeleteMessage(
-		ChatId chatId,
-		int messageId
-	)
-	{
-		await Client.DeleteMessages(await InputPeerChat(chatId), messageId);
-	}
-
-	/// <summary>Use this method to delete multiple messages simultaneously.
-	/// If some of the specified messages can't be found, they are skipped.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
-	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageIds">Identifiers of 1-100 messages to delete. See
-	/// <see cref="DeleteMessage(DeleteMessageRequest)"/> for limitations
-	/// on which messages can be deleted</param>
+	/// <param name="messageIds">Identifiers of 1-100 messages to delete</param>
 	public async Task DeleteMessages(
 		ChatId chatId,
-		IEnumerable<int> messageIds
+		params int[] messageIds
 	)
 	{
-		await Client.DeleteMessages(await InputPeerChat(chatId), messageIds.ToArray());
+		await Client.DeleteMessages(await InputPeerChat(chatId), messageIds);
 	}
-
 	#endregion Updating messages
 
 	#region Stickers
 
 	/// <summary>Use this method to send static .WEBP, animated .TGS, or video .WEBM stickers.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
 	/// <param name="sticker">Sticker to send. Pass a <see cref="InputFileId"/> as String to send a file that
@@ -2607,7 +2381,7 @@ public partial class Bot
 		ReplyParameters? replyParameters = default,
 		IReplyMarkup? replyMarkup = default,
 		string? emoji = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default
@@ -2625,7 +2399,6 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to get a sticker set.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="name">Name of the sticker set</param>
 	/// <returns>On success, a <see cref="StickerSet"/> object is returned.</returns>
 	public async Task<Telegram.Bot.Types.StickerSet> GetStickerSet(
@@ -2680,7 +2453,6 @@ public partial class Bot
 	/// <summary>Use this method to upload a file with a sticker for later use in the
 	/// <see cref="CreateNewStickerSetRequest"/> and <see cref="AddStickerToSetRequest"/>
 	/// methods (the file can be used multiple times).</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="userId">User identifier of sticker file owner</param>
 	/// <param name="sticker">A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format.</param>
 	/// <param name="stickerFormat">Format of the sticker</param>
@@ -2705,7 +2477,6 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to create a new sticker set owned by a user.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="userId">User identifier of created sticker set owner</param>
 	/// <param name="name">Short name of sticker set, to be used in <c>t.me/addstickers/</c> URLs (e.g., <i>animals</i>). Can contain
 	/// only English letters, digits and underscores. Must begin with a letter, can't contain consecutive
@@ -2740,7 +2511,6 @@ public partial class Bot
 	/// Emoji sticker sets can have up to 200 stickers.</item>
 	/// <item>Animated and video sticker sets can have up to 50 stickers.</item>
 	/// <item>Static sticker sets can have up to 120 stickers.</item></list></summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="userId">User identifier of sticker set owner</param>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="sticker">A JSON-serialized object with information about the added sticker.
@@ -2765,7 +2535,7 @@ public partial class Bot
 	)
 	{
 		var inputDoc = InputDocument(sticker.Id);
-		var mss = await Client.Stickers_ChangeStickerPosition(inputDoc, position);
+		await Client.Stickers_ChangeStickerPosition(inputDoc, position);
 	}
 
 	/// <summary>Use this method to delete a sticker from a set created by the bot.</summary>
@@ -2798,52 +2568,25 @@ public partial class Bot
 		CacheStickerSet(mss);
 	}
 
-	/// <summary>Use this method to change the list of emoji assigned to a regular or custom emoji sticker.
+	/// <summary>Use this method to change the list of emoji or the search keywords assigned to a regular or custom emoji sticker ;
+	/// or to change the mask position of a mask sticker.
 	/// The sticker must belong to a sticker set created by the bot.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="sticker"><see cref="InputFileId">File identifier</see> of the sticker</param>
-	/// <param name="emojiList">A JSON-serialized list of 1-20 emoji associated with the sticker</param>
-	public async Task SetStickerEmojiList(
+	/// <param name="emojiList">(optional) A string composed of 1-20 emoji associated with the sticker</param>
+	/// <param name="keywords">(optional) A comma-separated list of 0-20 search keywords for the sticker with total length of up to 64 characters. Pass an empty list to remove keywords.</param>
+	/// <param name="maskPosition">(optional) An object with the position where the mask should be placed on faces. Pass null to remove the mask position.</param>
+	public async Task SetStickerInfo(
 		InputFileId sticker,
-		IEnumerable<string> emojiList
-	)
-	{
-		var inputDoc = InputDocument(sticker.Id);
-		await Client.Stickers_ChangeSticker(inputDoc, emoji: string.Concat(emojiList));
-	}
-
-	/// <summary>Use this method to change search keywords assigned to a regular or custom emoji sticker.
-	/// The sticker must belong to a sticker set created by the bot.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="sticker"><see cref="InputFileId">File identifier</see> of the sticker</param>
-	/// <param name="keywords">Optional. A JSON-serialized list of 0-20 search keywords for the sticker
-	/// with total length of up to 64 characters</param>
-	public async Task SetStickerKeywords(
-		InputFileId sticker,
-		IEnumerable<string>? keywords = default
-	)
-	{
-		var inputDoc = InputDocument(sticker.Id);
-		await Client.Stickers_ChangeSticker(inputDoc, keywords: keywords == null ? "" : string.Join(',', keywords));
-	}
-
-	/// <summary>Use this method to change the mask position of a mask sticker.
-	/// The sticker must belong to a sticker set that was created by the bot.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="sticker"><see cref="InputFileId">File identifier</see> of the sticker</param>
-	/// <param name="maskPosition">A JSON-serialized object with the position where the mask should be placed on faces.
-	/// <see cref="Nullable">Omit</see> the parameter to remove the mask position.</param>
-	public async Task SetStickerMaskPosition(
-		InputFileId sticker,
+		string? emojiList = default,
+		string? keywords = default,
 		MaskPosition? maskPosition = default
 	)
 	{
 		var inputDoc = InputDocument(sticker.Id);
-		await Client.Stickers_ChangeSticker(inputDoc, mask_coords: maskPosition.MaskCoord());
+		await Client.Stickers_ChangeSticker(inputDoc, emojiList, maskPosition.MaskCoord(), keywords);
 	}
 
 	/// <summary>Use this method to set the title of a created sticker set.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="title">Sticker set title, 1-64 characters</param>
 	public async Task SetStickerSetTitle(
@@ -2857,7 +2600,6 @@ public partial class Bot
 	/// <summary>Use this method to set the thumbnail of a regular or mask sticker set.
 	/// The format of the thumbnail file must match the format of the stickers in the set.
 	/// Returns <see langword="true"/> on success.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="userId">User identifier of the sticker set owner</param>
 	/// <param name="format">Format of the thumbnail</param>
@@ -2890,7 +2632,6 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to set the thumbnail of a custom emoji sticker set.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="customEmojiId">Custom emoji identifier of a <see cref="Sticker"/> from the <see cref="StickerSet"/>;
 	/// pass an <see langword="null"/> to drop the thumbnail and use the first sticker as the thumbnail.</param>
@@ -2899,11 +2640,10 @@ public partial class Bot
 		string? customEmojiId = default
 	)
 	{
-		var mss = await Client.Stickers_SetStickerSetThumb(name, null, customEmojiId == null ? null : long.Parse(customEmojiId));
+		await Client.Stickers_SetStickerSetThumb(name, null, customEmojiId == null ? null : long.Parse(customEmojiId));
 	}
 
 	/// <summary>Use this method to delete a sticker set that was created by the bot.</summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
 	/// <param name="name">Sticker set name</param>
 	public async Task DeleteStickerSet(
 		string name
@@ -3015,7 +2755,7 @@ public partial class Bot
 		IEnumerable<LabeledPrice> prices,
 		ReplyParameters? replyParameters = default,
 		InlineKeyboardMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		int? maxTipAmount = default,
 		IEnumerable<int>? suggestedTipAmounts = default,
 		string? startParameter = default,
@@ -3110,59 +2850,37 @@ public partial class Bot
 
 	/// <summary>If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,
 	/// the Bot API will send an <see cref="Update"/> with a <see cref="ShippingQuery"/> field
-	/// to the bot. Use this method to reply to shipping queries</summary>
+	/// to the bot. Use this method to reply to shipping queries or indicate failure</summary>
 	/// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
-	/// <param name="shippingOptions">Required if ok is <see langword="true"/>. An array of available shipping options</param>
-	public async Task AnswerShippingQuery(
-		string shippingQueryId,
-		IEnumerable<ShippingOption> shippingOptions
-	)
-	{
-		await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), shipping_options:
-			shippingOptions.Select(so => new TL.ShippingOption { id = so.Id, title = so.Title, prices = so.Prices.LabeledPrices() }).ToArray());
-	}
-
-	/// <summary>If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,
-	/// the Bot API will send an <see cref="Update"/> with a <see cref="ShippingQuery"/> field
-	/// to the bot. Use this method to indicate failed shipping query</summary>
-	/// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
-	/// <param name="errorMessage">Required if <see cref="AnswerShippingQueryRequest.Ok"/> is <see langword="false"/>. Error message in
+	/// <param name="shippingOptions">On success, an array of available shipping options</param>
+	/// <param name="errorMessage">On failure, the error message in
 	/// human readable form that explains why it is impossible to complete the order (e.g. "Sorry, delivery to
 	/// your desired address is unavailable'). Telegram will display this message to the user</param>
 	public async Task AnswerShippingQuery(
 		string shippingQueryId,
-		string errorMessage
+		IEnumerable<ShippingOption>? shippingOptions = default,
+		string? errorMessage = default
 	)
 	{
-		await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage);
+		await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage, shipping_options:
+			shippingOptions?.Select(so => new TL.ShippingOption { id = so.Id, title = so.Title, prices = so.Prices.LabeledPrices() }).ToArray());
 	}
 
 	/// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation
 	/// in the form of an <see cref="Update"/> with the field <see cref="PreCheckoutQuery"/>.
-	/// Use this method to respond to such pre-checkout queries.</summary>
+	/// Use this method to respond to it with success or failure</summary>
 	/// <remarks><b>Note</b>: The Bot API must receive an answer within 10 seconds after the pre-checkout query was sent.</remarks>
 	/// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
-	public async Task AnswerPreCheckoutQuery(
-		string preCheckoutQueryId
-	)
-	{
-		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), success: true);
-	}
-
-	/// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation
-	/// in the form of an <see cref="Update"/> with the field <see cref="PreCheckoutQuery"/>.
-	/// Use this method to respond to indicate failed pre-checkout query</summary>
-	/// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
-	/// <param name="errorMessage">Required if <see cref="AnswerPreCheckoutQueryRequest.Ok"/> is <see langword="false"/>. Error message in
+	/// <param name="errorMessage">Use null for success. In case of failure, the error message in
 	/// human readable form that explains the reason for failure to proceed with the checkout (e.g. "Sorry,
 	/// somebody just bought the last of our amazing black T-shirts while you were busy filling out your payment
 	/// details. Please choose a different color or garment!"). Telegram will display this message to the user</param>
 	public async Task AnswerPreCheckoutQuery(
 		string preCheckoutQueryId,
-		string errorMessage
+		string? errorMessage = default
 	)
 	{
-		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), error: errorMessage);
+		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), errorMessage, success: errorMessage == null);
 	}
 	#endregion Payments
 
@@ -3187,7 +2905,7 @@ public partial class Bot
 		string gameShortName,
 		ReplyParameters? replyParameters = default,
 		InlineKeyboardMarkup? replyMarkup = default,
-		int? messageThreadId = default,
+		int messageThreadId = default,
 		bool disableNotification = default,
 		bool protectContent = default,
 		string? businessConnectionId = default

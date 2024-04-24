@@ -20,7 +20,7 @@ public partial class InputMediaAudio :
     /// <summary>
     /// Optional. Duration of the audio in seconds
     /// </summary>
-    public int? Duration { get; set; }
+    public int Duration { get; set; }
 
     /// <summary>
     /// Optional. Performer of the audio

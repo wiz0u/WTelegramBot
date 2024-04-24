@@ -19,7 +19,7 @@ public partial class InputTextMessageContent : InputMessageContent
     /// <a href="https://core.telegram.org/bots/api#formatting-options">parsing entities</a> in the message
     /// text. See formatting options for more details.
     /// </summary>
-    public ParseMode? ParseMode { get; set; }
+    public ParseMode ParseMode { get; set; }
 
     /// <summary>
     /// Optional. List of special entities that appear in message text, which can be specified

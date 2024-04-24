@@ -26,5 +26,5 @@ public abstract partial class FileBase
     /// <summary>
     /// Optional. File size
     /// </summary>
-    public long? FileSize { get; set; }
+    public long FileSize { get; set; }
 }

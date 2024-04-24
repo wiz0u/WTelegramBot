@@ -54,17 +54,17 @@ public partial class Bot : IDisposable
 	}
 
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
-	/// <param name="token">The bot token</param>
+	/// <param name="botToken">The bot token</param>
 	/// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
 	/// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
     /// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
-	public Bot(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect) : this(
+	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect) : this(
 		what => what switch
 		{
 			"api_id" => apiId.ToString(),
 			"api_hash" => apiHash,
-			"bot_token" => token,
+			"bot_token" => botToken,
 			"device_model" => "server",
 			_ => null
 		},
@@ -79,8 +79,8 @@ public partial class Bot : IDisposable
 	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
 	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true)
 	{
-		var token = configProvider("bot_token") ?? throw new ArgumentNullException("bot_token");
-		BotId = long.Parse(token[0..token.IndexOf(':')]);
+		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException("bot_token");
+		BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
 		sqlCommands ??= Database.DefaultSqlCommands[(int)Database.DetectType(dbConnection)];
 		_collector = new(this);
 		var version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
@@ -89,13 +89,13 @@ public partial class Bot : IDisposable
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
 		Manager = Client.WithUpdateManager(OnUpdate, _database.LoadMBoxStates(), _collector);
-		_initTask = InitLogin();
+		_initTask = InitLogin(botToken);
 		if (waitForLogin) _initTask.Wait(); //TODO: test on winforms
 	}
 
-	private async Task<TL.User> InitLogin()
+	private async Task<TL.User> InitLogin(string botToken)
 	{
-		var me = await Client.LoginBotIfNeeded();
+		var me = await Client.LoginBotIfNeeded(botToken);
 		try
 		{
 			foreach (var (id, update) in _database.LoadTLUpdates().ToList())
@@ -146,27 +146,27 @@ public partial class Bot : IDisposable
 	/// <returns>An Array of <see cref="Update"/> objects is returned.</returns>
 	public async Task<Update[]> GetUpdates(int offset = 0, int limit = 100, int timeout = 0, IEnumerable<UpdateType>? allowedUpdates = null, CancellationToken cancellationToken = default)
 	{
-		try
+		if (allowedUpdates != null)
 		{
-			if (allowedUpdates != null)
-			{
-				var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
-				_state.AllowedUpdates = bitset == 0 ? DefaultAllowedUpdates : bitset < 0 ? -1 : bitset;
-			}
-			Update[] result;
-			limit = Math.Clamp(limit, 1, 100);
-			timeout *= 1000;
-			for (int maxWait = 0; ; maxWait = timeout)
-			{
-				if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
-					lock (_state.PendingUpdates)
+			var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
+			_state.AllowedUpdates = bitset == 0 ? DefaultAllowedUpdates : bitset < 0 ? -1 : bitset;
+		}
+		Update[] result;
+		limit = Math.Clamp(limit, 1, 100);
+		timeout *= 1000;
+		for (int maxWait = 0; ; maxWait = timeout)
+		{
+			if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
+				lock (_state.PendingUpdates)
+				{
+					if (offset < 0)
+						_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
+					else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
+						_state.PendingUpdates.RemoveRange(0, index);
+					else
+						_state.PendingUpdates.Clear();
+					try
 					{
-						if (offset < 0)
-							_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
-						else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
-							_state.PendingUpdates.RemoveRange(0, index);
-						else
-							_state.PendingUpdates.Clear();
 						if (_state.PendingUpdates.Count != 0)
 						{
 							_pendingCounter.Release();
@@ -175,14 +175,14 @@ public partial class Bot : IDisposable
 							return result;
 						}
 					}
-				if (maxWait == timeout) break;
-			}
-			return [];
+					finally
+					{
+						SaveState();
+					}
+				}
+			if (maxWait == timeout) break;
 		}
-		finally
-		{
-			SaveState();
-		}
+		return [];
 	}
 
 	private async Task OnUpdate(TL.Update update)

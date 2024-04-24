@@ -34,7 +34,7 @@ public abstract partial class InputMedia
     /// <summary>
     /// Change, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in a caption
     /// </summary>
-    public ParseMode? ParseMode { get; set; }
+    public ParseMode ParseMode { get; set; }
 
     /// <summary>
     /// Initialize an object

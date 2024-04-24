@@ -30,7 +30,7 @@ public partial class InlineQueryResultCachedVoice : InlineQueryResult
     public string? Caption { get; set; }
 
     /// <inheritdoc cref="Documentation.ParseMode" />
-    public ParseMode? ParseMode { get; set; }
+    public ParseMode ParseMode { get; set; }
 
     /// <inheritdoc cref="Documentation.CaptionEntities" />
     public MessageEntity[]? CaptionEntities { get; set; }
