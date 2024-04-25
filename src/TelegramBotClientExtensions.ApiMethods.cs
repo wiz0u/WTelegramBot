@@ -506,7 +506,7 @@ public static partial class TelegramBotClientExtensions
         bool removeCaption = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CopyMessages(chatId, fromChatId, messageIds, messageThreadId ?? 0, disableNotification, protectContent, removeCaption).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CopyMessages(chatId, fromChatId, messageIds, removeCaption, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send photos.
@@ -575,7 +575,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, hasSpoiler, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display them in the music player.
@@ -729,7 +729,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode ?? default, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, disableContentTypeDetection, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode ?? default, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as
@@ -814,7 +814,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, supportsStreaming, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, hasSpoiler, supportsStreaming, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). Bots can currently
@@ -897,7 +897,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, hasSpoiler, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, hasSpoiler, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display the file as a playable voice
@@ -1471,7 +1471,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type, replyParameters, replyMarkup, messageThreadId ?? 0, allowsMultipleAnswers, correctOptionId, explanation, explanationParseMode ?? default, explanationEntities, openPeriod, closeDate, isClosed, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode ?? default, explanationEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send an animated emoji that will display a random value.
@@ -4137,7 +4137,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, providerToken, currency, prices, replyParameters, replyMarkup, messageThreadId ?? 0, maxTipAmount, suggestedTipAmounts, startParameter, providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, providerToken, currency, prices, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to create a link for an invoice.
@@ -4226,7 +4226,7 @@ public static partial class TelegramBotClientExtensions
         bool isFlexible = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CreateInvoiceLink(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CreateInvoiceLink(title, description, payload, providerToken, currency, prices, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible).ThrowAsApi();
 
     /// <summary>
     /// If you sent an invoice requesting a shipping address and the parameter <c>isFlexible"</c> was specified,

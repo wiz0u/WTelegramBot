@@ -45,7 +45,7 @@ After that, here are the points you should pay attention to when migrating exist
 - `TelegramBotClient` and `WTelegram.Bot` are `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state.  
   ℹ️ Remember to close/dispose the dbConnection as well
 - Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
-- FileID/FileUniqueID are not compatible with official Bot API ones, they are to be used with this library only.
+- FileID/FileUniqueID/InlineMessageId are not compatible with official Bot API ones, they are to be used with this library only.
 - Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_  
   Use the direct async methods instead.
 - There is no support for HTTP / Webhooks (see [support for ASP.NET apps])

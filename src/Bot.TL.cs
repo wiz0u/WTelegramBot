@@ -310,6 +310,7 @@ public partial class Bot
 		}
 	}
 
+	/// <summary>Return TL structure for the InputMedia and its caption. Upload the file/thumb for InputFileStream and add attributes</summary>
 	public async Task<TL.InputSingleMedia> InputSingleMedia(InputMedia media)
 	{
 		var caption = media.Caption;

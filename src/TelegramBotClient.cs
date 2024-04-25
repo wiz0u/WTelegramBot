@@ -6,7 +6,7 @@ namespace Telegram.Bot;
 /// <summary>
 /// A client to use the Telegram Bot API
 /// </summary>
-public partial class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
+public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
 {
     readonly TelegramBotClientOptions _options;
 
