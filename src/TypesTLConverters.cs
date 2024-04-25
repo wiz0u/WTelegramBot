@@ -112,7 +112,8 @@ public static class TypesTLConverters
 	};
 
 
-	internal static ChatMember ChatMember(this ChatParticipantBase? participant, User user)
+	/// <summary>Convert TL.ChatParticipantBase to Types.ChatMember</summary>
+	public static ChatMember ChatMember(this ChatParticipantBase? participant, User user)
 		=> participant switch
 		{
 			ChatParticipantCreator => new ChatMemberOwner { User = user },

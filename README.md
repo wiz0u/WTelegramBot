@@ -115,11 +115,19 @@ On each Update you receive, there is an extra field named "RawUpdate" that conta
 Enable `TelegramBotClient.WantUnknownRawUpdates` to also receive TL.Update that usually would have been silently ignored by Bot API
 (they will be posted as Update of type Unknown with the RawUpdate field filled)
 
-Extended API calls not usually accessible to Bot API can be made via the `TelegramBotClient.Client` which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
-You can read that [library's documentation](https://wiz0u.github.io/WTelegramClient/EXAMPLES) or search through the [official Client API documentation](https://corefork.telegram.org/methods), but make sure to look for the mention "**Bots can use this method**".  
+Some extended API calls can be made via `WTelegram.Bot` exclusive methods:
+- `GetChatMemberList`: fetch a list of chat members
+- `GetMessagesById`: fetch posted messages (or range of messages) based on their message IDs
+- `InputUser`: can resolve a username into a user ID that you can then use with GetChat
+- `GetChat`: can obtain details about any chat based on their public name, or a user ID resolved by InputUser
+
+Other extended API calls not usually accessible to Bot API can be made via the `Bot.Client` property which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
+You can read that [library's documentation](https://wiz0u.github.io/WTelegramClient/EXAMPLES)
+or search through the [official Client API documentation](https://corefork.telegram.org/methods),
+but make sure to look for the mention "**Bots can use this method**" (other methods can't be called).  
 Note that you need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
-In the future, I might add some of these advanced methods directly as TelegramBotClient methods to make it more easy.
+Some `Bot` methods (for example, beginning with Input*) and extension methods can help you convert Bot API ids or structure to/from Client API.
 
 
 ## Support for ASP.NET apps

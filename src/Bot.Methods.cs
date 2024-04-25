@@ -12,6 +12,56 @@ namespace WTelegram;
 
 public partial class Bot
 {
+	#region Power-up methods
+	/// <summary>Use this method to get a list of members in a chat (can be incomplete).</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="limit">The maximum number of member to fetch (big number might be slow to fetch, and Telegram might still restrict the maximum anyway)</param>
+	/// <returns>On success, returns an Array of <see cref="ChatMember"/> objects that contains information about chat members</returns>
+	/// <remarks>⚠️ For big chats, Telegram will likely limit the total number of members you can obtain with this method</remarks>
+	public async Task<ChatMember[]> GetChatMemberList(ChatId chatId, int limit = 1000)
+	{
+		InputPeer chat = await InputPeerChat(chatId);
+		if (chat is InputPeerChannel ipc)
+		{
+			var participants = new List<ChannelParticipantBase>();
+			InputChannelBase channel = ipc;
+			for (int offset = 0; ;)
+			{
+				var ccp = await Client.Channels_GetParticipants(channel, null, offset, limit - offset, 0);
+				ccp.UserOrChat(_collector);
+				participants.AddRange(ccp.participants);
+				offset += ccp.participants.Length;
+				if (offset >= ccp.count || offset >= limit || ccp.participants.Length == 0) break;
+			}
+			return await participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+		}
+		else
+		{
+			var full = await Client.Messages_GetFullChat(chat.ID);
+			full.UserOrChat(_collector);
+			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
+				throw new ApiRequestException($"Cannot fetch participants for chat {chatId}");
+			return await participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+		}
+	}
+
+	/// <summary>Get chat messages based on their messageIds</summary>
+	/// <param name="chatId">The chat id or username</param>
+	/// <param name="messageIds">The message IDs to fetch. You can use <c>Enumerable.Range(startMsgId, count)</c> to get a range of messages</param>
+	/// <returns>List of messages that could be fetched</returns>
+	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
+	{
+		var peer = await InputPeerChat(chatId);
+		var msgs = await Client.GetMessages(peer, messageIds.Select(id => (InputMessageID)id).ToArray());
+		msgs.UserOrChat(_collector);
+		var messages = new List<Message>();
+		foreach (var msgBase in msgs.Messages)
+			if (await MakeMessage(msgBase) is { } msg)
+				messages.Add(msg);
+		return messages;
+	}
+	#endregion Power-up methods
+
 	#region Available methods
 
 	/// <summary>A simple method for testing your bot’s auth token.</summary>

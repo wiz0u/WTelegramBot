@@ -408,7 +408,7 @@ public partial class Bot
 	}
 
 	/// <summary>Converts Client API TL.MessageBase to Bot Telegram.Bot.Types.Message and assign the ReplyToMessage/ExternalReply</summary>
-	protected async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null, string? bConnId = null)
+	public async Task<Message?> MakeMessageAndReply(MessageBase? msgBase, Message? replyToMessage = null, string? bConnId = null)
 	{
 		var msg = await MakeMessage(msgBase);
 		if (msg == null) return null;
