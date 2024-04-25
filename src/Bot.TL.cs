@@ -150,7 +150,7 @@ public partial class Bot
 		{
 			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId);
 			var msg = await GetMessage(peer, replied.MessageId);
-			if (msg == null && replied.AllowSendingWithoutReply != true) throw new ApiRequestException("message to reply not found", 400);
+			if (msg == null && replied.AllowSendingWithoutReply != true) throw new ApiRequestException("Bad Request: message to reply not found", 400);
 			return msg;
 		}
 		return null;
@@ -308,6 +308,54 @@ public partial class Bot
 				}
 				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
 		}
+	}
+
+	public async Task<TL.InputSingleMedia> InputSingleMedia(InputMedia media)
+	{
+		var caption = media.Caption;
+		IEnumerable<MessageEntity>? captionEntities = media.CaptionEntities;
+		ApplyParse(media.ParseMode, ref caption, ref captionEntities);
+		var tlMedia = media is Telegram.Bot.Types.InputMediaPhoto imp
+			? await InputMediaPhoto(media.Media, imp.HasSpoiler)
+			: await InputMediaDocument(media.Media,
+				media switch { InputMediaVideo imv => imv.HasSpoiler, InputMediaAnimation ima => ima.HasSpoiler, _ => false });
+		if (tlMedia is TL.InputMediaUploadedDocument doc)
+		{
+			switch (media)
+			{
+				case Telegram.Bot.Types.InputMediaAudio ima:
+					doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
+						duration = ima.Duration, performer = ima.Performer, title = ima.Title,
+						flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }];
+					break;
+				case Telegram.Bot.Types.InputMediaDocument imd:
+					if (imd.DisableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file;
+					break;
+				case Telegram.Bot.Types.InputMediaVideo imv:
+					doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
+						duration = imv.Duration, h = imv.Height, w = imv.Width,
+						flags = imv.SupportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
+					break;
+				case Telegram.Bot.Types.InputMediaAnimation ima:
+					if (doc.mime_type == "video/mp4")
+						doc.attributes = [.. doc.attributes, new DocumentAttributeVideo { duration = ima.Duration, w = ima.Width, h = ima.Height }];
+					else if (ima.Width > 0 && ima.Height > 0)
+					{
+						if (doc.mime_type?.StartsWith("image/") != true) doc.mime_type = "image/gif";
+						doc.attributes = [.. doc.attributes, new DocumentAttributeImageSize { w = ima.Width, h = ima.Height }];
+					}
+					break;
+			}
+			if (media is IInputMediaThumb { Thumbnail: { } thumbnail })
+				await SetDocThumb(doc, thumbnail);
+		}
+		return new InputSingleMedia
+		{
+			flags = captionEntities != null ? TL.InputSingleMedia.Flags.has_entities : 0,
+			media = tlMedia,
+			message = caption,
+			entities = captionEntities?.ToArray(),
+		};
 	}
 
 	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker)

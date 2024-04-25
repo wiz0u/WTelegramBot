@@ -268,7 +268,7 @@ public partial class Bot : IDisposable
 						_chats[id] = chatBase.Chat();
 					return chatBase;
 				}
-				throw new ApiRequestException($"Chat {chatId} is unknown");
+				throw new ApiRequestException($"Bad Request: Chat not found {chatId}", 400);
 			}
 		else
 		{
@@ -280,7 +280,7 @@ public partial class Bot : IDisposable
 			if (resolved.Chat is { } chatBase)
 				lock (_chats)
 					return _chats[chatBase.ID] = chatBase.Chat();
-			throw new ApiRequestException($"Chat {chatId} is unknown");
+			throw new ApiRequestException($"Bad Request: Chat not found {chatId}", 400);
 		}
 	}
 

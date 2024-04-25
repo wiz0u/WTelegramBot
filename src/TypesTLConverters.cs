@@ -293,7 +293,7 @@ public static class TypesTLConverters
 		{
 			writer.WriteTLObject(location);
 			writer.Write((byte)dc_id);
-			writer.Write((int)file.FileSize);
+			writer.Write((int)(file.FileSize ?? 0));
 			writer.Write((byte)42);
 		}
 		var bytes = memStream.ToArray();

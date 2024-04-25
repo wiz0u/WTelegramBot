@@ -100,8 +100,8 @@ public partial class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
             "WEBPAGE_MEDIA_EMPTY" => "Wrong type of the web page content",
             "MEDIA_GROUPED_INVALID" => "Can't use the media of the specified type in the album",
             "REPLY_MARKUP_TOO_LONG" => "reply markup is too long",
-            "INPUT_USER_DEACTIVATED" => "user is deactivated", // 403
-            "USER_IS_BLOCKED" => "bot was blocked by the user", // 403
+            "INPUT_USER_DEACTIVATED" => "user is deactivated", // force 403
+            "USER_IS_BLOCKED" => "bot was blocked by the user", // force 403
             "USER_ADMIN_INVALID" => "user is an administrator of the chat",
             "File generation failed" => "can't upload file by URL",
             "CHAT_ABOUT_NOT_MODIFIED" => "chat description is not modified",

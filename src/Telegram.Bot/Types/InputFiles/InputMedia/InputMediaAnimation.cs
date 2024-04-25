@@ -19,17 +19,17 @@ public partial class InputMediaAnimation :
     /// <summary>
     /// Optional. Animation width
     /// </summary>
-    public int? Width { get; set; }
+    public int Width { get; set; }
 
     /// <summary>
     /// Optional. Animation height
     /// </summary>
-    public int? Height { get; set; }
+    public int Height { get; set; }
 
     /// <summary>
     /// Optional. Animation duration
     /// </summary>
-    public int? Duration { get; set; }
+    public int Duration { get; set; }
 
     /// <summary>
     /// Optional. Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation

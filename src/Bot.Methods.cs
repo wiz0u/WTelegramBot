@@ -174,7 +174,7 @@ public partial class Bot
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
-		if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new ApiRequestException("Cannot find source message");
+		if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new ApiRequestException("Bad Request: message to copy not found", 400);
 		ApplyParse(parseMode, ref caption, ref captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var text = caption ?? msg.message;
@@ -238,7 +238,7 @@ public partial class Bot
 					random_id = random_id++,
 					message = msg.message,
 					entities = msg.entities,
-					flags = msg.entities != null ? InputSingleMedia.Flags.has_entities : 0
+					flags = msg.entities != null ? TL.InputSingleMedia.Flags.has_entities : 0
 				});
 				cur_grouped_id = msg.grouped_id;
 				continue;
@@ -684,7 +684,7 @@ public partial class Bot
 	/// files can be only grouped in an album with messages of the same type.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel
 	/// (in the format <c>@channelusername</c>)</param>
-	/// <param name="media">An array describing messages to be sent, must include 2-10 items</param>
+	/// <param name="medias">An array describing messages to be sent, must include 2-10 items</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
@@ -693,7 +693,7 @@ public partial class Bot
 	/// <returns>On success, an array of <see cref="Message"/>s that were sent is returned.</returns>
 	public async Task<Message[]> SendMediaGroup(
 		ChatId chatId,
-		IEnumerable<IAlbumInputMedia> media,
+		IEnumerable<IAlbumInputMedia> medias,
 		ReplyParameters? replyParameters = default,
 		int messageThreadId = default,
 		bool disableNotification = default,
@@ -706,51 +706,14 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		List<InputSingleMedia> multimedia = [];
 		var random_id = Helpers.RandomLong();
-		foreach (var aim in media)
+		foreach (var aim in medias)
 		{
-			var im = (InputMedia)aim;
-			var caption = im.Caption;
-			IEnumerable<MessageEntity>? captionEntities = im.CaptionEntities;
-			ApplyParse(im.ParseMode, ref caption, ref captionEntities);
-			var imedia = im.Type == InputMediaType.Photo ? await InputMediaPhoto(im.Media) : await InputMediaDocument(im.Media);
-			switch (imedia)
-			{
-				case InputMediaUploadedPhoto:
-				case InputMediaPhotoExternal:
-				case InputMediaDocumentExternal:
-					imedia = (await Client.Messages_UploadMedia(peer, imedia)).ToInputMedia();
-					break;
-				case TL.InputMediaUploadedDocument doc:
-					switch (aim)
-					{
-						case Telegram.Bot.Types.InputMediaAudio ima:
-							doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
-							duration = ima.Duration, performer = ima.Performer, title = ima.Title,
-							flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }];
-							break;
-						case Telegram.Bot.Types.InputMediaVideo imv:
-							doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
-							duration = imv.Duration, h = imv.Height, w = imv.Width,
-							flags = imv.SupportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
-							break;
-						case Telegram.Bot.Types.InputMediaDocument imd:
-							if (imd.DisableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file;
-							break;
-					}
-					if (aim is IInputMediaThumb { Thumbnail: var thumbnail })
-						await SetDocThumb(doc, thumbnail);
-					var mmd = (MessageMediaDocument)await Client.Messages_UploadMedia(peer, doc);
-					imedia = mmd.document;
-					break;
-			}
-			multimedia.Add(new InputSingleMedia
-			{
-				flags = captionEntities != null ? InputSingleMedia.Flags.has_entities : 0,
-				media = imedia,
-				random_id = random_id + multimedia.Count,
-				message = caption,
-				entities = captionEntities?.ToArray(),
-			});
+			var media = (InputMedia)aim;
+			var ism = await InputSingleMedia(media);
+			ism.random_id = random_id + multimedia.Count;
+			if (media.Media.FileType != FileType.Id) // External or Uploaded
+				ism.media = (await Client.Messages_UploadMedia(peer, ism.media)).ToInputMedia();
+			multimedia.Add(ism);
 		}
 		return await PostedMsgs(Messages_SendMultiMedia(businessConnectionId, peer, [.. multimedia], reply_to,
 			silent: disableNotification == true, noforwards: protectContent == true),
@@ -1260,7 +1223,7 @@ public partial class Bot
 	)
 	{
 		var (file, location, dc_id) = fileId.ParseFileId(true);
-		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize, (t, s) => cancellationToken.ThrowIfCancellationRequested());
+		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) => cancellationToken.ThrowIfCancellationRequested());
 		return file;
 	}
 
@@ -1295,7 +1258,7 @@ public partial class Bot
 				await Client.Channels_EditBanned(channel, user,
 					new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages, until_date = untilDate });
 				break;
-			default: throw new ApiRequestException("can't ban members in private chats", 400);
+			default: throw new ApiRequestException("Bad Request: can't ban members in private chats", 400);
 		}
 	}
 
@@ -2247,10 +2210,9 @@ public partial class Bot
 	)
 	{
 		var peer = await InputPeerChat(chatId);
-		var imedia = media.Type == InputMediaType.Photo ? await InputMediaPhoto(media.Media) : await InputMediaDocument(media.Media);
-		var captionEntities = media.CaptionEntities?.ToArray();
-		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
-			imedia, await MakeReplyMarkup(replyMarkup), captionEntities), peer);
+		var ism = await InputSingleMedia(media);
+		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, ism.message ?? "", ism.media,
+			await MakeReplyMarkup(replyMarkup), ism.entities), peer);
 	}
 
 	/// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of
@@ -2270,10 +2232,9 @@ public partial class Bot
 	)
 	{
 		var id = inlineMessageId.ParseInlineMsgID();
-		var imedia = media.Type == InputMediaType.Photo ? await InputMediaPhoto(media.Media) : await InputMediaDocument(media.Media);
-		var captionEntities = media.CaptionEntities?.ToArray();
-		await Client.Messages_EditInlineBotMessage(id, ApplyParse(media.ParseMode, media.Caption ?? "", ref captionEntities),
-			imedia, await MakeReplyMarkup(replyMarkup), captionEntities);
+		var ism = await InputSingleMedia(media);
+		await Client.Messages_EditInlineBotMessage(id, ism.message ?? "", ism.media,
+			await MakeReplyMarkup(replyMarkup), ism.entities);
 	}
 
 	/// <summary>Use this method to edit only the reply markup of messages.</summary>
