@@ -20,9 +20,9 @@ public partial class Bot : IDisposable
     public long BotId { get; }
 
 	/// <summary>
-	/// Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.RawUpdate"/>)
+	/// Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.TLUpdate"/>)
 	/// </summary>
-	public bool WantUnknownRawUpdates { get; private set; }
+	public bool WantUnknownTLUpdates { get; set; }
 
 	const long ZERO_CHANNEL_ID = -1000000000000;
 	static readonly User GroupAnonymousBot = new() { Id = 1087968824, Username = "GroupAnonymousBot", FirstName = "Group", IsBot = true };
@@ -101,7 +101,7 @@ public partial class Bot : IDisposable
 			foreach (var (id, update) in _database.LoadTLUpdates().ToList())
 			{
 				var botUpdate = await MakeUpdate(update);
-				botUpdate ??= new Update { RawUpdate = update };
+				botUpdate ??= new Update { TLUpdate = update };
 				botUpdate.Id = id;
 				_state.PendingUpdates.Add(botUpdate);
 			}
@@ -157,16 +157,16 @@ public partial class Bot : IDisposable
 		for (int maxWait = 0; ; maxWait = timeout)
 		{
 			if (await _pendingCounter.WaitAsync(maxWait, cancellationToken))
-				lock (_state.PendingUpdates)
+				try
 				{
-					if (offset < 0)
-						_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
-					else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
-						_state.PendingUpdates.RemoveRange(0, index);
-					else
-						_state.PendingUpdates.Clear();
-					try
+					lock (_state.PendingUpdates)
 					{
+						if (offset < 0)
+							_state.PendingUpdates.RemoveRange(0, Math.Max(_state.PendingUpdates.Count + offset, 0));
+						else if (_state.PendingUpdates.FindIndex(u => u.Id >= offset) is >= 0 and int index)
+							_state.PendingUpdates.RemoveRange(0, index);
+						else
+							_state.PendingUpdates.Clear();
 						if (_state.PendingUpdates.Count != 0)
 						{
 							_pendingCounter.Release();
@@ -175,10 +175,10 @@ public partial class Bot : IDisposable
 							return result;
 						}
 					}
-					finally
-					{
-						SaveState();
-					}
+				}
+				finally
+				{
+					SaveState();
 				}
 			if (maxWait == timeout) break;
 		}
@@ -189,8 +189,8 @@ public partial class Bot : IDisposable
 	{
 		try { await _initTask; } catch { }
 		var botUpdate = await MakeUpdate(update);
-		if (botUpdate == null && WantUnknownRawUpdates)
-			botUpdate = new Update { RawUpdate = update };
+		if (botUpdate == null && WantUnknownTLUpdates)
+			botUpdate = new Update { TLUpdate = update };
 		if (botUpdate != null)
 		{
 			botUpdate.Id = ++_state.LastUpdateId;
@@ -243,6 +243,7 @@ public partial class Bot : IDisposable
 	/// <summary>return Chat if found in known chats (DB), or null</summary>
 	public Chat? Chat(long chatId)
 	{
+		if (chatId < 0) chatId = chatId > ZERO_CHANNEL_ID ? -chatId : ZERO_CHANNEL_ID - chatId;
 		lock (_chats)
 			if (_chats.TryGetValue(chatId, out var chat))
 				return chat;

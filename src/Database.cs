@@ -114,10 +114,10 @@ internal partial class Database : IDisposable
 		using var memStream = new MemoryStream(1024);
 		foreach (var botUpdate in updates)
 		{
-			if (botUpdate.RawUpdate == null) continue;
+			if (botUpdate.TLUpdate == null) continue;
 			memStream.SetLength(0);
 			using (var writer = new BinaryWriter(memStream, System.Text.Encoding.UTF8, leaveOpen: true))
-				botUpdate.RawUpdate.WriteTL(writer);
+				botUpdate.TLUpdate.WriteTL(writer);
 			cmd.Parameters[0].Value = botUpdate.Id;
 			cmd.Parameters[1].Value = memStream.ToArray();
 			cmd.ExecuteNonQuery();

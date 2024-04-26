@@ -110,10 +110,10 @@ In case of an error, it will throw TL.RpcException showing the raw Telegram erro
 
 ## How to access the advanced features?
 
-On each Update/Message/User/Chat you receive, there is an extra field named "Raw..." that contains the the raw Client API structure, which may contain extra information not transcribed into the Bot API
+On each Update/Message/User/Chat you receive, there is an extra field named "TL..." that contains the the raw Client API structure, which may contain extra information not transcribed into the Bot API
 
-Enable `TelegramBotClient.WantUnknownRawUpdates` to also receive TL.Update that usually would have been silently ignored by Bot API
-(they will be posted as Update of type Unknown with the RawUpdate field filled)
+Enable `TelegramBotClient.WantUnknownTLUpdates` to also receive TL.Update that usually would have been silently ignored by Bot API
+(they will be posted as Update of type Unknown with the TLUpdate field filled)
 
 Some extended API calls can be made via `WTelegram.Bot` exclusive methods:
 - `GetChatMemberList`: fetch a list of chat members

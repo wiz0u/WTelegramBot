@@ -1295,7 +1295,7 @@ public partial class Bot
 			var full = userFull.full_user;
 			var user = userFull.users[userId];
 			var chat = user.Chat();
-			chat.RawInfo = userFull;
+			chat.TLInfo = userFull;
 			chat.Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto();
 			chat.ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray();
 			chat.Birthday = full.birthday.Birthday();
@@ -1326,7 +1326,7 @@ public partial class Bot
 			var full = chatFull.full_chat;
 			var tlChat = chatFull.chats[inputPeer.ID];
 			var chat = tlChat.Chat();
-			chat.RawInfo = chatFull;
+			chat.TLInfo = chatFull;
 			chat.Photo = full.ChatPhoto.ChatPhoto();
 			chat.AvailableReactions = full.AvailableReactions switch
 			{

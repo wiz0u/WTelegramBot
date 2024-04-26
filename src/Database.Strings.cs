@@ -14,14 +14,14 @@ internal partial class Database
 		[ // Sqlite or PostgreSQL
 /*DbSetup*/	"CREATE TABLE IF NOT EXISTS WTB_MBoxState (MBox BIGINT NOT NULL PRIMARY KEY, pts INT NOT NULL, access_hash BIGINT NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Session (Name VARCHAR(32) NOT NULL PRIMARY KEY, Data BYTEA NOT NULL, LastUpdateId INT NOT NULL, AllowedUpdates INT NOT NULL) ;\n" +
-			"CREATE TABLE IF NOT EXISTS WTB_Updates (Id INT NOT NULL PRIMARY KEY, Raw BYTEA NOT NULL) ;\n" +
+			"CREATE TABLE IF NOT EXISTS WTB_Updates (Id INT NOT NULL PRIMARY KEY, TLData BYTEA NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Users (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, LanguageCode VARCHAR(16) NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Chats (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, Type INT NOT NULL) ;\n",
 /*LoadSess*/"SELECT Data, LastUpdateId, AllowedUpdates FROM WTB_Session WHERE Name = 'WTelegramBot'",
 /*SaveSess*/"INSERT INTO WTB_Session (Name, Data, LastUpdateId, AllowedUpdates) VALUES ('WTelegramBot', @Data, @LastUpdateId, @AllowedUpdates) ON CONFLICT (Name) DO UPDATE SET Data = EXCLUDED.Data, LastUpdateId = EXCLUDED.LastUpdateId, AllowedUpdates = EXCLUDED.AllowedUpdates",
-/*LoadUpd*/	"SELECT Id, Raw FROM WTB_Updates ORDER BY Id",
+/*LoadUpd*/	"SELECT Id, TLData FROM WTB_Updates ORDER BY Id",
 /*DelUpd*/	"DELETE FROM WTB_Updates",
-/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, Raw) VALUES (@Id, @Raw)",
+/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, TLData) VALUES (@Id, @TLData)",
 /*LoadMBox*/"SELECT MBox, pts, access_hash FROM WTB_MBoxState",
 /*SaveMBox*/"INSERT INTO WTB_MBoxState(mbox, pts, access_hash) VALUES(@MBox, @pts, @access_hash) ON CONFLICT(MBox) DO UPDATE SET pts=EXCLUDED.pts, access_hash=EXCLUDED.access_hash",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",
@@ -32,14 +32,14 @@ internal partial class Database
 		[ // SQL Server
 /*DbSetup*/	"IF OBJECT_ID('WTB_MBoxState') IS NULL CREATE TABLE WTB_MBoxState (MBox BIGINT NOT NULL PRIMARY KEY, pts INT NOT NULL, access_hash BIGINT NOT NULL) ;\n" +
 			"IF OBJECT_ID('WTB_Session')   IS NULL CREATE TABLE WTB_Session (Name VARCHAR(32) NOT NULL PRIMARY KEY, Data VARBINARY(MAX) NOT NULL, LastUpdateId INT NOT NULL, AllowedUpdates INT NOT NULL) ;\n" +
-			"IF OBJECT_ID('WTB_Updates')   IS NULL CREATE TABLE WTB_Updates (Id INT NOT NULL PRIMARY KEY, Raw VARBINARY(MAX) NOT NULL) ;\n" +
+			"IF OBJECT_ID('WTB_Updates')   IS NULL CREATE TABLE WTB_Updates (Id INT NOT NULL PRIMARY KEY, TLData VARBINARY(MAX) NOT NULL) ;\n" +
 			"IF OBJECT_ID('WTB_Users')     IS NULL CREATE TABLE WTB_Users (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, LanguageCode VARCHAR(16) NOT NULL) ;\n" +
 			"IF OBJECT_ID('WTB_Chats')     IS NULL CREATE TABLE WTB_Chats (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, Type INT NOT NULL) ;\n",
 /*LoadSess*/"SELECT Data, LastUpdateId, AllowedUpdates FROM WTB_Session WHERE Name = 'WTelegramBot'",
 /*SaveSess*/"MERGE INTO WTB_Session USING (VALUES ('WTelegramBot', @Data, @LastUpdateId, @AllowedUpdates)) AS NEW (Name, Data, LastUpdateId, AllowedUpdates) ON WTB_Session.Name = NEW.Name\nWHEN MATCHED THEN UPDATE SET Data = NEW.Data, LastUpdateId = NEW.LastUpdateId, AllowedUpdates = NEW.AllowedUpdates\nWHEN NOT MATCHED THEN INSERT (Name, Data, LastUpdateId, AllowedUpdates) VALUES (NEW.Name, NEW.Data, NEW.LastUpdateId, NEW.AllowedUpdates);",
-/*LoadUpd*/	"SELECT Id, Raw FROM WTB_Updates ORDER BY Id",
+/*LoadUpd*/	"SELECT Id, TLData FROM WTB_Updates ORDER BY Id",
 /*DelUpd*/	"DELETE FROM WTB_Updates",
-/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, Raw) VALUES (@Id, @Raw)",
+/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, TLData) VALUES (@Id, @TLData)",
 /*LoadMBox*/"SELECT MBox, pts, access_hash FROM WTB_MBoxState",
 /*SaveMBox*/"MERGE INTO WTB_MBoxState USING (VALUES (@MBox, @pts, @access_hash)) AS NEW (mbox, pts, access_hash) ON WTB_MBoxState.MBox = NEW.MBox\nWHEN MATCHED THEN UPDATE SET pts=NEW.pts, access_hash=NEW.access_hash\nWHEN NOT MATCHED THEN INSERT (mbox, pts, access_hash) VALUES (NEW.mbox, NEW.pts, NEW.access_hash);",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",
@@ -50,14 +50,14 @@ internal partial class Database
 		[ // MySQL
 /*DbSetup*/	"CREATE TABLE IF NOT EXISTS WTB_MBoxState (MBox BIGINT NOT NULL PRIMARY KEY, pts INT NOT NULL, access_hash BIGINT NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Session (Name VARCHAR(32) NOT NULL PRIMARY KEY, Data BYTEA NOT NULL, LastUpdateId INT NOT NULL, AllowedUpdates INT NOT NULL) ;\n" +
-			"CREATE TABLE IF NOT EXISTS WTB_Updates (Id INT NOT NULL PRIMARY KEY, Raw BYTEA NOT NULL) ;\n" +
+			"CREATE TABLE IF NOT EXISTS WTB_Updates (Id INT NOT NULL PRIMARY KEY, TLData BYTEA NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Users (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, LanguageCode VARCHAR(16) NOT NULL) ;\n" +
 			"CREATE TABLE IF NOT EXISTS WTB_Chats (Id BIGINT NOT NULL PRIMARY KEY, AccessHash BIGINT NOT NULL, Flags INT NOT NULL, FirstName VARCHAR(255) NOT NULL, LastName VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, Type INT NOT NULL) ;\n",
 /*LoadSess*/"SELECT Data, LastUpdateId, AllowedUpdates FROM WTB_Session WHERE Name = 'WTelegramBot'",
 /*SaveSess*/"REPLACE INTO WTB_Session (Name, Data, LastUpdateId, AllowedUpdates) VALUES ('WTelegramBot', @Data, @LastUpdateId, @AllowedUpdates)",
-/*LoadUpd*/	"SELECT Id, Raw FROM WTB_Updates ORDER BY Id",
+/*LoadUpd*/	"SELECT Id, TLData FROM WTB_Updates ORDER BY Id",
 /*DelUpd*/	"DELETE FROM WTB_Updates",
-/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, Raw) VALUES (@Id, @Raw)",
+/*SaveUpd*/	"INSERT INTO WTB_Updates (Id, TLData) VALUES (@Id, @TLData)",
 /*LoadMBox*/"SELECT MBox, pts, access_hash FROM WTB_MBoxState",
 /*SaveMBox*/"REPLACE INTO WTB_MBoxState(mbox, pts, access_hash) VALUES(@MBox, @pts, @access_hash)",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",

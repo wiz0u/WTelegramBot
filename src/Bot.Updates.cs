@@ -19,14 +19,14 @@ public partial class Bot
 				if (NotAllowed(isChannelPost ? UpdateType.ChannelPost : UpdateType.Message)) return null;
 				var message = await MakeMessageAndReply(unm.message);
 				if (message == null) return null;
-				return isChannelPost ? new Update { ChannelPost = message, RawUpdate = update }
-									: new Update { Message = message, RawUpdate = update };
+				return isChannelPost ? new Update { ChannelPost = message, TLUpdate = update }
+									: new Update { Message = message, TLUpdate = update };
 			case UpdateEditMessage uem:
 				if (uem.message is TL.Message emsg && emsg.flags.HasFlag(TL.Message.Flags.out_)) return null;
 				isChannelPost = (await ChatFromPeer(uem.message.Peer))?.Type == ChatType.Channel;
 				if (NotAllowed(isChannelPost ? UpdateType.ChannelPost : UpdateType.Message)) return null;
-				return isChannelPost ? new Update { EditedChannelPost = await MakeMessageAndReply(uem.message), RawUpdate = update }
-									: new Update { EditedMessage = await MakeMessageAndReply(uem.message), RawUpdate = update };
+				return isChannelPost ? new Update { EditedChannelPost = await MakeMessageAndReply(uem.message), TLUpdate = update }
+									: new Update { EditedMessage = await MakeMessageAndReply(uem.message), TLUpdate = update };
 			case UpdateBotInlineQuery ubiq:
 				if (NotAllowed(UpdateType.InlineQuery)) return null;
 				return new Update
@@ -48,7 +48,7 @@ public partial class Bot
 						},
 						Location = ubiq.geo.Location()
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case UpdateBotInlineSend ubis:
 				if (NotAllowed(UpdateType.ChosenInlineResult)) return null;
@@ -62,7 +62,7 @@ public partial class Bot
 						InlineMessageId = ubis.msg_id.InlineMessageId(),
 						Query = ubis.query,
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case UpdateBotCallbackQuery ubcq:
 				if (NotAllowed(UpdateType.CallbackQuery)) return null;
@@ -77,7 +77,7 @@ public partial class Bot
 						Data = ubcq.data == null ? null : Encoding.UTF8.GetString(ubcq.data),
 						GameShortName = ubcq.game_short_name
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case UpdateInlineBotCallbackQuery ubicq:
 				if (NotAllowed(UpdateType.CallbackQuery)) return null;
@@ -92,7 +92,7 @@ public partial class Bot
 						Data = ubicq.data == null ? null : Encoding.UTF8.GetString(ubicq.data),
 						GameShortName = ubicq.game_short_name
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case UpdateChannelParticipant uchp:
 				if (NotAllowed(uchp.actor_id == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
@@ -132,7 +132,7 @@ public partial class Bot
 				}, update);
 			case UpdateMessagePoll ump:
 				if (NotAllowed(UpdateType.Poll)) return null;
-				return new Update { Poll = MakePoll(ump.poll, ump.results), RawUpdate = update };
+				return new Update { Poll = MakePoll(ump.poll, ump.results), TLUpdate = update };
 			case UpdateMessagePollVote umpv:
 				if (NotAllowed(UpdateType.PollAnswer)) return null;
 				return new Update
@@ -144,7 +144,7 @@ public partial class Bot
 						User = umpv.peer is PeerUser pu ? await UserOrResolve(pu.user_id) : null,
 						OptionIds = umpv.options.Select(o => (int)o[0]).ToArray()
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotChatInviteRequester ubcir:
 				if (NotAllowed(UpdateType.ChatJoinRequest)) return null;
@@ -159,7 +159,7 @@ public partial class Bot
 						UserChatId = ubcir.user_id,
 						InviteLink = await MakeChatInviteLink(ubcir.invite)
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotShippingQuery ubsq:
 				if (NotAllowed(UpdateType.ShippingQuery)) return null;
@@ -172,7 +172,7 @@ public partial class Bot
 						InvoicePayload = Encoding.UTF8.GetString(ubsq.payload),
 						ShippingAddress = ubsq.shipping_address.ShippingAddress()
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotPrecheckoutQuery ubpq:
 				if (NotAllowed(UpdateType.PreCheckoutQuery)) return null;
@@ -188,23 +188,23 @@ public partial class Bot
 						ShippingOptionId = ubpq.shipping_option_id,
 						OrderInfo = ubpq.info.OrderInfo()
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotBusinessConnect ubbc:
 				if (NotAllowed(UpdateType.BusinessConnection)) return null;
-				return new Update { BusinessConnection = await MakeBusinessConnection(ubbc.connection), RawUpdate = update };
+				return new Update { BusinessConnection = await MakeBusinessConnection(ubbc.connection), TLUpdate = update };
 			case TL.UpdateBotNewBusinessMessage ubnbm:
 				if (NotAllowed(UpdateType.BusinessMessage)) return null;
 				var replyToMessage = await MakeMessage(ubnbm.reply_to_message);
 				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubnbm.connection_id;
 				message = await MakeMessageAndReply(ubnbm.message, replyToMessage, ubnbm.connection_id);
-				return message == null ? null : new Update { BusinessMessage = message, RawUpdate = update };
+				return message == null ? null : new Update { BusinessMessage = message, TLUpdate = update };
 			case TL.UpdateBotEditBusinessMessage ubebm:
 				if (NotAllowed(UpdateType.EditedBusinessMessage)) return null;
 				replyToMessage = await MakeMessage(ubebm.reply_to_message);
 				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubebm.connection_id;
 				message = await MakeMessageAndReply(ubebm.message, replyToMessage, ubebm.connection_id);
-				return message == null ? null : new Update { EditedBusinessMessage = message, RawUpdate = update };
+				return message == null ? null : new Update { EditedBusinessMessage = message, TLUpdate = update };
 			case TL.UpdateBotDeleteBusinessMessage ubdbm:
 				if (NotAllowed(UpdateType.DeletedBusinessMessages)) return null;
 				return new Update
@@ -215,7 +215,7 @@ public partial class Bot
 						Chat = await ChatFromPeer(ubdbm.peer, true),
 						MessageIds = ubdbm.messages
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotMessageReaction ubmr:
 				if (NotAllowed(UpdateType.MessageReaction)) return null;
@@ -231,7 +231,7 @@ public partial class Bot
 						OldReaction = ubmr.old_reactions.Select(TypesTLConverters.ReactionType).ToArray(),
 						NewReaction = ubmr.new_reactions.Select(TypesTLConverters.ReactionType).ToArray(),
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotMessageReactions ubmrs:
 				if (NotAllowed(UpdateType.MessageReactionCount)) return null;
@@ -244,7 +244,7 @@ public partial class Bot
 						Date = ubmrs.date,
 						Reactions = ubmrs.reactions.Select(rc => new Telegram.Bot.Types.ReactionCount { Type = rc.reaction.ReactionType(), TotalCount = rc.count }).ToArray(),
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			case TL.UpdateBotChatBoost ubcb:
 				bool expired = ubcb.boost.expires < ubcb.boost.date;
@@ -264,7 +264,7 @@ public partial class Bot
 						RemoveDate = cb.Boost.AddDate,
 						Source = cb.Boost.Source,
 					},
-					RawUpdate = update
+					TLUpdate = update
 				};
 			//TL.UpdateDraftMessage seems used to update ourself user info
 			default:
@@ -273,8 +273,8 @@ public partial class Bot
 	}
 
 	private Update? MakeUpdate(ChatMemberUpdated chatMember, TL.Update update) => chatMember.From?.Id == BotId
-		? new Update { MyChatMember = chatMember, RawUpdate = update }
-		: new Update { ChatMember = chatMember, RawUpdate = update };
+		? new Update { MyChatMember = chatMember, TLUpdate = update }
+		: new Update { ChatMember = chatMember, TLUpdate = update };
 
 	[return: NotNullIfNotNull(nameof(invite))]
 	private async Task<ChatInviteLink?> MakeChatInviteLink(ExportedChatInvite? invite)
@@ -468,7 +468,7 @@ public partial class Bot
 			case TL.Message message:
 				var msg = new Message
 				{
-					RawMessage = message,
+					TLMessage = message,
 					MessageId = message.id,
 					From = await UserFromPeer(message.from_id),
 					SenderChat = await ChatFromPeer(message.from_id),
@@ -494,7 +494,7 @@ public partial class Bot
 			case TL.MessageService msgSvc:
 				msg = new Message
 				{
-					RawMessage = msgSvc,
+					TLMessage = msgSvc,
 					MessageId = msgSvc.id,
 					From = await UserFromPeer(msgSvc.from_id),
 					SenderChat = await ChatFromPeer(msgSvc.from_id),
@@ -514,7 +514,7 @@ public partial class Bot
 			default:
 				return new Message
 				{
-					RawMessage = msgBase,
+					TLMessage = msgBase,
 					MessageId = msgBase.ID,
 					Chat = await ChatFromPeer(msgBase.Peer, allowUser: true)!,
 				};
