@@ -468,6 +468,7 @@ public partial class Bot
 			case TL.Message message:
 				var msg = new Message
 				{
+					RawMessage = message,
 					MessageId = message.id,
 					From = await UserFromPeer(message.from_id),
 					SenderChat = await ChatFromPeer(message.from_id),
@@ -493,6 +494,7 @@ public partial class Bot
 			case TL.MessageService msgSvc:
 				msg = new Message
 				{
+					RawMessage = msgSvc,
 					MessageId = msgSvc.id,
 					From = await UserFromPeer(msgSvc.from_id),
 					SenderChat = await ChatFromPeer(msgSvc.from_id),
@@ -512,6 +514,7 @@ public partial class Bot
 			default:
 				return new Message
 				{
+					RawMessage = msgBase,
 					MessageId = msgBase.ID,
 					Chat = await ChatFromPeer(msgBase.Peer, allowUser: true)!,
 				};

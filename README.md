@@ -1,6 +1,6 @@
 ﻿# WTelegramBot
 
-WTelegramBot is a full rewrite in pure C# of the Bot API server, presenting the same methods as library Telegram.Bot for easy [migration](#migration).
+WTelegramBot is a full rewrite in pure C# of Telegram Bot API server, presenting the same methods as the Telegram.Bot library for easy [migration](#migration).
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
 
@@ -110,7 +110,7 @@ In case of an error, it will throw TL.RpcException showing the raw Telegram erro
 
 ## How to access the advanced features?
 
-On each Update you receive, there is an extra field named "RawUpdate" that contains the matching raw TL.Update, which may contain extra information not transcribed into the Bot API Update
+On each Update/Message/User/Chat you receive, there is an extra field named "Raw..." that contains the the raw Client API structure, which may contain extra information not transcribed into the Bot API
 
 Enable `TelegramBotClient.WantUnknownRawUpdates` to also receive TL.Update that usually would have been silently ignored by Bot API
 (they will be posted as Update of type Unknown with the RawUpdate field filled)

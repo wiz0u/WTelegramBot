@@ -62,7 +62,7 @@ class BotCollectorPeer(Bot client) : Peer, WTelegram.IPeerCollector, IReadOnlyDi
 	public bool ContainsKey(long key) => throw new NotImplementedException();
 	public IEnumerator<KeyValuePair<long, TL.User>> GetEnumerator() => throw new NotImplementedException();
 	IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
-	public bool TryGetValue(long key, out TL.User value)
+	public bool TryGetValue(long key, out TL.User value) // used only for fetching access_hash in Markdown/HtmlToToEntities
 	{
 		User? user;
 		lock (client._users)

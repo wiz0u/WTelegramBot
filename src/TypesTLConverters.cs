@@ -51,6 +51,7 @@ public static class TypesTLConverters
 		if (user == null) return null;
 		var result = new User
 		{
+			RawUser = user,
 			Id = user.id,
 			IsBot = user.IsBot,
 			FirstName = user.first_name,
@@ -78,6 +79,7 @@ public static class TypesTLConverters
 		var channel = chat as Channel;
 		return chat == null ? null : new Chat
 		{
+			RawInfo = chat,
 			Id = (channel == null ? 0 : ZERO_CHANNEL_ID) - chat.ID,
 			Type = channel == null ? ChatType.Group : channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
 			Title = chat.Title,
@@ -91,6 +93,7 @@ public static class TypesTLConverters
 	[return: NotNullIfNotNull(nameof(user))]
 	public static Chat? Chat(this TL.User? user) => user == null ? null : new Chat
 	{
+		RawInfo = user,
 		Id = user.id,
 		Type = ChatType.Private,
 		Username = user.MainUsername,
@@ -103,6 +106,7 @@ public static class TypesTLConverters
 	[return: NotNullIfNotNull(nameof(user))]
 	public static Chat? Chat(this User? user) => user == null ? null : new Chat
 	{
+		RawInfo = user.RawUser,
 		Id = user.Id,
 		Type = ChatType.Private,
 		Username = user.Username,

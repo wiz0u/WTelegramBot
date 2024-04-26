@@ -21,8 +21,17 @@ namespace Telegram.Bot.Types
 		public TL.Update? RawUpdate;
 	}
 
+	public partial class Message
+	{
+		/// <summary>The corresponding Client API message structure</summary>
+		public TL.MessageBase? RawMessage;
+	}
+
 	public partial class Chat
 	{
+		/// <summary>The corresponding Client API message structure (can be TL.User, TL.Chat, TL.Channel.. or if obtained via GetChat: TL.Users_UserFull, TL.Messages_ChatFull)</summary>
+		public TL.IObject? RawInfo;
+
 		/// <summary>Client API access_hash of the chat</summary>
 		public long AccessHash { get; set; }
 		/// <summary>Useful operator for Client API calls</summary>
@@ -36,6 +45,8 @@ namespace Telegram.Bot.Types
 
 	public partial class User
 	{
+		/// <summary>The corresponding Client API message structure</summary>
+		public TL.User? RawUser;
 		/// <summary>Client API access_hash of the user</summary>
 		public long AccessHash { get; set; }
 		/// <summary>Useful operator for Client API calls</summary>
