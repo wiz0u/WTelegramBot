@@ -1,4 +1,4 @@
-﻿pr: none
+pr: none
 trigger: [ master ]
 
 name: 7.2.0-dev.$(Rev:r)
