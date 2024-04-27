@@ -32,7 +32,10 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\.github\dev.yml" Link="Data\dev.yml" />
+    <None Include="..\.github\release.yml" Link="Data\release.yml" />
+    <None Include="..\README.md" Link="Data\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\logo.png" Link="Data\logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
