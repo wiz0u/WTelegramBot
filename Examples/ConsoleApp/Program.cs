@@ -19,7 +19,7 @@ WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yy
 // Using SQLite DB for storage. Other DBs below (remember to add/uncomment the adequate PackageReference in .csproj)
 using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
 //SQL Server:	using var connection = new Microsoft.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=PATH_TO.mdf;Integrated Security=True;Connect Timeout=60");
-//MySQL:		using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
+//MySQL:    	using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
 //PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Data Source=...");
 
 using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
