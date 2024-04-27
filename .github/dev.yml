@@ -31,13 +31,13 @@ stages:
           versionEnvVar: 'Build.BuildNumber'
           buildProperties: NoWarn="1574";ContinuousIntegrationBuild=true;Version=$(Build.BuildNumber);"ReleaseNotes=$(Release_Notes)"
 
-      - task: NuGetCommand@2
-        inputs:
-          command: 'push'
-          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
-          publishPackageMetadata: true
-          nuGetFeedType: 'external'
-          publishFeedCredentials: 'nuget.org'
+      # - task: NuGetCommand@2
+      #   inputs:
+      #     command: 'push'
+      #     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
+      #     publishPackageMetadata: true
+      #     nuGetFeedType: 'external'
+      #     publishFeedCredentials: 'nuget.org'
 
   - stage: notify
     jobs:
