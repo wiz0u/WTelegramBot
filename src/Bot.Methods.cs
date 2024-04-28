@@ -853,8 +853,8 @@ public partial class Bot
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
-				question = question,
-				answers = options.Select((answer, index) => new TL.PollAnswer { text = answer, option = [(byte)index] }).ToArray(),
+				question = new() { text = question },
+				answers = options.Select((answer, index) => new TL.PollAnswer { text = new() { text = answer }, option = [(byte)index] }).ToArray(),
 				close_period = openPeriod.GetValueOrDefault(),
 				close_date = closeDate.GetValueOrDefault(),
 			},

@@ -856,8 +856,8 @@ public partial class Bot
 		return new Telegram.Bot.Types.Poll
 		{
 			Id = poll.id.ToString(),
-			Question = poll.question,
-			Options = poll.answers.Select((pa, i) => new PollOption { Text = pa.text, VoterCount = pollResults.results[i].voters }).ToArray(),
+			Question = poll.question.text,
+			Options = poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results[i].voters }).ToArray(),
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
 			IsAnonymous = !poll.flags.HasFlag(TL.Poll.Flags.public_voters),

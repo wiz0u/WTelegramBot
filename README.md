@@ -129,7 +129,9 @@ Some extended API calls can be made via `WTelegram.Bot` special methods:
 - `GetChat`: can obtain details about any group/channel based on their public name, or a user ID resolved by InputUser
 
 Other extended API calls not usually accessible to Bot API can be made via the `Bot.Client` property which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
-You can read that [library's documentation](https://wiz0u.github.io/WTelegramClient/EXAMPLES)
+* This way, you can use new features available only in Client API latest layers without waiting months for it to be available in Bot API
+
+For more information about calling Client API methods, you can read that [library's documentation](https://wiz0u.github.io/WTelegramClient/EXAMPLES)
 or search through the [official Client API documentation](https://corefork.telegram.org/methods),
 but make sure to look for the mention "**Bots can use this method**" (other methods can't be called).  
 
@@ -156,7 +158,7 @@ You should make sure your hosting service won't stop/recycle your app after some
 
 This library is still quite new but I tested it extensively to make sure it covers all of the Bot API successfully.
 
-If you have questions about the Bot API methods from TelegramBotClient, you can ask them [in Telegram.Bot support chat](https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA).
+If you have questions about the (official) Bot API methods from TelegramBotClient, you can ask them in [Telegram.Bot support chat](https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA).
 
 If your question is more specific to WTelegram.Bot, or an issue with library behaviour, you can ask them in [@WTelegramClient](https://t.me/WTelegramClient).
 
