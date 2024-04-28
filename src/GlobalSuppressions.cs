@@ -31,13 +31,25 @@ using System.Diagnostics.CodeAnalysis;
 
 #pragma warning disable CS9113
 
+#if NETSTANDARD2_0
 namespace System.Runtime.CompilerServices
 {
+	internal static class RuntimeHelpers
+	{
+		public static T[] GetSubArray<T>(T[] array, Range range)
+		{
+			if (array == null) throw new ArgumentNullException();
+			var (offset, length) = range.GetOffsetAndLength(array.Length);
+			if (length == 0) return [];
+			var dest = typeof(T).IsValueType || typeof(T[]) == array.GetType() ? new T[length]
+				: (T[])Array.CreateInstance(array.GetType().GetElementType()!, length);
+			Array.Copy(array, offset, dest, 0, length);
+			return dest;
+		}
+	}
 	[EditorBrowsable(EditorBrowsableState.Never)]
 	internal class IsExternalInit { }
-
-#if NETSTANDARD2_1
 	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
 	internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute { }
-#endif
 }
+#endif

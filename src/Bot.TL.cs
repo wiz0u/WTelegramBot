@@ -162,10 +162,8 @@ public partial class Bot
 		if (replied?.MessageId > 0)
 		{
 			if (replied.ChatId is not null) replyToPeer = await InputPeerChat(replied.ChatId);
-			var quote = replied.Quote;
 			var quoteEntities = replied.QuoteEntities;
-			if (replied.QuoteParseMode != null)
-				quote = ApplyParse(Enum.Parse<ParseMode>(replied.QuoteParseMode), quote, ref quoteEntities);
+			var quote = ApplyParse(replied.QuoteParseMode, replied.Quote, ref quoteEntities);
 			return new InputReplyToMessage
 			{
 				reply_to_msg_id = replied.MessageId,
@@ -304,7 +302,8 @@ public partial class Bot
 				{
 					string? fileExt = Path.GetExtension(stream.FileName); // ?? defaultFilename (if we want to behave exactly like Telegram.Bot)
 					fileExt ??= Path.GetExtension((stream.Content as FileStream)?.Name);
-					mimeType = string.IsNullOrEmpty(fileExt) ? null : BotHelpers.ExtToMimeType.GetValueOrDefault(fileExt);
+					if (!string.IsNullOrEmpty(fileExt))
+						BotHelpers.ExtToMimeType.TryGetValue(fileExt, out mimeType);
 				}
 				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
 		}
@@ -364,7 +363,7 @@ public partial class Bot
 		var peer = InputPeerUser(userId);
 		var media = await InputMediaDocument(sticker.Sticker, mimeType: MimeType(sticker.Format));
 		var document = await UploadMediaDocument(peer, media);
-		string keywords = sticker.KeyWords == null ? "" : string.Join(',', sticker.KeyWords);
+		string keywords = sticker.KeyWords == null ? "" : string.Join(",", sticker.KeyWords);
 		return new InputStickerSetItem
 		{
 			document = document,

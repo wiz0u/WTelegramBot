@@ -152,7 +152,7 @@ public partial class Bot : IDisposable
 			_state.AllowedUpdates = bitset == 0 ? DefaultAllowedUpdates : bitset < 0 ? -1 : bitset;
 		}
 		Update[] result;
-		limit = Math.Clamp(limit, 1, 100);
+		limit = limit < 1 ? 1 : limit > 100 ? 100 : limit;
 		timeout *= 1000;
 		for (int maxWait = 0; ; maxWait = timeout)
 		{

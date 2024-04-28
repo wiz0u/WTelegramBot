@@ -34,7 +34,7 @@ public partial class ReplyParameters
     /// <summary>
     /// Optional. Mode for parsing entities in the quote. See formatting options for more details.
     /// </summary>
-    public string? QuoteParseMode { get; set; }
+    public Enums.ParseMode QuoteParseMode { get; set; }
 
     /// <summary>
     /// Optional. A JSON-serialized list of special entities that appear in the quote.

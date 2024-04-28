@@ -81,7 +81,7 @@ internal partial class Database
 	{
 		var type = dbConnection.GetType().FullName!;
 		foreach (var mapping in DetectMapping)
-			if (type.Contains(mapping.Key, StringComparison.OrdinalIgnoreCase))
+			if (type.IndexOf(mapping.Key, StringComparison.OrdinalIgnoreCase) >= 0)
 				return mapping.Value;
 		return 0;
 	}

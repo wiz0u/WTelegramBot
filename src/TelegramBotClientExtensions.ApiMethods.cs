@@ -1680,7 +1680,7 @@ public static partial class TelegramBotClientExtensions
         Stream destination,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).GetInfoAndDownloadFile(fileId, destination).ThrowAsApi();
+        await botClient.Bot(cancellationToken).GetInfoAndDownloadFile(fileId, destination, cancellationToken).ThrowAsApi();
 
     /// <summary>
     /// Use this method to ban a user in a group, a supergroup or a channel. In the case of supergroups and
@@ -3817,7 +3817,7 @@ public static partial class TelegramBotClientExtensions
         IEnumerable<string>? keywords = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SetStickerInfo(sticker, keywords: keywords == null ? "" : string.Join(',', keywords)).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SetStickerInfo(sticker, keywords: keywords == null ? "" : string.Join(",", keywords)).ThrowAsApi();
 
     /// <summary>
     /// Use this method to change the mask position of a mask sticker.

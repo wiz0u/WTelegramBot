@@ -304,7 +304,7 @@ public static class TypesTLConverters
 		var bytes = memStream.ToArray();
 		file.FileId = ToBase64(bytes);
 		bytes[12] = (byte)(type?[0] ?? 0);
-		file.FileUniqueId = ToBase64(bytes.AsSpan(3, 10));
+		file.FileUniqueId = ToBase64(bytes, 3, 10);
 		return file;
 	}
 
@@ -321,7 +321,7 @@ public static class TypesTLConverters
 		if (!generateFile) return (null!, location, dc_id);
 
 		idBytes[12] = idBytes[^8]; // patch byte following id with InputPhotoFileLocation.thumb_size
-		var fileUniqueId = ToBase64(idBytes.AsSpan(3, 10));
+		var fileUniqueId = ToBase64(idBytes, 3, 10);
 		var filename = location.GetType().Name;
 		if (filename.StartsWith("Input")) filename = filename[5..];
 		if (filename.EndsWith("FileLocation")) filename = filename[..^12];
@@ -331,7 +331,7 @@ public static class TypesTLConverters
 		{
 			FilePath = $"{fileId}/{filename}",
 			FileId = fileId,
-			FileUniqueId = ToBase64(idBytes.AsSpan(3, 10)),
+			FileUniqueId = ToBase64(idBytes, 3, 10),
 			FileSize = fileSize
 		}, location, dc_id);
 	}
@@ -353,7 +353,7 @@ public static class TypesTLConverters
 		var chatPhoto = new ChatPhoto()
 		{ BigFileId = ToBase64(bytes) };
 		bytes[12] = (byte)big.Type[0]; // patch byte following id with thumb_size
-		chatPhoto.BigFileUniqueId = ToBase64(bytes.AsSpan(3, 10));
+		chatPhoto.BigFileUniqueId = ToBase64(bytes, 3, 10);
 		memStream.SetLength(0);
 		writer.WriteTLObject(photo.ToFileLocation(small));
 		writer.Write((byte)photo.dc_id);
@@ -362,7 +362,7 @@ public static class TypesTLConverters
 		bytes = memStream.ToArray();
 		chatPhoto.SmallFileId = ToBase64(bytes);
 		bytes[12] = (byte)small.Type[0]; // patch byte following id with thumb_size
-		chatPhoto.SmallFileUniqueId = ToBase64(bytes.AsSpan(3, 10));
+		chatPhoto.SmallFileUniqueId = ToBase64(bytes, 3, 10);
 		return chatPhoto;
 	}
 
@@ -384,8 +384,8 @@ public static class TypesTLConverters
 		return (InputBotInlineMessageIDBase)reader.ReadTLObject();
 	}
 
-	private static string ToBase64(this byte[] bytes) => ToBase64(bytes.AsSpan());
-	private static string ToBase64(this Span<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+	private static string ToBase64(this byte[] bytes) => ToBase64(bytes, 0, bytes.Length);
+	private static string ToBase64(this byte[] bytes, int offset, int length) => Convert.ToBase64String(bytes, offset, length).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
 	internal static SendMessageAction ChatAction(this ChatAction action) => action switch
 	{
@@ -470,7 +470,7 @@ public static class TypesTLConverters
 		=> prices.Select(p => new TL.LabeledPrice { label = p.Label, amount = p.Amount }).ToArray();
 
 	internal static TL.BotCommand BotCommand(this BotCommand bc)
-		=> new() { command = bc.Command.StartsWith('/') ? bc.Command[1..] : bc.Command, description = bc.Description };
+		=> new() { command = bc.Command.StartsWith("/") ? bc.Command[1..] : bc.Command, description = bc.Description };
 	internal static BotCommand BotCommand(this TL.BotCommand bc)
 		=> new() { Command = bc.command, Description = bc.description };
 
