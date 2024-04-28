@@ -92,6 +92,7 @@ _(so the new linkPreviewOptions: parameter behaves the same as the old disableWe
 - Removed many [Obsolete] tags for things that still simplify your code
 - Turned many nullable (like `bool?`) into normal type (like `bool`) when `null` meant the same as the default value (like `false`)
 - Turned some `ParseMode?` back into `ParseMode` (restoring the old `ParseMode.Default` which is the same as default/null)
+- Restored some `MessageType` enum value that were removed (renamed) recently (easier compatibility)
 - Not pushing you towards using silly Request-based constructors (seriously!?)
 
 These should make migration from previous versions of Telegram.Bot more easy
@@ -114,6 +115,8 @@ _(Even with HTTP Bot API, it didn't make much sense: You can use cancellationTok
 
 ## How to access the advanced features?
 
+The [Example app](https://github.com/wiz0u/WTelegramBot/tree/master/Examples/ConsoleApp) demonstrates all of the features below.
+
 On each Update/Message/User/Chat you receive, there is an extra field named "`TL...`" that contains the corresponding raw Client API structure, which may contain extra information not transcribed into the Bot API
 
 You can also enable `TelegramBotClient.WantUnknownTLUpdates` to receive updates that usually would have been silently ignored by Bot API
@@ -125,13 +128,12 @@ Some extended API calls can be made via `WTelegram.Bot` special methods:
 - `InputUser`: can resolve a username into a user ID that you can then use with GetChat
 - `GetChat`: can obtain details about any group/channel based on their public name, or a user ID resolved by InputUser
 
-The [Example app](https://github.com/wiz0u/WTelegramBot/tree/master/Examples/ConsoleApp) demonstrates all of the above features.
-
 Other extended API calls not usually accessible to Bot API can be made via the `Bot.Client` property which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
 You can read that [library's documentation](https://wiz0u.github.io/WTelegramClient/EXAMPLES)
 or search through the [official Client API documentation](https://corefork.telegram.org/methods),
 but make sure to look for the mention "**Bots can use this method**" (other methods can't be called).  
-If you want to experiment with these, note that you need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
+
+> Note: If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 Some other `WTelegram.Bot` methods (for example, beginning with Input*) and extension methods can help you convert Bot API ids or structure to/from Client API.
 

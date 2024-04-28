@@ -25,7 +25,7 @@ public partial class InputTextMessageContent : InputMessageContent
     /// Optional. List of special entities that appear in message text, which can be specified
     /// instead of <see cref="ParseMode"/>
     /// </summary>
-    public MessageEntity[]? Entities { get; set; } // ToDo: add test
+    public MessageEntity[]? Entities { get; set; }
 
     /// <summary>
     /// Optional. Link preview generation options for the message

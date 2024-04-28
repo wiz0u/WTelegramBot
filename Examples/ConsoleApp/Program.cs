@@ -106,15 +106,20 @@ for (int offset = 0; ;)
 					//---> It's easy to reply to a message by giving its id to replyParameters: (was broken in Telegram.Bot v20.0.0)
 					await bot.SendTextMessage(message.Chat, $"Hello, {message.From}!", replyParameters: message.MessageId);
 				}
-				else if (text == "react")
+				else if (text == "wtb")
 				{
-					//---> It's easy to send reaction emojis by just giving the emoji string
-					await bot.SetMessageReaction(message.Chat, message.MessageId, ["👍"]);
+					//---> It's easy to disableWebPreview like before by passing true to linkPreviewOptions: (was broken in Telegram.Bot v20.0.0)
+					await bot.SendTextMessage(message.Chat, $"Enjoy https://www.nuget.org/packages/WTelegramBot", linkPreviewOptions: true);
 				}
 				else if (text == "pic")
 				{
 					//---> It's easy to send a file by id or by url by just passing the string: (was broken in Telegram.Bot v19.0.0)
 					await bot.SendPhoto(message.Chat, "https://picsum.photos/310/200.jpg"); // easily send file by URL or FileID
+				}
+				else if (text == "react")
+				{
+					//---> It's easy to send reaction emojis by just giving the emoji string or id
+					await bot.SetMessageReaction(message.Chat, message.MessageId, ["👍"]);
 				}
 				else if (text == "lastseen")
 				{

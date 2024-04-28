@@ -89,8 +89,8 @@ public partial class Bot : IDisposable
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
 		Manager = Client.WithUpdateManager(OnUpdate, _database.LoadMBoxStates(), _collector);
-		_initTask = InitLogin(botToken);
-		if (waitForLogin) _initTask.Wait(); //TODO: test on winforms
+		_initTask = Task.Run(() => InitLogin(botToken));
+		if (waitForLogin) _initTask.Wait();
 	}
 
 	private async Task<TL.User> InitLogin(string botToken)

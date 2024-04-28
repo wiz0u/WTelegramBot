@@ -38,7 +38,7 @@ namespace Telegram.Bot.Types
 		/// <summary>Useful operator for Client API calls</summary>
 		public static implicit operator TL.InputPeer(Chat chat) => chat.Type switch
 		{
-			ChatType.Private => new TL.InputPeerUser(-chat.Id, chat.AccessHash),
+			ChatType.Private => new TL.InputPeerUser(chat.Id, chat.AccessHash),
 			ChatType.Group => new TL.InputPeerChat(-chat.Id),
 			_ => new TL.InputPeerChannel(-1000000000000 - chat.Id, chat.AccessHash),
 		};
