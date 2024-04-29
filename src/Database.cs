@@ -242,3 +242,5 @@ internal partial class Database : IDisposable
 		}
 	}
 }
+
+//TODO use bulk insert or selective update instead of full reupload of the tables
