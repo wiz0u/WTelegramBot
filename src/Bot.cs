@@ -238,7 +238,7 @@ public partial class Bot : IDisposable
 
 	/// <summary>Obtain a InputChannel for this chat (useful with Client API calls)</summary><remarks>May throw exception if chat is unknown</remarks>
 	public async Task<InputChannel> InputChannel(ChatId chatId) => chatId.Identifier is not long id || id < ZERO_CHANNEL_ID
-		? (InputPeerChannel)await InputPeerChat(chatId) : throw new ApiRequestException("Bad Request: method is available for supergroup and channel chats only", 400);
+		? (InputPeerChannel)await InputPeerChat(chatId) : throw new WTException("Bad Request: method is available for supergroup and channel chats only");
 
 	/// <summary>return Chat if found in known chats (DB), or null</summary>
 	public Chat? Chat(long chatId)
@@ -269,7 +269,7 @@ public partial class Bot : IDisposable
 						_chats[id] = chatBase.Chat();
 					return chatBase;
 				}
-				throw new ApiRequestException($"Bad Request: Chat not found {chatId}", 400);
+				throw new WTException($"Bad Request: Chat not found {chatId}");
 			}
 		else
 		{
@@ -281,7 +281,7 @@ public partial class Bot : IDisposable
 			if (resolved.Chat is { } chatBase)
 				lock (_chats)
 					return _chats[chatBase.ID] = chatBase.Chat();
-			throw new ApiRequestException($"Bad Request: Chat not found {chatId}", 400);
+			throw new WTException($"Bad Request: Chat not found {chatId}");
 		}
 	}
 

@@ -4,6 +4,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TL;
+using WTelegram;
 
 namespace Telegram.Bot.Types;
 
@@ -312,7 +313,7 @@ public static class TypesTLConverters
 	public static (File file, InputFileLocationBase location, int dc_id) ParseFileId(this string fileId, bool generateFile = false)
 	{
 		var idBytes = Convert.FromBase64String(fileId.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - fileId.Length) % 4));
-		if (idBytes[^1] != 42) throw new ApiRequestException("Unsupported file_id format");
+		if (idBytes[^1] != 42) throw new WTException("Unsupported file_id format");
 		using var memStream = new MemoryStream(idBytes);
 		using var reader = new BinaryReader(memStream);
 		var location = (InputFileLocationBase)reader.ReadTLObject();
@@ -409,7 +410,7 @@ public static class TypesTLConverters
 			MenuButtonDefault => null,
 			MenuButtonCommands => new BotMenuButtonCommands(),
 			MenuButtonWebApp mbwa => new BotMenuButton { text = mbwa.Text, url = mbwa.WebApp.Url },
-			_ => throw new ApiRequestException("MenuButton has unsupported type")
+			_ => throw new WTException("MenuButton has unsupported type")
 		};
 
 	internal static MenuButton MenuButton(this BotMenuButtonBase? menuButton)
@@ -418,7 +419,7 @@ public static class TypesTLConverters
 			null => new MenuButtonDefault(),
 			BotMenuButtonCommands => new MenuButtonCommands(),
 			BotMenuButton bmb => new MenuButtonWebApp { Text = bmb.text, WebApp = new WebAppInfo { Url = bmb.url } },
-			_ => throw new ApiRequestException("Unrecognized BotMenuButtonBase")
+			_ => throw new WTException("Unrecognized BotMenuButtonBase")
 		};
 
 	internal static ChatAdminRights ChatAdminRights(this ChatAdministratorRights? rights)
@@ -557,13 +558,13 @@ public static class TypesTLConverters
 	{
 		ReactionTypeEmoji rte => new ReactionEmoji { emoticon = rte.Emoji },
 		ReactionTypeCustomEmoji rtce => new ReactionCustomEmoji { document_id = long.Parse(rtce.CustomEmojiId) },
-		_ => throw new ApiRequestException("Unrecognized ReactionType")
+		_ => throw new WTException("Unrecognized ReactionType")
 	};
 	internal static ReactionType ReactionType(this Reaction reaction) => reaction switch
 	{
 		ReactionEmoji rte => new ReactionTypeEmoji { Emoji = rte.emoticon },
 		ReactionCustomEmoji rce => new ReactionTypeCustomEmoji { CustomEmojiId = rce.document_id.ToString() },
-		_ => throw new ApiRequestException("Unrecognized Reaction")
+		_ => throw new WTException("Unrecognized Reaction")
 	};
 
 	internal static InputMediaWebPage? InputMediaWebPage(this LinkPreviewOptions? lpo) => lpo?.Url == null ? null : new InputMediaWebPage

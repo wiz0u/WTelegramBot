@@ -40,7 +40,7 @@ public partial class Bot
 			var full = await Client.Messages_GetFullChat(chat.ID);
 			full.UserOrChat(_collector);
 			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
-				throw new ApiRequestException($"Cannot fetch participants for chat {chatId}");
+				throw new WTException($"Cannot fetch participants for chat {chatId}");
 			return await participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
 		}
 	}
@@ -184,7 +184,7 @@ public partial class Bot
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
-		if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new ApiRequestException("Bad Request: message to copy not found", 400);
+		if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new WTException("Bad Request: message to copy not found");
 		ApplyParse(parseMode, ref caption, ref captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var text = caption ?? msg.message;
@@ -1025,7 +1025,7 @@ public partial class Bot
 				await Client.Channels_EditBanned(channel, user,
 					new ChatBannedRights { flags = ChatBannedRights.Flags.view_messages, until_date = untilDate });
 				break;
-			default: throw new ApiRequestException("Bad Request: can't ban members in private chats", 400);
+			default: throw new WTException("Bad Request: can't ban members in private chats");
 		}
 	}
 
@@ -1097,9 +1097,9 @@ public partial class Bot
 		var part = await Client.Channels_GetParticipant(channel, user);
 		part.UserOrChat(_collector);
 		if (part.participant is not ChannelParticipantAdmin admin)
-			throw new ApiRequestException("Bad Request: user is not an administrator");
+			throw new WTException("Bad Request: user is not an administrator");
 		if (!admin.flags.HasFlag(ChannelParticipantAdmin.Flags.can_edit))
-			throw new ApiRequestException("Bad Request: not enough rights to change custom title of the user");
+			throw new WTException("Bad Request: not enough rights to change custom title of the user");
 		await Client.Channels_EditAdmin(channel, user, admin.admin_rights, customTitle);
 	}
 
@@ -1393,7 +1393,7 @@ public partial class Bot
 			var full = await Client.Messages_GetFullChat(chat.ID);
 			full.UserOrChat(_collector);
 			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
-				throw new ApiRequestException($"Cannot fetch participants for chat {chatId}");
+				throw new WTException($"Cannot fetch participants for chat {chatId}");
 			return await participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
 		}
 	}
@@ -1430,8 +1430,8 @@ public partial class Bot
 			var full = await Client.Messages_GetFullChat(chat.ID);
 			full.UserOrChat(_collector);
 			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
-				throw new ApiRequestException($"Cannot fetch participants for chat {chatId}");
-			var participant = participants.participants.FirstOrDefault(p => p.UserId == userId) ?? throw new ApiRequestException($"user not found ({userId} in chat {chatId})");
+				throw new WTException($"Cannot fetch participants for chat {chatId}");
+			var participant = participants.participants.FirstOrDefault(p => p.UserId == userId) ?? throw new WTException($"user not found ({userId} in chat {chatId})");
 			return participant.ChatMember(await UserOrResolve(userId));
 		}
 	}
@@ -1473,7 +1473,7 @@ public partial class Bot
 		var channel = await InputChannel(chatId);
 		var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor?.ToInt(),
 			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
-		var ftc = msg.ForumTopicCreated ?? throw new ApiRequestException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
+		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
 		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = new Color(ftc.IconColor), IconCustomEmojiId = ftc.IconCustomEmojiId };
 	}
 
@@ -1940,7 +1940,7 @@ public partial class Bot
 		var media = new TL.InputMediaUploadedDocument(uploadedFile, mimeType, attribs);
 		var messageMedia = await Client.Messages_UploadMedia(peer, media);
 		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
-			throw new ApiRequestException("Unexpected UploadMedia result");
+			throw new WTException("Unexpected UploadMedia result");
 		var file = new Telegram.Bot.Types.File { FileSize = doc.size }.SetFileIds(doc.ToFileLocation(), doc.dc_id);
 		file.FilePath = file.FileId + '/' + sticker.FileName;
 		return file;

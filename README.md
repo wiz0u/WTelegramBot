@@ -1,4 +1,4 @@
-﻿[![Bot API Layer](https://img.shields.io/badge/Bot_API_Layer-7.2-blueviolet)](https://corefork.telegram.org/methods)
+﻿[![Bot API Layer](https://img.shields.io/badge/Bot_API_Layer-7.2-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)
@@ -111,7 +111,7 @@ Here are the differences:
 * The orders of parameters can differ, presenting a more logical order for developers, with the more rarely used optional parameters near the end.
 * There is no CancellationToken parameter because it doesn't make sense to abort an immediate TCP request to Client API.  
 _(Even with HTTP Bot API, it didn't make much sense: You can use cancellationToken.ThrowIfCancellationRequested() at various points of your own code if you want it to be cancellable)_
-* In case of an error, WTelegram.Bot will throw `TL.RpcException` showing the raw Telegram error, instead of an ApiRequestException
+* In case of an error, WTelegram.Bot will throw `WTelegram.WTException` like `TL.RpcException` showing the raw Telegram error, instead of an ApiRequestException
 
 ## How to access the advanced features?
 

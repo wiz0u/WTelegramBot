@@ -91,7 +91,7 @@ public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
     /// <summary>Convert WTelegram Exception into ApiRequestException</summary>
     internal static Exceptions.ApiRequestException MakeException(WTelegram.WTException ex)
     {
-        if (ex is not TL.RpcException rpcEx) return new Exceptions.ApiRequestException(ex.Message, ex);
+        if (ex is not TL.RpcException rpcEx) return new Exceptions.ApiRequestException(ex.Message, 400, ex);
         var msg = ex.Message switch
         {
             "MESSAGE_NOT_MODIFIED" => "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message",

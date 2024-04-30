@@ -281,6 +281,7 @@ public partial class Bot
 		=> invite switch
 		{
 			null => null,
+			ChatInvitePublicJoinRequests => null,
 			ChatInviteExported cie => new ChatInviteLink
 			{
 				InviteLink = cie.link,
@@ -293,7 +294,7 @@ public partial class Bot
 				MemberLimit = cie.usage_limit == 0 ? null : cie.usage_limit,
 				PendingJoinRequestCount = cie.flags.HasFlag(ChatInviteExported.Flags.has_requested) ? cie.requested : null,
 			},
-			_ => throw new ApiRequestException("Unexpected ExportedChatInvite: " + invite)
+			_ => throw new WTException("Unexpected ExportedChatInvite: " + invite)
 		};
 
 	/// <returns>User or a stub on failure</returns>
@@ -385,7 +386,7 @@ public partial class Bot
 				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: return (await MakeMessageAndReply(bizMsg, replyToMessage, biz.connection_id))!;
 			}
 		}
-		throw new ApiRequestException("Failed to retrieve sent message");
+		throw new WTException("Failed to retrieve sent message");
 	}
 
 	private async Task<Message[]> PostedMsgs(Task<UpdatesBase> updatesTask, int nbMsg, long startRandomId, Message? replyToMessage)

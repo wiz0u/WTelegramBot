@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WTelegramBot.csproj" />
+    <PackageReference Include="WTelegramBot" Version="7.2.0" />
   </ItemGroup>
 
 </Project>

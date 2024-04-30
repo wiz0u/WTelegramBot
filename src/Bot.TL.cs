@@ -150,7 +150,7 @@ public partial class Bot
 		{
 			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId);
 			var msg = await GetMessage(peer, replied.MessageId);
-			if (msg == null && replied.AllowSendingWithoutReply != true) throw new ApiRequestException("Bad Request: message to reply not found", 400);
+			if (msg == null && replied.AllowSendingWithoutReply != true) throw new WTException("Bad Request: message to reply not found");
 			return msg;
 		}
 		return null;
@@ -255,7 +255,7 @@ public partial class Bot
 				var inputFile = await Client.UploadFileAsync(photo.Content, photo.FileName);
 				return new InputChatUploadedPhoto { file = inputFile, flags = InputChatUploadedPhoto.Flags.has_file };
 		}
-		throw new ApiRequestException("Unrecognized InputFileStream type");
+		throw new WTException("Unrecognized InputFileStream type");
 	}
 
 	private static InputPhoto InputPhoto(string fileId)
@@ -380,7 +380,7 @@ public partial class Bot
 		if (media is TL.InputMediaDocument imd) return imd.id; // already on Telegram, no need to upload
 		var messageMedia = await Client.Messages_UploadMedia(peer, media);
 		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
-			throw new ApiRequestException("Unexpected UploadMedia result");
+			throw new WTException("Unexpected UploadMedia result");
 		return doc;
 	}
 
@@ -452,7 +452,7 @@ public partial class Bot
 				doc.thumb = await Client.UploadFileAsync(stream.Content, stream.FileName);
 				doc.flags |= InputMediaUploadedDocument.Flags.has_thumb;
 				break;
-			default: throw new ApiRequestException("Only InputFileStream is not supported for thumbnails", 400);
+			default: throw new WTException("Only InputFileStream is not supported for thumbnails");
 		}
 
 	}
