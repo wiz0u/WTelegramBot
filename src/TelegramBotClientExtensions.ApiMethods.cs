@@ -1171,7 +1171,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, 0, horizontalAccuracy, heading, proximityAlertRadius, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit live location messages. A location can be edited until its
@@ -1212,7 +1212,7 @@ public static partial class TelegramBotClientExtensions
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, 0, horizontalAccuracy, heading, proximityAlertRadius, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to stop updating a live location message before
@@ -1471,7 +1471,7 @@ public static partial class TelegramBotClientExtensions
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode ?? default, explanationEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options.Select(os => (InputPollOption)os), isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode ?? default, explanationEntities, default, default, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send an animated emoji that will display a random value.
@@ -2329,8 +2329,8 @@ public static partial class TelegramBotClientExtensions
     /// <param name="cancellationToken">
     /// A cancellation token that can be used by other objects or threads to receive notice of cancellation
     /// </param>
-    /// <returns>Returns a <see cref="Chat"/> object on success.</returns>
-    public static async Task<Chat> GetChatAsync(
+    /// <returns>Returns a <see cref="ChatFullInfo"/> object on success.</returns>
+    public static async Task<ChatFullInfo> GetChatAsync(
         this ITelegramBotClient botClient,
         ChatId chatId,
         CancellationToken cancellationToken = default

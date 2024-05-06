@@ -30,7 +30,7 @@ namespace Telegram.Bot.Types
 	public partial class Chat
 	{
 		/// <summary>The corresponding Client API message structure. Real type can be TL.User, TL.Chat, TL.Channel...<br/>
-		/// If it was obtained via GetChat(), real type can be TL.Users_UserFull, TL.Messages_ChatFull)</summary>
+		/// For ChatFullInfo, real type can be TL.Users_UserFull, TL.Messages_ChatFull)</summary>
 		public TL.IObject? TLInfo;
 
 		/// <summary>Client API access_hash of the chat</summary>
@@ -171,5 +171,11 @@ namespace Telegram.Bot.Types
 		public static implicit operator string(BotDescription bd) => bd.Description;
 		/// <summary>implicit from string</summary>
 		public static implicit operator BotDescription(string bd) => new() { Description = bd };
+	}
+
+	public partial class InputPollOption
+	{
+		/// <summary>Implicit operator, same as <see cref="InputFileId(string)"/></summary>
+		public static implicit operator InputPollOption(string text) => new() { Text = text };
 	}
 }

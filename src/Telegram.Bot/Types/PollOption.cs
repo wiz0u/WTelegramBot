@@ -10,6 +10,12 @@ public partial class PollOption
     /// </summary>
     public string Text { get; set; } = default!;
 
+	/// <summary>
+	/// Optional. Special entities that appear in the option text.
+	/// Currently, only custom emoji entities are allowed in poll option texts
+	/// </summary>
+	public MessageEntity[]? TextEntities { get; set; }
+	
     /// <summary>
     /// Number of users that voted for this option
     /// </summary>

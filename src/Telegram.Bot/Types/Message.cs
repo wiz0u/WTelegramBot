@@ -423,6 +423,11 @@ public partial class Message : MaybeInaccessibleMessage
     /// </summary>
     public ChatBoostAdded? BoostAdded { get; set; }
 
+	/// <summary>
+	/// Optional. Service message: chat background set
+	/// </summary>
+	public ChatBackground? ChatBackgroundSet { get; set; }
+
     /// <summary>
     /// Optional. Service message: forum topic created
     /// </summary>

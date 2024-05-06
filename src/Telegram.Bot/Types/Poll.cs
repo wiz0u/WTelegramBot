@@ -16,6 +16,12 @@ public partial class Poll
     /// </summary>
     public string Question { get; set; } = default!;
 
+	/// <summary>
+	/// Optional. Special entities that appear in the question.
+	/// Currently, only custom emoji entities are allowed in poll option texts
+	/// </summary>
+	public MessageEntity[]? QuestionEntities { get; set; }
+
     /// <summary>
     /// List of poll options
     /// </summary>

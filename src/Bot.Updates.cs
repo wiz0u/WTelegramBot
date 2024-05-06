@@ -104,6 +104,7 @@ public partial class Bot
 					OldChatMember = uchp.prev_participant.ChatMember(await UserOrResolve((uchp.prev_participant ?? uchp.new_participant)!.UserId)),
 					NewChatMember = uchp.new_participant.ChatMember(await UserOrResolve((uchp.new_participant ?? uchp.prev_participant)!.UserId)),
 					InviteLink = await MakeChatInviteLink(uchp.invite),
+					ViaJoinRequest = uchp.invite is ChatInvitePublicJoinRequests,
 					ViaChatFolderInviteLink = uchp.flags.HasFlag(UpdateChannelParticipant.Flags.via_chatlist)
 				}, update);
 			case UpdateChatParticipant ucp:
@@ -633,15 +634,9 @@ public partial class Bot
 				}
 				else
 				{
-					msg.Document = new Telegram.Bot.Types.Document
-					{
-						FileSize = document.size,
-						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
-						FileName = document.Filename,
-						MimeType = document.mime_type
-					}.SetFileIds(document.ToFileLocation(), document.dc_id);
+					msg.Document = document.Document(thumb);
 					if (document.GetAttribute<DocumentAttributeAnimated>() != null)
-						msg.Animation = MakeAnimation(msg.Document, document.GetAttribute<DocumentAttributeVideo>());
+						msg.Animation = MakeAnimation(msg.Document!, document.GetAttribute<DocumentAttributeVideo>());
 				}
 				break;
 			case MessageMediaPhoto { photo: TL.Photo photo } mmp:
@@ -707,14 +702,7 @@ public partial class Bot
 				if (mmg.game.document is TL.Document doc && doc.GetAttribute<DocumentAttributeAnimated>() != null)
 				{
 					thumb = doc.LargestThumbSize;
-					var msgDoc = new Telegram.Bot.Types.Document
-					{
-						FileSize = doc.size,
-						Thumbnail = thumb?.PhotoSize(doc.ToFileLocation(thumb), doc.dc_id),
-						FileName = doc.Filename,
-						MimeType = doc.mime_type
-					}.SetFileIds(doc.ToFileLocation(), doc.dc_id);
-					msg.Game.Animation = MakeAnimation(msgDoc, doc.GetAttribute<DocumentAttributeVideo>());
+					msg.Game.Animation = MakeAnimation(doc.Document(thumb)!, doc.GetAttribute<DocumentAttributeVideo>());
 				}
 				return msg;
 			case MessageMediaStory mms:
@@ -834,6 +822,7 @@ public partial class Bot
 				WinnerCount = magr.winners_count, UnclaimedPrizeCount = magr.unclaimed_count,
 				GiveawayMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
 			},
+			MessageActionSetChatWallPaper mascwp => msg.ChatBackgroundSet = new ChatBackground { Type = mascwp.wallpaper.BackgroundType() },
 			_ => null,
 		};
 	}
@@ -869,6 +858,17 @@ public partial class Bot
 			ExplanationEntities = pollResults.solution_entities,
 			OpenPeriod = poll.close_period == default ? null : poll.close_period,
 			CloseDate = poll.close_date == default ? null : poll.close_date
+		};
+	}
+
+	private TL.PollAnswer MakePollAnswer(InputPollOption ipo, int index)
+	{
+		var entities = ipo.TextEntities;
+		var text = ApplyParse(ipo.TextParseMode, ipo.Text, ref entities);
+		return new()
+		{
+			text = new() { text = text, entities = entities },
+			option = [(byte)index]
 		};
 	}
 }

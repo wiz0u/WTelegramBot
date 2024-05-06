@@ -603,4 +603,52 @@ public static class TypesTLConverters
 			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute}).ToArray()
 	};
 
+	internal static Document? Document(this TL.DocumentBase document, TL.PhotoSizeBase? thumb = null)
+		=> document is not TL.Document doc ? null : new Document
+		{
+			FileSize = doc.size,
+			Thumbnail = thumb?.PhotoSize(doc.ToFileLocation(thumb), doc.dc_id),
+			FileName = doc.Filename,
+			MimeType = doc.mime_type
+		}.SetFileIds(doc.ToFileLocation(), doc.dc_id);
+
+	internal static BackgroundType BackgroundType(this WallPaperBase wallpaper) => wallpaper switch
+	{
+		WallPaperNoFile wpnf => wpnf.settings.emoticon != null
+			? new BackgroundTypeChatTheme { ThemeName = wpnf.settings.emoticon }
+			: new BackgroundTypeFill { Fill = wpnf.settings.BackgroundFill()!, DarkThemeDimming = wpnf.settings?.intensity ?? 0 },
+		WallPaper wp => wp.flags.HasFlag(WallPaper.Flags.pattern)
+			? new BackgroundTypePattern
+			{
+				Document = wp.document.Document()!,
+				Fill = wp.settings.BackgroundFill()!,
+				IsMoving = wp.settings?.flags.HasFlag(WallPaperSettings.Flags.motion) == true,
+				Intensity = Math.Abs(wp.settings?.intensity ?? 0),
+				IsInverted = wp.settings?.intensity < 0
+			}
+			: new BackgroundTypeWallpaper
+			{
+				Document = wp.document.Document()!,
+				DarkThemeDimming = wp.settings?.intensity ?? 0,
+				IsBlurred = wp.settings?.flags.HasFlag(WallPaperSettings.Flags.blur) == true,
+				IsMoving = wp.settings?.flags.HasFlag(WallPaperSettings.Flags.motion) == true,
+			},
+		_ => throw new WTException("Unrecognized WallPaperBase")
+	};
+
+	private static BackgroundFill? BackgroundFill(this WallPaperSettings? settings) => settings == null ? null :
+		settings.flags.HasFlag(WallPaperSettings.Flags.has_third_background_color) ? new BackgroundFillFreeformGradient
+		{
+			Colors = settings.flags.HasFlag(WallPaperSettings.Flags.has_fourth_background_color)
+				? [settings.background_color, settings.second_background_color, settings.third_background_color, settings.fourth_background_color]
+				: [settings.background_color, settings.second_background_color, settings.third_background_color]
+		}
+		: settings.second_background_color == settings.background_color ? new BackgroundFillSolid { Color = settings.background_color }
+		: new BackgroundFillGradient
+		{
+			TopColor = settings.background_color,
+			BottomColor = settings.second_background_color,
+			RotationAngle = settings.rotation
+		};
+
 }

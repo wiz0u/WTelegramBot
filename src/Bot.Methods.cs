@@ -645,6 +645,7 @@ public partial class Bot
 	/// <param name="messageId">Identifier of the message to edit</param>
 	/// <param name="latitude">Latitude of new location</param>
 	/// <param name="longitude">Longitude of new location</param>
+	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
 	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
 	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
 	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
@@ -654,11 +655,11 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <returns>On success the edited <see cref="Message"/> is returned.</returns>
-	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, 
+	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, int livePeriod = default,
 		float? horizontalAccuracy = default, int? heading = default, int? proximityAlertRadius = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		var peer = await InputPeerChat(chatId);
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
 		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
 	}
 
@@ -669,6 +670,7 @@ public partial class Bot
 	/// <param name="latitude">Latitude of new location</param>
 	/// <param name="longitude">Longitude of new location</param>
 	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
+	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
 	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
 	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
 	/// Must be between 1 and 100000 if specified</param>
@@ -676,11 +678,11 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, 
+	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = default,
 		float? horizontalAccuracy = default, int? heading = default, int? proximityAlertRadius = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		var id = inlineMessageId.ParseInlineMsgID();
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius);
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
 		await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
 
@@ -806,6 +808,9 @@ public partial class Bot
 	/// <summary>Use this method to send a native poll.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="question">Poll question, 1-300 characters</param>
+	/// <param name="questionParseMode">Mode for parsing entities in the question. See
+	/// <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details</param>
+	/// <param name="questionEntities">List of special entities that appear in the poll explanation, which can be specified instead of <see cref="ParseMode"/></param>
 	/// <param name="options">A list of answer options, 2-10 strings 1-100 characters each</param>
 	/// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
 	/// <param name="type">Poll type, <see cref="PollType.Quiz"/> or <see cref="PollType.Regular"/></param>
@@ -831,15 +836,17 @@ public partial class Bot
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendPoll(ChatId chatId, string question, IEnumerable<string> options, 
+	public async Task<Message> SendPoll(ChatId chatId, string question, IEnumerable<InputPollOption> options,
 		bool isAnonymous = true, PollType type = PollType.Regular, bool allowsMultipleAnswers = default, int? correctOptionId = default, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
 		string? explanation = default, ParseMode explanationParseMode = default, IEnumerable<MessageEntity>? explanationEntities = default,
+		ParseMode questionParseMode = default, IEnumerable<MessageEntity>? questionEntities = default,
 		int? openPeriod = default, DateTime? closeDate = default, bool isClosed = default,
 		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 		
 	{
 		ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
+		ApplyParse(questionParseMode, ref question!, ref questionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
@@ -853,8 +860,8 @@ public partial class Bot
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
-				question = new() { text = question },
-				answers = options.Select((answer, index) => new TL.PollAnswer { text = new() { text = answer }, option = [(byte)index] }).ToArray(),
+				question = new() { text = question, entities = questionEntities?.ToArray() },
+				answers = options.Select(MakePollAnswer).ToArray(),
 				close_period = openPeriod.GetValueOrDefault(),
 				close_date = closeDate.GetValueOrDefault(),
 			},
@@ -1285,7 +1292,7 @@ public partial class Bot
 	/// conversations, current username of a user, group or channel, etc.)</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
 	/// <returns>Returns a <see cref="Chat"/> object on success.</returns>
-	public async Task<Chat> GetChat(ChatId chatId)
+	public async Task<ChatFullInfo> GetChat(ChatId chatId)
 	{
 		if (chatId.Identifier is long userId && userId >= 0)
 		{
@@ -1294,26 +1301,34 @@ public partial class Bot
 			userFull.UserOrChat(_collector);
 			var full = userFull.full_user;
 			var user = userFull.users[userId];
-			var chat = user.Chat();
-			chat.TLInfo = userFull;
-			chat.Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto();
-			chat.ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray();
-			chat.Birthday = full.birthday.Birthday();
-			chat.BusinessIntro = await MakeBusinessIntro(full.business_intro);
-			chat.BusinessLocation = full.business_location.BusinessLocation();
-			chat.BusinessOpeningHours = full.business_work_hours.BusinessOpeningHours();
-			chat.PersonalChat = full.personal_channel_id == 0 ? null : Chat(full.personal_channel_id);
-			chat.AccentColorId = (int)(user.id % 7);
+			var chat = new ChatFullInfo
+			{
+				TLInfo = userFull,
+				Id = user.id,
+				Type = ChatType.Private,
+				Username = user.MainUsername,
+				FirstName = user.first_name,
+				LastName = user.last_name,
+				AccessHash = user.access_hash,
+				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
+				ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray(),
+				Birthday = full.birthday.Birthday(),
+				BusinessIntro = await MakeBusinessIntro(full.business_intro),
+				BusinessLocation = full.business_location.BusinessLocation(),
+				BusinessOpeningHours = full.business_work_hours.BusinessOpeningHours(),
+				PersonalChat = full.personal_channel_id == 0 ? null : Chat(full.personal_channel_id),
+				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
+				EmojiStatusCustomEmojiId = user.emoji_status?.document_id.ToString(),
+				EmojiStatusExpirationDate = (user.emoji_status as EmojiStatusUntil)?.until,
+				Bio = full.about,
+				HasPrivateForwards = full.private_forward_name != null,
+				HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden),
+				MessageAutoDeleteTime = full.ttl_period == 0 ? null : full.ttl_period
+			};
 			if (user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = user.color.color;
 			if (user.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = user.color.background_emoji_id.ToString();
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = user.profile_color.background_emoji_id.ToString();
-			chat.EmojiStatusCustomEmojiId = user.emoji_status?.document_id.ToString();
-			chat.EmojiStatusExpirationDate = (user.emoji_status as EmojiStatusUntil)?.until;
-			chat.Bio = full.about;
-			chat.HasPrivateForwards = full.private_forward_name != null;
-			chat.HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden);
-			chat.MessageAutoDeleteTime = full.ttl_period == 0 ? null : full.ttl_period;
 			if (full.pinned_msg_id > 0)
 				chat.PinnedMessage = await GetMessage(inputUser, full.pinned_msg_id);
 			return chat;
@@ -1325,23 +1340,33 @@ public partial class Bot
 			chatFull.UserOrChat(_collector);
 			var full = chatFull.full_chat;
 			var tlChat = chatFull.chats[inputPeer.ID];
-			var chat = tlChat.Chat();
-			chat.TLInfo = chatFull;
-			chat.Photo = full.ChatPhoto.ChatPhoto();
-			chat.AvailableReactions = full.AvailableReactions switch
+			var chat = new ChatFullInfo
 			{
-				/*chatReactionsNone*/null => [],
-				ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
-				/*ChatReactionsAll*/_ => null,
+				TLInfo = chatFull,
+				Id = -tlChat.ID,
+				Type = ChatType.Group,
+				Title = tlChat.Title,
+				Photo = full.ChatPhoto.ChatPhoto(),
+				AvailableReactions = full.AvailableReactions switch
+				{
+					/*chatReactionsNone*/ null => [],
+					ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
+					/*chatReactionsAll*/ _ => null,
+				},
+				Description = full.About,
+				InviteLink = (full.ExportedInvite as ChatInviteExported)?.link,
+				MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod,
+				AccentColorId = (int)(tlChat.ID % 7)
 			};
-			chat.Description = full.About;
-			chat.InviteLink = (full.ExportedInvite as ChatInviteExported)?.link;
 			if (full.PinnedMsg > 0)
 				chat.PinnedMessage = await GetMessage(inputPeer, full.PinnedMsg);
-			chat.MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod;
-			chat.AccentColorId = (int)(tlChat.ID % 7);
 			if (tlChat is TL.Channel channel)
 			{
+				chat.Id = ZERO_CHANNEL_ID - tlChat.ID;
+				chat.Type = channel.IsChannel ? ChatType.Channel : ChatType.Supergroup;
+				chat.Username = channel.MainUsername;
+				chat.IsForum = channel.flags.HasFlag(Channel.Flags.forum);
+				chat.AccessHash = channel.access_hash;
 				var channelFull = (ChannelFull)full;
 				chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : channel.ActiveUsernames.ToArray();
 				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
