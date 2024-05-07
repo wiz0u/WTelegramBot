@@ -276,6 +276,11 @@ public enum MessageType
     /// </summary>
     BoostAdded,
 
+	/// <summary>
+	/// The <see cref="Message"/> contains a <see cref="Message.ChatBackgroundSet"/>
+	/// </summary>
+	ChatBackgroundSet,
+
 #pragma warning disable CS1591
 	WebsiteConnected = ConnectedWebsite,
 	ChatMembersAdded = NewChatMembers,

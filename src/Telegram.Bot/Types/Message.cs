@@ -556,6 +556,7 @@ public partial class Message : MaybeInaccessibleMessage
             { PassportData: not null }                  => MessageType.PassportData,
             { ProximityAlertTriggered: not null }       => MessageType.ProximityAlertTriggered,
             { BoostAdded: not null }                    => MessageType.BoostAdded,
+            { ChatBackgroundSet: not null }             => MessageType.ChatBackgroundSet,
             { ForumTopicCreated: not null }             => MessageType.ForumTopicCreated,
             { ForumTopicEdited: not null }              => MessageType.ForumTopicEdited,
             { ForumTopicClosed: not null }              => MessageType.ForumTopicClosed,
