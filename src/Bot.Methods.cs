@@ -12,6 +12,8 @@ namespace WTelegram;
 
 public partial class Bot
 {
+	const int reactions_uniq_max = 11;
+
 	#region Power-up methods
 	/// <summary>Use this method to get a list of members in a chat (can be incomplete).</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1310,6 +1312,7 @@ public partial class Bot
 				FirstName = user.first_name,
 				LastName = user.last_name,
 				AccessHash = user.access_hash,
+				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
 				ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray(),
 				Birthday = full.birthday.Birthday(),
@@ -1317,7 +1320,6 @@ public partial class Bot
 				BusinessLocation = full.business_location.BusinessLocation(),
 				BusinessOpeningHours = full.business_work_hours.BusinessOpeningHours(),
 				PersonalChat = full.personal_channel_id == 0 ? null : Chat(full.personal_channel_id),
-				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				EmojiStatusCustomEmojiId = user.emoji_status?.document_id.ToString(),
 				EmojiStatusExpirationDate = (user.emoji_status as EmojiStatusUntil)?.until,
 				Bio = full.about,
@@ -1325,7 +1327,6 @@ public partial class Bot
 				HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden),
 				MessageAutoDeleteTime = full.ttl_period == 0 ? null : full.ttl_period
 			};
-			if (user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = user.color.color;
 			if (user.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = user.color.background_emoji_id.ToString();
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = user.profile_color.background_emoji_id.ToString();
@@ -1336,13 +1337,13 @@ public partial class Bot
 		else
 		{
 			var inputPeer = await InputPeerChat(chatId);
-			var chatFull = await Client.GetFullChat(inputPeer);
-			chatFull.UserOrChat(_collector);
-			var full = chatFull.full_chat;
-			var tlChat = chatFull.chats[inputPeer.ID];
+			var mcf = await Client.GetFullChat(inputPeer);
+			mcf.UserOrChat(_collector);
+			var full = mcf.full_chat;
+			var tlChat = mcf.chats[inputPeer.ID];
 			var chat = new ChatFullInfo
 			{
-				TLInfo = chatFull,
+				TLInfo = mcf,
 				Id = -tlChat.ID,
 				Type = ChatType.Group,
 				Title = tlChat.Title,
@@ -1353,6 +1354,7 @@ public partial class Bot
 					ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
 					/*chatReactionsAll*/ _ => null,
 				},
+				MaxReactionCount = full.AvailableReactions == null ? 0 : reactions_uniq_max,
 				Description = full.About,
 				InviteLink = (full.ExportedInvite as ChatInviteExported)?.link,
 				MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod,
@@ -1368,6 +1370,7 @@ public partial class Bot
 				chat.IsForum = channel.flags.HasFlag(Channel.Flags.forum);
 				chat.AccessHash = channel.access_hash;
 				var channelFull = (ChannelFull)full;
+				if (channelFull.flags2.HasFlag(ChannelFull.Flags2.has_reactions_limit)) chat.MaxReactionCount = channelFull.reactions_limit;
 				chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : channel.ActiveUsernames.ToArray();
 				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
 				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = channel.color.background_emoji_id.ToString();
@@ -1394,6 +1397,8 @@ public partial class Bot
 			{
 				chat.Permissions = basicChat.default_banned_rights.ChatPermissions();
 				chat.HasProtectedContent = basicChat.flags.HasFlag(TL.Chat.Flags.noforwards);
+				var chatFull = (ChatFull)full;
+				if (chatFull.flags.HasFlag(ChatFull.Flags.has_reactions_limit)) chat.MaxReactionCount = chatFull.reactions_limit;
 			}
 			return chat;
 		}
