@@ -1,11 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Telegram.Bot.Types.Payments;
+﻿namespace Telegram.Bot.Types.Payments;
 
 /// <summary>
 /// This object represents a portion of the price for goods or services.
 /// </summary>
-/// <a href="https://core.telegram.org/bots/api#labeledprice"/>
 public partial class LabeledPrice
 {
     /// <summary>
@@ -14,14 +11,7 @@ public partial class LabeledPrice
     public required string Label { get; set; }
 
     /// <summary>
-    /// Price of the product in the <i>smallest units</i> of the
-    /// <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a>
-    /// (integer, <b>not</b> float/double).
-    /// <para>
-    /// For example, for a price of <c>US$ 1.45</c> pass <c>amount = 145</c>. See the <i>exp</i> parameter in
-    /// <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number
-    /// of digits past the decimal point for each currency (2 for the majority of currencies).
-    /// </para>
+    /// Price of the product in the <em>smallest units</em> of the <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> (integer, <b>not</b> float/double). For example, for a price of <c>US$ 1.45</c> pass <c>amount = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies).
     /// </summary>
     public required int Amount { get; set; }
 
@@ -29,7 +19,7 @@ public partial class LabeledPrice
     /// Initializes an instance of <see cref="LabeledPrice"/>
     /// </summary>
     /// <param name="label">Portion label</param>
-    /// <param name="amount">Price of the product</param>
+    /// <param name="amount">Price of the product in the <em>smallest units</em> of the <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> (integer, <b>not</b> float/double). For example, for a price of <c>US$ 1.45</c> pass <c>amount = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies).</param>
     [SetsRequiredMembers]
     public LabeledPrice(string label, int amount)
     {
@@ -38,7 +28,7 @@ public partial class LabeledPrice
     }
 
     /// <summary>
-    /// Initializes an instance of <see cref="LabeledPrice"/>
+    /// Instantiates a new <see cref="LabeledPrice"/>
     /// </summary>
     public LabeledPrice()
     { }

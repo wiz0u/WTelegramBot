@@ -21,17 +21,17 @@ public partial class Animation : FileBase
     public int Duration { get; set; }
 
     /// <summary>
-    /// Optional. Animation thumbnail as defined by sender
+    /// <em>Optional</em>. Animation thumbnail as defined by sender
     /// </summary>
     public PhotoSize? Thumbnail { get; set; }
 
     /// <summary>
-    /// Optional. Original animation filename as defined by sender
+    /// <em>Optional</em>. Original animation filename as defined by sender
     /// </summary>
     public string? FileName { get; set; }
 
     /// <summary>
-    /// Optional. MIME type of the file as defined by sender
+    /// <em>Optional</em>. MIME type of the file as defined by sender
     /// </summary>
     public string? MimeType { get; set; }
 }

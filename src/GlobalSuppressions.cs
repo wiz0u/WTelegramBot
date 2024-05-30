@@ -3,6 +3,7 @@
 // Project-level suppressions either have no target or are given
 // a specific target and scoped to a namespace, type, member, etc.
 
+global using System.Diagnostics.CodeAnalysis;
 global using Telegram.Bot.Types;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
@@ -17,7 +18,6 @@ global using Update = Telegram.Bot.Types.Update;
 global using User = Telegram.Bot.Types.User;
 global using MessageEntity = TL.MessageEntity;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]
 [assembly: SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>", Scope = "type", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]

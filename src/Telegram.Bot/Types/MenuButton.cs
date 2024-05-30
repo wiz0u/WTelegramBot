@@ -1,33 +1,25 @@
-﻿using Telegram.Bot.Requests;
-using Telegram.Bot.Types.Enums;
-
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
-/// This object describes the bot’s menu button in a private chat. It should be one of:
-/// <list type="bullet">
-/// <item>MenuButtonCommands</item>
-/// <item>MenuButtonWebApp</item>
-/// <item>MenuButtonDefault</item>
-/// </list>
-/// If a menu button other than MenuButtonDefault is set for a private chat, then it is applied in the chat.
-/// Otherwise the default menu button is applied. By default, the menu button opens the list of bot commands.
+/// This object describes the bot's menu button in a private chat. It should be one of<br/><see cref="MenuButtonDefault"/>, <see cref="MenuButtonCommands"/>, <see cref="MenuButtonWebApp"/><br/>If a menu button other than <see cref="MenuButtonDefault"/> is set for a private chat, then it is applied in the chat. Otherwise the default menu button is applied. By default, the menu button opens the list of bot commands.
 /// </summary>
 public abstract partial class MenuButton
 {
     /// <summary>
     /// Type of the button
     /// </summary>
-    public abstract MenuButtonType Type { get; }
+    public abstract Enums.MenuButtonType Type { get; }
 }
 
 /// <summary>
-/// Represents a menu button, which opens the bot’s list of commands.
+/// Represents a menu button, which opens the bot's list of commands.
 /// </summary>
 public partial class MenuButtonCommands : MenuButton
 {
-    /// <inheritdoc />
-    public override MenuButtonType Type => MenuButtonType.Commands;
+    /// <summary>
+    /// Type of the button, always <see cref="Enums.MenuButtonType.Commands"/>
+    /// </summary>
+    public override Enums.MenuButtonType Type => Enums.MenuButtonType.Commands;
 }
 
 /// <summary>
@@ -35,8 +27,10 @@ public partial class MenuButtonCommands : MenuButton
 /// </summary>
 public partial class MenuButtonWebApp : MenuButton
 {
-    /// <inheritdoc />
-    public override MenuButtonType Type => MenuButtonType.WebApp;
+    /// <summary>
+    /// Type of the button, always <see cref="Enums.MenuButtonType.WebApp"/>
+    /// </summary>
+    public override Enums.MenuButtonType Type => Enums.MenuButtonType.WebApp;
 
     /// <summary>
     /// Text on the button
@@ -44,8 +38,7 @@ public partial class MenuButtonWebApp : MenuButton
     public string Text { get; set; } = default!;
 
     /// <summary>
-    /// Description of the Web App that will be launched when the user presses the button. The Web App will be able
-    /// to send an arbitrary message on behalf of the user using the method <see cref="AnswerWebAppQueryRequest"/>.
+    /// Description of the Web App that will be launched when the user presses the button. The Web App will be able to send an arbitrary message on behalf of the user using the method <see cref="WTelegram.Bot.AnswerWebAppQuery">AnswerWebAppQuery</see>.
     /// </summary>
     public WebAppInfo WebApp { get; set; } = default!;
 }
@@ -55,6 +48,8 @@ public partial class MenuButtonWebApp : MenuButton
 /// </summary>
 public partial class MenuButtonDefault : MenuButton
 {
-    /// <inheritdoc />
-    public override MenuButtonType Type => MenuButtonType.Default;
+    /// <summary>
+    /// Type of the button, always <see cref="Enums.MenuButtonType.Default"/>
+    /// </summary>
+    public override Enums.MenuButtonType Type => Enums.MenuButtonType.Default;
 }

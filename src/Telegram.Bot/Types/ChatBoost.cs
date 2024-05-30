@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object contains information about a chat boost.
@@ -24,5 +23,5 @@ public partial class ChatBoost
     /// <summary>
     /// Source of the added boost
     /// </summary>
-    public ChatBoostSource Source  { get; set; } = default!;
+    public ChatBoostSource Source { get; set; } = default!;
 }

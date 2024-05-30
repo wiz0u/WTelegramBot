@@ -6,76 +6,72 @@
 public partial class ChatPermissions
 {
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to send text messages, contacts, locations and venues
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send text messages, contacts, giveaways, giveaway winners, invoices, locations and venues
     /// </summary>
     public bool CanSendMessages { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send audios
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send audios
     /// </summary>
     public bool CanSendAudios { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send documents
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send documents
     /// </summary>
     public bool CanSendDocuments { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send photos
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send photos
     /// </summary>
     public bool CanSendPhotos { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send videos
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send videos
     /// </summary>
     public bool CanSendVideos { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send video notes
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send video notes
     /// </summary>
     public bool CanSendVideoNotes { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true" />, if the user is allowed to send voice notes
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send voice notes
     /// </summary>
     public bool CanSendVoiceNotes { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to send polls, implies <see cref="CanSendMessages"/>
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send polls
     /// </summary>
     public bool CanSendPolls { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to send animations, games, stickers and use inline
-    /// bots
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to send animations, games, stickers and use inline bots
     /// </summary>
     public bool CanSendOtherMessages { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to add web page previews to their messages
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to add web page previews to their messages
     /// </summary>
     public bool CanAddWebPagePreviews { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to change the chat title, photo and other settings.
-    /// Ignored in public supergroups
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to change the chat title, photo and other settings. Ignored in public supergroups
     /// </summary>
     public bool CanChangeInfo { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to invite new users to the chat
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to invite new users to the chat
     /// </summary>
     public bool CanInviteUsers { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to pin messages. Ignored in public supergroups
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to pin messages. Ignored in public supergroups
     /// </summary>
     public bool CanPinMessages { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to create forum topics.
-    /// If omitted defaults to the value of <see cref="CanPinMessages"/>
-    /// supergroups only
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to create forum topics. If omitted defaults to the value of <see cref="CanPinMessages">CanPinMessages</see>
     /// </summary>
     public bool CanManageTopics { get; set; }
 }

@@ -6,7 +6,7 @@
 public partial class ShippingAddress
 {
     /// <summary>
-    /// ISO 3166-1 alpha-2 country code
+    /// Two-letter <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2">ISO 3166-1 alpha-2</a> country code
     /// </summary>
     public string CountryCode { get; set; } = default!;
 

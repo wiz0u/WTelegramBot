@@ -1,17 +1,17 @@
 ﻿namespace Telegram.Bot.Types.Enums;
 
 /// <summary>
-/// The type of a <see cref="Message"/>
+/// The type of <see cref="Message"/>
 /// </summary>
 public enum MessageType
 {
     /// <summary>
-    /// The <see cref="Message"/> is unknown
+    /// <see cref="Message"/> type is unknown
     /// </summary>
     Unknown = 0,
 
     /// <summary>
-    /// The <see cref="Message"/> contains <see cref="Message.Text"/>
+    /// The <see cref="Message"/> contains a <see cref="Message.Text"/>
     /// </summary>
     Text,
 
@@ -186,7 +186,7 @@ public enum MessageType
     VideoChatParticipantsInvited,
 
     /// <summary>
-    /// The <see cref="Message"/> contains a <see cref="Message.Animation"/>
+    /// The <see cref="Message"/> contains an <see cref="Message.Animation"/>
     /// </summary>
     Animation,
 
@@ -226,15 +226,9 @@ public enum MessageType
     WriteAccessAllowed,
 
     /// <summary>
-    /// The <see cref="Message"/> contains a <see cref="Message.UserShared"/>
+    /// The <see cref="Message"/> contains an <see cref="Message.UsersShared"/>
     /// </summary>
-    [Obsolete($"This member is obsolete, use {nameof(MessageType)}.{nameof(UsersShared)} instead")]
-    UserShared,
-
-    /// <summary>
-    /// The <see cref="Message"/> contains a <see cref="Message.UsersShared"/>
-    /// </summary>
-    UsersShared,
+    UsersShared = 45,
 
     /// <summary>
     /// The <see cref="Message"/> contains a <see cref="Message.ChatShared"/>
@@ -276,23 +270,23 @@ public enum MessageType
     /// </summary>
     BoostAdded,
 
-	/// <summary>
-	/// The <see cref="Message"/> contains a <see cref="Message.ChatBackgroundSet"/>
-	/// </summary>
-	ChatBackgroundSet,
+    /// <summary>
+    /// The <see cref="Message"/> contains a <see cref="Message.ChatBackgroundSet"/>
+    /// </summary>
+    ChatBackgroundSet,
 
 #pragma warning disable CS1591
-	WebsiteConnected = ConnectedWebsite,
-	ChatMembersAdded = NewChatMembers,
-	ChatMemberLeft = LeftChatMember,
-	ChatTitleChanged = NewChatTitle,
-	ChatPhotoChanged = NewChatPhoto,
-	MessagePinned = PinnedMessage,
-	ChatPhotoDeleted = DeleteChatPhoto,
-	GroupCreated = GroupChatCreated,
-	SupergroupCreated = SupergroupChatCreated,
-	ChannelCreated = ChannelChatCreated,
-	MigratedToSupergroup = MigrateFromChatId,
-	MigratedFromGroup = MigrateToChatId,
+    WebsiteConnected = ConnectedWebsite,
+    ChatMembersAdded = NewChatMembers,
+    ChatMemberLeft = LeftChatMember,
+    ChatTitleChanged = NewChatTitle,
+    ChatPhotoChanged = NewChatPhoto,
+    MessagePinned = PinnedMessage,
+    ChatPhotoDeleted = DeleteChatPhoto,
+    GroupCreated = GroupChatCreated,
+    SupergroupCreated = SupergroupChatCreated,
+    ChannelCreated = ChannelChatCreated,
+    MigratedToSupergroup = MigrateFromChatId,
+    MigratedFromGroup = MigrateToChatId,
 #pragma warning restore CS1591
 }

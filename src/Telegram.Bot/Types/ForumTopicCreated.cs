@@ -16,7 +16,7 @@ public partial class ForumTopicCreated
     public int IconColor { get; set; }
 
     /// <summary>
-    /// Optional. Unique identifier of the custom emoji shown as the topic icon
+    /// <em>Optional</em>. Unique identifier of the custom emoji shown as the topic icon
     /// </summary>
     public string? IconCustomEmojiId { get; set; }
 }

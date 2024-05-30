@@ -6,7 +6,7 @@
 public partial class MessageAutoDeleteTimerChanged
 {
     /// <summary>
-    /// New auto-delete time for messages in the chat
+    /// New auto-delete time for messages in the chat; in seconds
     /// </summary>
     public int MessageAutoDeleteTime { get; set; }
 }

@@ -1,12 +1,12 @@
 ﻿namespace Telegram.Bot.Types;
 
 /// <summary>
-/// This object represents a messageId.
+/// This object represents a unique message identifier.
 /// </summary>
 public partial class MessageId
 {
     /// <summary>
-    /// Message identifier in the chat specified in <see cref="Requests.CopyMessageRequest.FromChatId"/>
+    /// Unique message identifier
     /// </summary>
     public int Id { get; set; }
 }

@@ -6,22 +6,22 @@
 public partial class OrderInfo
 {
     /// <summary>
-    /// Optional. User name
+    /// <em>Optional</em>. User name
     /// </summary>
     public string? Name { get; set; }
 
     /// <summary>
-    /// Optional. User's phone number
+    /// <em>Optional</em>. User's phone number
     /// </summary>
     public string? PhoneNumber { get; set; }
 
     /// <summary>
-    /// Optional. User email
+    /// <em>Optional</em>. User email
     /// </summary>
     public string? Email { get; set; }
 
     /// <summary>
-    /// Optional. User shipping address
+    /// <em>Optional</em>. User shipping address
     /// </summary>
     public ShippingAddress? ShippingAddress { get; set; }
 }

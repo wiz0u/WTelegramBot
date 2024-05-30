@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object represents a boost removed from a chat.

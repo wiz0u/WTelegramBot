@@ -14,32 +14,32 @@ public static class TypesTLConverters
 	const long ZERO_CHANNEL_ID = -1000000000000;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityTextUrl"/> only, url that will be opened after user taps on the text
+	/// <em>Optional</em>. For <see cref="MessageEntityTextUrl"/> only, url that will be opened after user taps on the text
 	/// </summary>
 	public static string? Url(this MessageEntity entity)
 		=> (entity as MessageEntityTextUrl)?.url;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityMentionName"/> only, the mentioned user id
+	/// <em>Optional</em>. For <see cref="MessageEntityMentionName"/> only, the mentioned user id
 	/// </summary>
 	/// <remarks>Use <see cref="TelegramBotClient.User(long)"/> to obtain user details from this id</remarks>
 	public static long? UserId(this MessageEntity entity)
 		=> (entity as MessageEntityMentionName)?.user_id ?? (entity as InputMessageEntityMentionName)?.user_id.UserId;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
+	/// <em>Optional</em>. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
 	/// </summary>
 	public static User? User(this MessageEntity entity, ITelegramBotClient botClient)
 		=> entity.UserId() is long userId ? botClient.Bot.User(userId) ?? new User { Id = userId, FirstName = "" } : null;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text
+	/// <em>Optional</em>. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text
 	/// </summary>
 	public static string? Language(this MessageEntity entity)
 		=> (entity as MessageEntityPre)?.language;
 
 	/// <summary>
-	/// Optional. For <see cref="MessageEntityType.CustomEmoji"/> only, unique identifier of the custom emoji.
+	/// <em>Optional</em>. For <see cref="MessageEntityType.CustomEmoji"/> only, unique identifier of the custom emoji.
 	/// Use <see cref="Requests.GetCustomEmojiStickersRequest"/> to get full information about the sticker
 	/// </summary>
 	public static string? CustomEmojiId(this MessageEntity entity)
@@ -264,8 +264,8 @@ public static class TypesTLConverters
 		{
 			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
 			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
-			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallBackGame(kbg.text),
-			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPayment(kbb.text),
+			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallbackGame(kbg.text),
+			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPay(kbb.text),
 			KeyboardButtonSwitchInline kbsi => kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ?
 				InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
 				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
@@ -517,7 +517,7 @@ public static class TypesTLConverters
 		{
 			SecureValueType.PersonalDetails => Passport.EncryptedPassportElementType.PersonalDetails,
 			SecureValueType.Passport => Passport.EncryptedPassportElementType.Passport,
-			SecureValueType.DriverLicense => Passport.EncryptedPassportElementType.DriverLicence,
+			SecureValueType.DriverLicense => Passport.EncryptedPassportElementType.DriverLicense,
 			SecureValueType.IdentityCard => Passport.EncryptedPassportElementType.IdentityCard,
 			SecureValueType.InternalPassport => Passport.EncryptedPassportElementType.InternalPassport,
 			SecureValueType.Address => Passport.EncryptedPassportElementType.Address,
@@ -583,7 +583,7 @@ public static class TypesTLConverters
 		ShowAboveText = invert_media
 	};
 
-	internal static Birthday? Birthday(this TL.Birthday? birthday) => birthday == null ? null : new Birthday
+	internal static Birthdate? Birthdate(this TL.Birthday? birthday) => birthday == null ? null : new Birthdate
 	{
 		Day = birthday.day,
 		Month = birthday.month,

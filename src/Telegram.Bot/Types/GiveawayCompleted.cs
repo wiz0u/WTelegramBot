@@ -11,12 +11,12 @@ public partial class GiveawayCompleted
     public int WinnerCount { get; set; }
 
     /// <summary>
-    /// Optional. Number of undistributed prizes
+    /// <em>Optional</em>. Number of undistributed prizes
     /// </summary>
     public int? UnclaimedPrizeCount { get; set; }
 
     /// <summary>
-    /// Optional. Message with the giveaway that was completed, if it wasn't deleted
+    /// <em>Optional</em>. Message with the giveaway that was completed, if it wasn't deleted
     /// </summary>
     public Message? GiveawayMessage { get; set; }
 }

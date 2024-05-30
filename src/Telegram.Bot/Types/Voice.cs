@@ -11,7 +11,7 @@ public partial class Voice : FileBase
     public int Duration { get; set; }
 
     /// <summary>
-    /// Optional. MIME type of the file as defined by sender
+    /// <em>Optional</em>. MIME type of the file as defined by sender
     /// </summary>
     public string? MimeType { get; set; }
 }

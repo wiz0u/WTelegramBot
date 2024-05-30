@@ -16,7 +16,7 @@ public partial class BusinessMessagesDeleted
     public Chat Chat { get; set; } = default!;
 
     /// <summary>
-    /// List of identifiers of deleted messages in the chat of the business account
+    /// The list of identifiers of deleted messages in the chat of the business account
     /// </summary>
     public int[] MessageIds { get; set; } = default!;
 }

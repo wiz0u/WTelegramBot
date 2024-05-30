@@ -84,8 +84,7 @@ public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
         Stream destination,
         CancellationToken cancellationToken = default)
     {
-        int slash = filePath.IndexOf('/');
-        await this.GetInfoAndDownloadFileAsync(slash < 0 ? filePath : filePath[..slash], destination, cancellationToken);
+        await DownloadFile(filePath, destination, cancellationToken);
     }
 
     /// <summary>Convert WTelegram Exception into ApiRequestException</summary>

@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object represents reaction changes on a message with anonymous reactions.

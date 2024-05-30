@@ -16,17 +16,17 @@ public partial class Contact
     public string FirstName { get; set; } = default!;
 
     /// <summary>
-    /// Optional. Contact's last name
+    /// <em>Optional</em>. Contact's last name
     /// </summary>
     public string? LastName { get; set; }
 
     /// <summary>
-    /// Optional. Contact's user identifier in Telegram
+    /// <em>Optional</em>. Contact's user identifier in Telegram.
     /// </summary>
     public long? UserId { get; set; }
 
     /// <summary>
-    /// Optional. Additional data about the contact in the form of a vCard
+    /// <em>Optional</em>. Additional data about the contact in the form of a <a href="https://en.wikipedia.org/wiki/VCard">vCard</a>
     /// </summary>
     public string? Vcard { get; set; }
 }

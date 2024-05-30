@@ -6,7 +6,7 @@
 public partial class GameHighScore
 {
     /// <summary>
-    /// Position in high score table for the game.
+    /// Position in high score table for the game
     /// </summary>
     public int Position { get; set; }
 

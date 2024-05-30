@@ -6,7 +6,7 @@
 public partial class VideoChatParticipantsInvited
 {
     /// <summary>
-    /// Optional. New members that were invited to the voice chat
+    /// New members that were invited to the video chat
     /// </summary>
     public User[] Users { get; set; } = default!;
 }

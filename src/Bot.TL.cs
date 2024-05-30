@@ -54,20 +54,6 @@ public partial class Bot
 				| (rus.RequestUsername == true ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
 				| (rus.RequestPhoto == true ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
 		};
-#pragma warning disable CS0618 // Type or member is obsolete
-		if (btn.RequestUser is { } ru) return new InputKeyboardButtonRequestPeer
-		{
-			text = btn.Text,
-			button_id = ru.RequestId,
-			max_quantity = 1,
-			peer_type = new RequestPeerTypeUser
-			{
-				bot = ru.UserIsBot == true,
-				premium = ru.UserIsPremium == true,
-				flags = (ru.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (ru.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium)
-			}
-		};
-#pragma warning restore CS0618 // Type or member is obsolete
 		if (btn.RequestChat is { } rc) return new InputKeyboardButtonRequestPeer
 		{
 			text = btn.Text,
@@ -363,7 +349,7 @@ public partial class Bot
 		var peer = InputPeerUser(userId);
 		var media = await InputMediaDocument(sticker.Sticker, mimeType: MimeType(sticker.Format));
 		var document = await UploadMediaDocument(peer, media);
-		string keywords = sticker.KeyWords == null ? "" : string.Join(",", sticker.KeyWords);
+		string keywords = sticker.Keywords == null ? "" : string.Join(",", sticker.Keywords);
 		return new InputStickerSetItem
 		{
 			document = document,

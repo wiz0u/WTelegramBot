@@ -1,16 +1,14 @@
-﻿using Telegram.Bot.Types.Enums;
-
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
-/// This object contains information about one member of the chat.
+/// This object contains information about one member of a chat. Currently, the following 6 types of chat members are supported:<br/><see cref="ChatMemberOwner"/>, <see cref="ChatMemberAdministrator"/>, <see cref="ChatMemberMember"/>, <see cref="ChatMemberRestricted"/>, <see cref="ChatMemberLeft"/>, <see cref="ChatMemberBanned"/>
 /// </summary>
 public abstract partial class ChatMember
 {
     /// <summary>
-    /// The member's status in the chat.
+    /// The member's status in the chat
     /// </summary>
-    public abstract ChatMemberStatus Status { get; }
+    public abstract Enums.ChatMemberStatus Status { get; }
 
     /// <summary>
     /// Information about the user
@@ -19,31 +17,35 @@ public abstract partial class ChatMember
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that owns the chat and has all administrator privileges
+/// Represents a <see cref="ChatMember">chat member</see> that owns the chat and has all administrator privileges.
 /// </summary>
 public partial class ChatMemberOwner : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Creator;
-
     /// <summary>
-    /// Custom title for this user
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Creator"/>
     /// </summary>
-    public string? CustomTitle { get; set; }
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Creator;
 
     /// <summary>
     /// <see langword="true"/>, if the user's presence in the chat is hidden
     /// </summary>
     public bool IsAnonymous { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Custom title for this user
+    /// </summary>
+    public string? CustomTitle { get; set; }
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that has some additional privileges
+/// Represents a <see cref="ChatMember">chat member</see> that has some additional privileges.
 /// </summary>
 public partial class ChatMemberAdministrator : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Administrator;
+    /// <summary>
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Administrator"/>
+    /// </summary>
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Administrator;
 
     /// <summary>
     /// <see langword="true"/>, if the bot is allowed to edit administrator privileges of that user
@@ -56,9 +58,7 @@ public partial class ChatMemberAdministrator : ChatMember
     public bool IsAnonymous { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the administrator can access the chat event log, chat statistics, message statistics
-    /// in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode.
-    /// Implied by any other administrator privilege
+    /// <see langword="true"/>, if the administrator can access the chat event log, get boost list, see hidden supergroup and channel members, report spam messages and ignore slow mode. Implied by any other administrator privilege.
     /// </summary>
     public bool CanManageChat { get; set; }
 
@@ -73,85 +73,86 @@ public partial class ChatMemberAdministrator : ChatMember
     public bool CanManageVideoChats { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the administrator can restrict, ban or unban chat members
+    /// <see langword="true"/>, if the administrator can restrict, ban or unban chat members, or access supergroup statistics
     /// </summary>
     public bool CanRestrictMembers { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the administrator can add new administrators with a subset of his own privileges or
-    /// demote administrators that he has promoted, directly or indirectly (promoted by administrators that
-    /// were appointed by the user)
+    /// <see langword="true"/>, if the administrator can add new administrators with a subset of their own privileges or demote administrators that they have promoted, directly or indirectly (promoted by administrators that were appointed by the user)
     /// </summary>
     public bool CanPromoteMembers { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the administrator can change the chat title, photo and other settings
+    /// <see langword="true"/>, if the user is allowed to change the chat title, photo and other settings
     /// </summary>
     public bool CanChangeInfo { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the administrator can invite new users to the chat
+    /// <see langword="true"/>, if the user is allowed to invite new users to the chat
     /// </summary>
     public bool CanInviteUsers { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can post in the channel, channels only
-    /// </summary>
-    public bool CanPostMessages { get; set; }
-
-    /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can edit messages of other users, channels only
-    /// </summary>
-    public bool CanEditMessages { get; set; }
-
-    /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can pin messages, supergroups only
-    /// </summary>
-    public bool CanPinMessages { get; set; }
-
-    /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can post stories in the channel; channels only
+    /// <see langword="true"/>, if the administrator can post stories to the chat
     /// </summary>
     public bool CanPostStories { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can edit stories posted by other users; channels only
+    /// <see langword="true"/>, if the administrator can edit stories posted by other users, post stories to the chat page, pin chat stories, and access the chat's story archive
     /// </summary>
     public bool CanEditStories { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the administrator can delete stories posted by other users; channels only
+    /// <see langword="true"/>, if the administrator can delete stories posted by other users
     /// </summary>
     public bool CanDeleteStories { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to create, rename, close, and reopen forum topics;
-    /// supergroups only
+    /// <em>Optional</em>. <see langword="true"/>, if the administrator can post messages in the channel, or access channel statistics; for channels only
+    /// </summary>
+    public bool CanPostMessages { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. <see langword="true"/>, if the administrator can edit messages of other users and can pin messages; for channels only
+    /// </summary>
+    public bool CanEditMessages { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to pin messages; for groups and supergroups only
+    /// </summary>
+    public bool CanPinMessages { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. <see langword="true"/>, if the user is allowed to create, rename, close, and reopen forum topics; for supergroups only
     /// </summary>
     public bool CanManageTopics { get; set; }
 
     /// <summary>
-    /// Optional. Custom title for this user
+    /// <em>Optional</em>. Custom title for this user
     /// </summary>
     public string? CustomTitle { get; set; }
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that has no additional privileges or restrictions.
+/// Represents a <see cref="ChatMember">chat member</see> that has no additional privileges or restrictions.
 /// </summary>
 public partial class ChatMemberMember : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Member;
+    /// <summary>
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Member"/>
+    /// </summary>
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Member;
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that is under certain restrictions in the chat. Supergroups only.
+/// Represents a <see cref="ChatMember">chat member</see> that is under certain restrictions in the chat. Supergroups only.
 /// </summary>
 public partial class ChatMemberRestricted : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Restricted;
+    /// <summary>
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Restricted"/>
+    /// </summary>
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Restricted;
 
     /// <summary>
     /// <see langword="true"/>, if the user is a member of the chat at the moment of the request
@@ -159,52 +160,37 @@ public partial class ChatMemberRestricted : ChatMember
     public bool IsMember { get; set; }
 
     /// <summary>
-    /// <see langword="true"/>, if the user can change the chat title, photo and other settings
-    /// </summary>
-    public bool CanChangeInfo { get; set; }
-
-    /// <summary>
-    /// <see langword="true"/>, if the user can invite new users to the chat
-    /// </summary>
-    public bool CanInviteUsers { get; set; }
-
-    /// <summary>
-    /// <see langword="true"/>, if the user can pin messages, supergroups only
-    /// </summary>
-    public bool CanPinMessages { get; set; }
-
-    /// <summary>
-    /// <see langword="true"/>, if the user can send text messages, contacts, locations and venues
+    /// <see langword="true"/>, if the user is allowed to send text messages, contacts, giveaways, giveaway winners, invoices, locations and venues
     /// </summary>
     public bool CanSendMessages { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send audios
+    /// <see langword="true"/>, if the user is allowed to send audios
     /// </summary>
     public bool CanSendAudios { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send documents
+    /// <see langword="true"/>, if the user is allowed to send documents
     /// </summary>
     public bool CanSendDocuments { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send photos
+    /// <see langword="true"/>, if the user is allowed to send photos
     /// </summary>
     public bool CanSendPhotos { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send videos
+    /// <see langword="true"/>, if the user is allowed to send videos
     /// </summary>
     public bool CanSendVideos { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send video notes
+    /// <see langword="true"/>, if the user is allowed to send video notes
     /// </summary>
     public bool CanSendVideoNotes { get; set; }
 
     /// <summary>
-    /// <see langword="true" />, if the user is allowed to send voice notes
+    /// <see langword="true"/>, if the user is allowed to send voice notes
     /// </summary>
     public bool CanSendVoiceNotes { get; set; }
 
@@ -224,37 +210,54 @@ public partial class ChatMemberRestricted : ChatMember
     public bool CanAddWebPagePreviews { get; set; }
 
     /// <summary>
-    /// Date when restrictions will be lifted for this user, UTC time
+    /// <see langword="true"/>, if the user is allowed to change the chat title, photo and other settings
     /// </summary>
-    public DateTime? UntilDate { get; set; }
+    public bool CanChangeInfo { get; set; }
 
     /// <summary>
-    /// Optional. <see langword="true"/>, if the user is allowed to create forum topics
-    /// supergroups only
+    /// <see langword="true"/>, if the user is allowed to invite new users to the chat
+    /// </summary>
+    public bool CanInviteUsers { get; set; }
+
+    /// <summary>
+    /// <see langword="true"/>, if the user is allowed to pin messages
+    /// </summary>
+    public bool CanPinMessages { get; set; }
+
+    /// <summary>
+    /// <see langword="true"/>, if the user is allowed to create forum topics
     /// </summary>
     public bool CanManageTopics { get; set; }
+
+    /// <summary>
+    /// Date when restrictions will be lifted for this user, in UTC. If unset, then the user is restricted forever
+    /// </summary>
+    public DateTime? UntilDate { get; set; }
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that isn't currently a member of the chat, but may join it themselves
+/// Represents a <see cref="ChatMember">chat member</see> that isn't currently a member of the chat, but may join it themselves.
 /// </summary>
 public partial class ChatMemberLeft : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Left;
+    /// <summary>
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Left"/>
+    /// </summary>
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Left;
 }
 
 /// <summary>
-/// Represents a <see cref="ChatMember"/> that was banned in the chat and can't return to the chat
-/// or view chat messages
+/// Represents a <see cref="ChatMember">chat member</see> that was banned in the chat and can't return to the chat or view chat messages.
 /// </summary>
 public partial class ChatMemberBanned : ChatMember
 {
-    /// <inheritdoc />
-    public override ChatMemberStatus Status => ChatMemberStatus.Kicked;
+    /// <summary>
+    /// The member's status in the chat, always <see cref="Enums.ChatMemberStatus.Kicked"/>
+    /// </summary>
+    public override Enums.ChatMemberStatus Status => Enums.ChatMemberStatus.Kicked;
 
     /// <summary>
-    /// Date when restrictions will be lifted for this user, UTC time
+    /// Date when restrictions will be lifted for this user, in UTC. If unset, then the user is banned forever
     /// </summary>
     public DateTime? UntilDate { get; set; }
 }

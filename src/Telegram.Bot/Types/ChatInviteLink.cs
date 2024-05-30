@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// Represents an invite link for a chat.
@@ -7,8 +6,7 @@ namespace Telegram.Bot.Types;
 public partial class ChatInviteLink
 {
     /// <summary>
-    /// The invite link. If the link was created by another chat administrator, then the second part of the
-    /// link will be replaced with “…”.
+    /// The invite link. If the link was created by another chat administrator, then the second part of the link will be replaced with “…”.
     /// </summary>
     public string InviteLink { get; set; } = default!;
 
@@ -33,23 +31,22 @@ public partial class ChatInviteLink
     public bool IsRevoked { get; set; }
 
     /// <summary>
-    /// Optional. Invite link name
+    /// <em>Optional</em>. Invite link name
     /// </summary>
     public string? Name { get; set; }
 
     /// <summary>
-    /// Optional. Point in time when the link will expire or has been expired
+    /// <em>Optional</em>. Point in time when the link will expire or has been expired
     /// </summary>
     public DateTime? ExpireDate { get; set; }
 
     /// <summary>
-    /// Optional. Maximum number of users that can be members of the chat simultaneously after joining the chat
-    /// via this invite link; 1-99999
+    /// <em>Optional</em>. The maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999
     /// </summary>
     public int? MemberLimit { get; set; }
 
     /// <summary>
-    /// Optional. Number of pending join requests created using this link
+    /// <em>Optional</em>. Number of pending join requests created using this link
     /// </summary>
     public int? PendingJoinRequestCount { get; set; }
 }

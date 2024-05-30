@@ -1,9 +1,7 @@
-﻿using Telegram.Bot.Types.Enums;
-
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
-/// Contains information about the current status of a webhook.
+/// Describes the current status of a webhook.
 /// </summary>
 public partial class WebhookInfo
 {
@@ -23,35 +21,32 @@ public partial class WebhookInfo
     public int PendingUpdateCount { get; set; }
 
     /// <summary>
-    /// Optional. Currently used webhook IP address
+    /// <em>Optional</em>. Currently used webhook IP address
     /// </summary>
     public string? IpAddress { get; set; }
 
     /// <summary>
-    /// Optional. Time for the most recent error that happened when trying to deliver an update via webhook
+    /// <em>Optional</em>. DateTime for the most recent error that happened when trying to deliver an update via webhook
     /// </summary>
     public DateTime? LastErrorDate { get; set; }
 
     /// <summary>
-    /// Optional. Error message in human-readable format for the most recent error that happened when trying to
-    /// deliver an update via webhook
+    /// <em>Optional</em>. Error message in human-readable format for the most recent error that happened when trying to deliver an update via webhook
     /// </summary>
     public string? LastErrorMessage { get; set; }
 
     /// <summary>
-    /// Optional. Unix time of the most recent error that happened when trying to synchronize available updates
-    /// with Telegram datacenters
+    /// <em>Optional</em>. DateTime of the most recent error that happened when trying to synchronize available updates with Telegram datacenters
     /// </summary>
     public DateTime? LastSynchronizationErrorDate { get; set; }
 
     /// <summary>
-    /// Optional. Maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery
+    /// <em>Optional</em>. The maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery
     /// </summary>
     public int? MaxConnections { get; set; }
 
     /// <summary>
-    /// Optional. A list of update types the bot is subscribed to. Defaults to all update types except
-    /// <see cref="UpdateType.ChatMember"/>
+    /// <em>Optional</em>. A list of update types the bot is subscribed to. Defaults to all update types except <em>ChatMember</em>
     /// </summary>
-    public UpdateType[]? AllowedUpdates { get; set; }
+    public Enums.UpdateType[]? AllowedUpdates { get; set; }
 }

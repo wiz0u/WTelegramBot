@@ -6,17 +6,17 @@
 public partial class Document : FileBase
 {
     /// <summary>
-    /// Optional. Document thumbnail as defined by sender
+    /// <em>Optional</em>. Document thumbnail as defined by sender
     /// </summary>
     public PhotoSize? Thumbnail { get; set; }
 
     /// <summary>
-    /// Optional. Original filename as defined by sender
+    /// <em>Optional</em>. Original filename as defined by sender
     /// </summary>
     public string? FileName { get; set; }
 
     /// <summary>
-    /// Optional. MIME type of the file as defined by sender
+    /// <em>Optional</em>. MIME type of the file as defined by sender
     /// </summary>
     public string? MimeType { get; set; }
 }

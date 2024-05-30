@@ -3,7 +3,6 @@
 /// <summary>
 /// This object contains basic information about an invoice.
 /// </summary>
-/// <seealso href="https://core.telegram.org/bots/api#invoice"/>
 public partial class Invoice
 {
     /// <summary>
@@ -22,20 +21,12 @@ public partial class Invoice
     public string StartParameter { get; set; } = default!;
 
     /// <summary>
-    /// Three-letter ISO 4217
-    /// <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> code
+    /// Three-letter ISO 4217 <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> code
     /// </summary>
     public string Currency { get; set; } = default!;
 
     /// <summary>
-    /// Total price in the <i>smallest units</i> of the
-    /// <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a>
-    /// (integer, <b>not</b> float/double).
-    /// <para>
-    /// For example, for a price of <c>US$ 1.45</c> pass <c>amount = 145</c>. See the <i>exp</i> parameter in
-    /// <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the
-    /// number of digits past the decimal point for each currency (2 for the majority of currencies).
-    /// </para>
+    /// Total price in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a price of <c>US$ 1.45</c> pass <c>amount = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies).
     /// </summary>
     public int TotalAmount { get; set; }
 }

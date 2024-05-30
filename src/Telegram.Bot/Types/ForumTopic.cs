@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object represents a forum topic.
@@ -19,10 +18,10 @@ public partial class ForumTopic
     /// <summary>
     /// Color of the topic icon in RGB format
     /// </summary>
-    public Color IconColor { get; set; }
+    public int IconColor { get; set; }
 
     /// <summary>
-    /// Optional. Unique identifier of the custom emoji shown as the topic icon
+    /// <em>Optional</em>. Unique identifier of the custom emoji shown as the topic icon
     /// </summary>
     public string? IconCustomEmojiId { get; set; }
 }

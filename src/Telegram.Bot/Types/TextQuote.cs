@@ -11,8 +11,7 @@ public partial class TextQuote
     public string Text { get; set; } = default!;
 
     /// <summary>
-    /// Optional. Special entities that appear in the quote. Currently, only bold, italic, underline,
-    /// strikethrough, spoiler, and custom_emoji entities are kept in quotes.
+    /// <em>Optional</em>. Special entities that appear in the quote. Currently, only <em>bold</em>, <em>italic</em>, <em>underline</em>, <em>strikethrough</em>, <em>spoiler</em>, and <em>CustomEmoji</em> entities are kept in quotes.
     /// </summary>
     public MessageEntity[]? Entities { get; set; }
 
@@ -22,8 +21,7 @@ public partial class TextQuote
     public int Position { get; set; }
 
     /// <summary>
-    /// Optional.True, if the quote was chosen manually by the message sender.
-    /// Otherwise, the quote was added automatically by the server.
+    /// <em>Optional</em>. <see langword="true"/>, if the quote was chosen manually by the message sender. Otherwise, the quote was added automatically by the server.
     /// </summary>
     public bool IsManual { get; set; }
 }

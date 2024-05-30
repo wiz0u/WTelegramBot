@@ -34,81 +34,16 @@ See the [Example app](https://github.com/wiz0u/WTelegramBot/tree/master/Examples
 ➡️ There are still a lot of restrictions to bots, even via Client API, so don't expect to be able to do many fancy things
 
 <a name="migration"></a>
-## Migration of existing Telegram.Bot code
-The library contains a compatibility layer as `Telegram.Bot.TelegramBotClient` inheriting from WTelegram.Bot.
-
-Basically, you just need to change the nuget package dependency from Telegram.Bot to WTelegramBot.  
-After that, here are the points you should pay attention to when migrating existing code:
-
-### Changes needed in your code:
-- On `TelegramBotClient` constructor (or options), you will need to provide an ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
-  as well as a DbConnection, typically SqliteConnection:
-    ```csharp
-    // requires Nuget package: Microsoft.Data.Sqlite
-    var dbConnection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
-    ```
-    _MySQL, PosgreSQL, SQLServer, and any custom DB are also supported_
-- `TelegramBotClient` and `WTelegram.Bot` are `IDisposable`, so you should call `.Dispose()` when you're done using it, otherwise it will stay actively connected to Telegram servers and might not save its latest state.  
-  ⚠️ Remember to close/dispose the dbConnection as well
-- Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
-- FileID/FileUniqueID/InlineMessageId are not compatible with official Bot API ones, they are to be used with this library only.
-- Calling `MakeRequestAsync` with API request structures is not supported _(except GetUpdatesRequest)_  
-  Use the direct async methods instead.
-- There is no support for HTTP / Webhooks (see [support for ASP.NET apps](#support-for-aspnet-apps))
-- Methods DeleteWebhookAsync & LogOutAsync are forwarded to the Cloud Bot API. Use method CloseAsync to logout locally.
-- Serialization via Newtonsoft.Json is not supported, but you can use System.Text.Json serialization instead with `WTelegram.BotHelpers.JsonOptions`
-
-### Changes about Text Entities:
-- Text entities are of type `TL.MessageEntity` _(and derived classes)_ instead of `Telegram.Bot.Types.MessageEntity`  
-  If your existing code used MessageEntity a lot, you might find it useful to add this line at the top of one of your file:
-    ```csharp
-    global using MessageEntity = TL.MessageEntity;
-    ```
-- To access `entity.Url`, use `entity.Url()`
-- To access `entity.User`, use `entity.User(botClient)` ; or `entity.UserId()` if you only need the ID
-- `MessageEntityType` are constant strings instead of enum, but you can test `entity.Type == MessageEntityType.Something` in the same way as before
-- WTelegramClient includes two helper classes to [convert entities to/from HTML/Markdown](https://wiz0u.github.io/WTelegramClient/EXAMPLES#markdown): `HtmlText` & `Markdown`
-- Texts in Markdown (V1) will be parsed as MarkdownV2. some discrepancy or error may arise due to reserved characters
-
-### Making the library more easy to use, backward-compatibility friendly
-
-As versions goes, the Telegram.Bot library has tend to break existing code.  
-I believe backward-compatibility is very important to gain the trust of users of my library.  
-
-So I've tried to restore what got broken over time and what used to make the Telegram.Bot library simple and attractive to use, like helpers or implicit constructors for parameters:
-
-- `ReplyParameters`: just pass an `int` when you just want to reply to a message  
-_(so the new replyParameters: parameter behaves the same as the old replyToMessageId: parameter)_
-- `LinkPreviewOptions`: just pass a `bool` (true) to disable link preview  
-_(so the new linkPreviewOptions: parameter behaves the same as the old disableWebPagePreview: parameter)_
-- `InputFile`: just pass a `string`/`Stream` for file_id/url/stream content _(as was possible in previous versions of Telegram.Bot)_
-- `InputMedia*`: just pass an `InputFile` when you don't need to associate caption or such
-- `MessageId`: auto-converts to/from `int` (and also from `Message`)
-- `ReactionType`: just pass a `string` when you want to send an emoji
-- `ReactionType`: just pass a `long` when you want to send a custom emoji (id)
-- Some other obvious implicit conversion operators for structures containing a single property
-- No more enforcing `init;` properties, so you can adjust the content of fields as you wish or modify a structure returned by the API _(before passing it back to the API)_
-- Not using the annoying `MaybeInaccessibleMessage`, you would just get a `Message` of type Unknown with default Date if inaccessible
-- Removed many [Obsolete] tags for things that still simplify your code
-- Turned many nullable (like `bool?`) into normal type (like `bool`) when `null` meant the same as the default value (like `false`)
-- Turned some `ParseMode?` back into `ParseMode` (restoring the old `ParseMode.Default` which is the same as default/null)
-- Restored some `MessageType` enum value that were removed (renamed) recently (easier compatibility)
-- Not pushing you towards using silly Request-based constructors (seriously!?)
-
-These should make migration from previous versions of Telegram.Bot more easy
-
-Additional helpers:
-- TelegramBotClient.AllUpdateTypes to make your bot accept all available updates.
-
-
 ## Difference between classes `WTelegram.Bot` and `TelegramBotClient`
 
-If you're porting an existing codebase, you can continue to use TelegramBotClient as it has the same methods you're used to.  
-But if you're creating a new bot rather than migrating existing code, it is recommended that you use WTelegram.Bot.
+The library contains a compatibility layer as `Telegram.Bot.TelegramBotClient` inheriting from WTelegram.Bot.  
+[Click here to easily migrate](https://github.com/wiz0u/WTelegramBot/blob/master/CHANGES.md) your existing Telegram.Bot code.
 
-Here are the differences:
+If you're not migrating an existing codebase, it is recommended that you use `WTelegram.Bot` class directly.
+
+Here are the main differences:
 * The method names don't have the *Async suffix (even though they should still be invoked with `await`) so they are more close to official [Bot API method names](https://core.telegram.org/bots/api#available-methods).
-* The orders of parameters can differ, presenting a more logical order for developers, with the more rarely used optional parameters near the end.
+* The optional parameters follow a more logical order for developers, with the more rarely used optional parameters near the end.
 * There is no CancellationToken parameter because it doesn't make sense to abort an immediate TCP request to Client API.  
 _(Even with HTTP Bot API, it didn't make much sense: You can use cancellationToken.ThrowIfCancellationRequested() at various points of your own code if you want it to be cancellable)_
 * In case of an error, WTelegram.Bot will throw `WTelegram.WTException` like `TL.RpcException` showing the raw Telegram error, instead of an ApiRequestException

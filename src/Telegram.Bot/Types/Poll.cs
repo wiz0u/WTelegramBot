@@ -1,5 +1,4 @@
-﻿
-namespace Telegram.Bot.Types;
+﻿namespace Telegram.Bot.Types;
 
 /// <summary>
 /// This object contains information about a poll.
@@ -16,11 +15,10 @@ public partial class Poll
     /// </summary>
     public string Question { get; set; } = default!;
 
-	/// <summary>
-	/// Optional. Special entities that appear in the question.
-	/// Currently, only custom emoji entities are allowed in poll option texts
-	/// </summary>
-	public MessageEntity[]? QuestionEntities { get; set; }
+    /// <summary>
+    /// <em>Optional</em>. Special entities that appear in the <see cref="Question">Question</see>. Currently, only custom emoji entities are allowed in poll questions
+    /// </summary>
+    public MessageEntity[]? QuestionEntities { get; set; }
 
     /// <summary>
     /// List of poll options
@@ -53,30 +51,27 @@ public partial class Poll
     public bool AllowsMultipleAnswers { get; set; }
 
     /// <summary>
-    /// Optional. 0-based identifier of the correct answer option. Available only for polls in the quiz mode,
-    /// which are closed, or was sent (not forwarded) by the bot or to the private chat with the bot.
+    /// <em>Optional</em>. 0-based identifier of the correct answer option. Available only for polls in the quiz mode, which are closed, or was sent (not forwarded) by the bot or to the private chat with the bot.
     /// </summary>
     public int? CorrectOptionId { get; set; }
 
     /// <summary>
-    /// Optional. Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a
-    /// quiz-style poll, 0-200 characters
+    /// <em>Optional</em>. Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style poll, 0-200 characters
     /// </summary>
     public string? Explanation { get; set; }
 
     /// <summary>
-    /// Optional. Special entities like usernames, URLs, bot commands, etc. that appear in the
-    /// <see cref="Explanation"/>
+    /// <em>Optional</em>. Special entities like usernames, URLs, bot commands, etc. that appear in the <see cref="Explanation">Explanation</see>
     /// </summary>
     public MessageEntity[]? ExplanationEntities { get; set; }
 
     /// <summary>
-    /// Optional. Amount of time in seconds the poll will be active after creation
+    /// <em>Optional</em>. Amount of time in seconds the poll will be active after creation
     /// </summary>
     public int? OpenPeriod { get; set; }
 
     /// <summary>
-    /// Optional. Point in time when the poll will be automatically closed
+    /// <em>Optional</em>. Point in time when the poll will be automatically closed
     /// </summary>
     public DateTime? CloseDate { get; set; }
 }

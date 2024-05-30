@@ -21,17 +21,17 @@ public partial class Video : FileBase
     public int Duration { get; set; }
 
     /// <summary>
-    /// Optional. Video thumbnail
+    /// <em>Optional</em>. Video thumbnail
     /// </summary>
     public PhotoSize? Thumbnail { get; set; }
 
     /// <summary>
-    /// Optional. Original filename as defined by sender
+    /// <em>Optional</em>. Original filename as defined by sender
     /// </summary>
     public string? FileName { get; set; }
 
     /// <summary>
-    /// Optional. Mime type of a file as defined by sender
+    /// <em>Optional</em>. MIME type of the file as defined by sender
     /// </summary>
     public string? MimeType { get; set; }
 }
