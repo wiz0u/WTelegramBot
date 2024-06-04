@@ -12,7 +12,7 @@ namespace WTelegram;
 
 public partial class Bot
 {
-	const int reactions_uniq_max = 11;
+	const int Reactions_uniq_max = 11;
 
 	#region Power-up methods
 	/// <summary>Use this method to get a list of members in a chat (can be incomplete).</summary>
@@ -97,7 +97,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendTextMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? entities = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		ApplyParse(parseMode, ref text!, ref entities);
@@ -125,7 +125,7 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> ForwardMessage(ChatId chatId, ChatId fromChatId, int messageId, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), [messageId], [Helpers.RandomLong()], peer,
@@ -145,7 +145,7 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <returns>On success, an array of <see cref="MessageId"/> of the sent messages is returned.</returns>
 	public async Task<MessageId[]> ForwardMessages(ChatId chatId, ChatId fromChatId, IEnumerable<int> messageIds, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var random_id = Helpers.RandomLong();
@@ -181,7 +181,7 @@ public partial class Bot
 	/// <returns>Returns the <see cref="MessageId"/> of the sent message on success.</returns>
 	public async Task<MessageId> CopyMessage(ChatId chatId, ChatId fromChatId, int messageId,
 		string? caption = default, ParseMode parseMode = default, ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, 
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
 		bool disableNotification = default, bool protectContent = default)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
@@ -219,7 +219,7 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <returns>On success, an array of <see cref="MessageId"/> of the sent messages is returned.</returns>
 	public async Task<MessageId[]> CopyMessages(ChatId chatId, ChatId fromChatId, int[] messageIds, bool removeCaption = default,
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageIds.Select(id => (InputMessageID)id).ToArray());
 		msgs.UserOrChat(_collector);
@@ -293,7 +293,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPhoto(ChatId chatId, InputFile photo, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		ApplyParse(parseMode, ref caption, ref captionEntities);
@@ -358,8 +358,8 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAudio(ChatId chatId, InputFile audio, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int duration = default, string? performer = default, string? title = default, InputFile? thumbnail = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, 
+		int duration = 0, string? performer = default, string? title = default, InputFile? thumbnail = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
@@ -398,7 +398,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDocument(ChatId chatId, InputFile document, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, InputFile? thumbnail = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
@@ -439,8 +439,8 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideo(ChatId chatId, InputFile video, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int duration = default, int width = default, int height = default, InputFile? thumbnail = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, bool supportsStreaming = default,
+		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, bool supportsStreaming = default,
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
@@ -482,8 +482,8 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAnimation(ChatId chatId, InputFile animation, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int duration = default, int width = default, int height = default, InputFile? thumbnail = default,
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
+		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
@@ -524,8 +524,8 @@ public partial class Bot
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVoice(ChatId chatId, InputFile voice, string? caption = default, ParseMode parseMode = default, 
-		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int duration = default, 
-		int messageThreadId = default, IEnumerable<MessageEntity>? captionEntities = default, 
+		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int duration = 0, 
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
 		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
@@ -562,8 +562,8 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideoNote(ChatId chatId, InputFile videoNote, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		int duration = default, int? length = default, InputFile? thumbnail = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int duration = 0, int? length = default, InputFile? thumbnail = default, 
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			default, disableNotification, protectContent, businessConnectionId, default, default, doc =>
@@ -585,7 +585,7 @@ public partial class Bot
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, an array of <see cref="Message"/>s that were sent is returned.</returns>
 	public async Task<Message[]> SendMediaGroup(ChatId chatId, IEnumerable<IAlbumInputMedia> medias, ReplyParameters? replyParameters = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -627,13 +627,13 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLocation(ChatId chatId, double latitude, double longitude,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		double? horizontalAccuracy = default, int? livePeriod = default, int? heading = default, int? proximityAlertRadius = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int horizontalAccuracy = 0, int livePeriod = 0, int heading = 0, int proximityAlertRadius = 0, 
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
-		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod.Value)
+		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod)
 			: new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
@@ -657,8 +657,8 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <returns>On success the edited <see cref="Message"/> is returned.</returns>
-	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, int livePeriod = default,
-		float? horizontalAccuracy = default, int? heading = default, int? proximityAlertRadius = default, InlineKeyboardMarkup? replyMarkup = default)
+	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, int livePeriod = 0,
+		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
@@ -680,8 +680,8 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = default,
-		float? horizontalAccuracy = default, int? heading = default, int? proximityAlertRadius = default, InlineKeyboardMarkup? replyMarkup = default)
+	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = 0,
+		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		var id = inlineMessageId.ParseInlineMsgID();
 		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
@@ -744,7 +744,7 @@ public partial class Bot
 	public async Task<Message> SendVenue(ChatId chatId, double latitude, double longitude, string title, string address,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
 		string? foursquareId = default, string? foursquareType = default, string? googlePlaceId = default, string? googlePlaceType = default,
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -778,7 +778,7 @@ public partial class Bot
 	/// <param name="firstName">Contact's first name</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="lastName">Contact's last name</param>
-	/// <param name="vCard">Additional data about the contact in the form of a vCard, 0-2048 bytes</param>
+	/// <param name="vcard">Additional data about the contact in the form of a vCard, 0-2048 bytes</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
@@ -788,9 +788,9 @@ public partial class Bot
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default, string? vCard = default, 
+	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default, string? vcard = default, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -800,7 +800,7 @@ public partial class Bot
 			phone_number = phoneNumber,
 			first_name = firstName,
 			last_name = lastName,
-			vcard = vCard
+			vcard = vcard
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
@@ -844,8 +844,7 @@ public partial class Bot
 		string? explanation = default, ParseMode explanationParseMode = default, IEnumerable<MessageEntity>? explanationEntities = default,
 		ParseMode questionParseMode = default, IEnumerable<MessageEntity>? questionEntities = default,
 		int? openPeriod = default, DateTime? closeDate = default, bool isClosed = default,
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
-		
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
 		ApplyParse(questionParseMode, ref question!, ref questionEntities);
@@ -898,7 +897,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDice(ChatId chatId, Emoji emoji = Emoji.Dice, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -919,7 +918,7 @@ public partial class Bot
 	/// The user will see a “sending photo” status for the bot.</para>
 	/// <para>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</para></example>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="chatAction">Type of action to broadcast. Choose one, depending on what the user is about to receive:
+	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive:
 	/// <see cref="ChatAction.Typing"/> for <see cref="SendTextMessageAsync">text messages</see>,
 	/// <see cref="ChatAction.UploadPhoto"/> for
 	/// <see cref="SendPhoto(SendPhotoRequest)">photos</see>,
@@ -935,11 +934,11 @@ public partial class Bot
 	/// <see cref="SendVideoNote(SendVideoNoteRequest)">video notes</see></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread; supergroups only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
-	public async Task SendChatAction(ChatId chatId, ChatAction chatAction, int messageThreadId = default, string? businessConnectionId = default)
+	public async Task SendChatAction(ChatId chatId, ChatAction action, int messageThreadId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		if (businessConnectionId is null)
-			await Client.Messages_SetTyping(peer, chatAction.ChatAction(), messageThreadId);
+			await Client.Messages_SetTyping(peer, action.ChatAction(), messageThreadId);
 		else
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
 				new TL.Methods.Messages_SetTyping
@@ -947,7 +946,7 @@ public partial class Bot
 					flags = (TL.Methods.Messages_SetTyping.Flags)(messageThreadId != 0 ? 0x1 : 0),
 					peer = peer,
 					top_msg_id = messageThreadId,
-					action = chatAction.ChatAction(),
+					action = action.ChatAction(),
 				});
 	}
 
@@ -996,6 +995,16 @@ public partial class Bot
 	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
 	public Task<File> GetFile(string fileId) =>
 		Task.FromResult(fileId.ParseFileId(true).file);
+
+	/// <summary>Use this method to download a file.</summary>
+	/// <param name="fileIdOrPath">File identifier or file path obtained from <see cref="File.FilePath"/></param>
+	/// <param name="destination">Destination stream to write file to</param>
+	/// <param name="cancellationToken">If you need to abort the download</param>
+	public async Task DownloadFile(string fileIdOrPath, Stream destination, CancellationToken cancellationToken = default)
+	{
+		int slash = fileIdOrPath.IndexOf('/');
+		await GetInfoAndDownloadFile(slash < 0 ? fileIdOrPath : fileIdOrPath[..slash], destination, cancellationToken);
+	}
 
 	/// <summary>Use this method to get basic info about a file download it. For the moment, bots can download files
 	/// of up to 20MB in size.</summary>
@@ -1315,7 +1324,7 @@ public partial class Bot
 				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
 				ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray(),
-				Birthday = full.birthday.Birthday(),
+				Birthdate = full.birthday.Birthdate(),
 				BusinessIntro = await MakeBusinessIntro(full.business_intro),
 				BusinessLocation = full.business_location.BusinessLocation(),
 				BusinessOpeningHours = full.business_work_hours.BusinessOpeningHours(),
@@ -1354,7 +1363,7 @@ public partial class Bot
 					ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
 					/*chatReactionsAll*/ _ => null,
 				},
-				MaxReactionCount = full.AvailableReactions == null ? 0 : reactions_uniq_max,
+				MaxReactionCount = full.AvailableReactions == null ? 0 : Reactions_uniq_max,
 				Description = full.About,
 				InviteLink = (full.ExportedInvite as ChatInviteExported)?.link,
 				MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod,
@@ -1504,7 +1513,7 @@ public partial class Bot
 		var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor?.ToInt(),
 			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
 		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
-		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = new Color(ftc.IconColor), IconCustomEmojiId = ftc.IconCustomEmojiId };
+		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId };
 	}
 
 	/// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator
@@ -1895,7 +1904,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendSticker(ChatId chatId, InputFile sticker, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? emoji = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -2135,9 +2144,11 @@ public partial class Bot
 	/// the user to the chat from which the query originated. On success, a <see cref="SentWebAppMessage"/> object is returned.</summary>
 	/// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
 	/// <param name="result">An object describing the message to be sent</param>
-	public async Task AnswerWebAppQuery(string webAppQueryId, InlineQueryResult result)
+	/// <returns>The sent inline message if any</returns>
+	public async Task<string?> AnswerWebAppQuery(string webAppQueryId, InlineQueryResult result)
 	{
-		await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
+		var sent = await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
+		return sent.msg_id.InlineMessageId();
 	}
 
 	#endregion Inline mode
@@ -2187,14 +2198,14 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendInvoice(long chatId, string title, string description, string payload, string providerToken,
+	public async Task<Message> SendInvoice(ChatId chatId, string title, string description, string payload, string providerToken,
 		string currency, IEnumerable<LabeledPrice> prices, string? providerData = default, 
 		int? maxTipAmount = default, IEnumerable<int>? suggestedTipAmounts = default,
 		string? photoUrl = default, int? photoSize = default, int? photoWidth = default, int? photoHeight = default,
 		bool needName = default, bool needPhoneNumber = default, bool needEmail = default, bool needShippingAddress = default,
 		bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default, bool isFlexible = default,
 		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default, string? startParameter = default,
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -2279,6 +2290,18 @@ public partial class Bot
 	}
 	#endregion Payments
 
+	#region Telegram Passport
+	/// <summary>
+	/// Informs a user that some of the Telegram Passport elements they provided contains errors. The user will not be able to re-submit their Passport to you until the errors are fixed (the contents of the field for which you returned the error must change).<br/>Use this if the data submitted by the user doesn't satisfy the standards your service requires for any reason. For example, if a birthday date seems invalid, a submitted document is blurry, a scan shows evidence of tampering, etc. Supply some details in the error message to make sure the user knows how to correct the issues.
+	/// </summary>
+	/// <param name="userId">User identifier</param>
+	/// <param name="errors">A array describing the errors</param>
+	public async Task SetPassportDataErrorsAsync(long userId, IEnumerable<Telegram.Bot.Types.Passport.PassportElementError> errors)
+	{
+		var peer = InputPeerUser(userId);
+		await Client.Users_SetSecureValueErrors(peer, errors.Select(TypesTLConverters.SecureValueError).ToArray());
+	}
+	#endregion Telegram Passport
 	#region Games
 
 	/// <summary>Use this method to send a game.</summary>
@@ -2297,7 +2320,7 @@ public partial class Bot
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Telegram.Bot.Types.Message> SendGame(long chatId, string gameShortName, 
 		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default, 
-		int messageThreadId = default, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);

@@ -340,23 +340,17 @@ namespace Telegram.Bot.Types
 		/// <see cref="StickerFormat.Animated">Animated</see> and <see cref="StickerFormat.Video">video</see>
 		/// stickers can't be uploaded via HTTP URL.
 		/// </param>
-		/// <param name="emojiList">
+		/// <param name="emojis">
 		/// List of 1-20 emoji associated with the sticker
 		/// </param>
 		/// <param name="format">Format of the added sticker</param>
 		[SetsRequiredMembers]
-		public InputSticker(InputFile sticker, IEnumerable<string> emojiList, StickerFormat format)
+		public InputSticker(InputFile sticker, IEnumerable<string> emojis, StickerFormat format)
 		{
 			Format = format;
 			Sticker = sticker;
-			EmojiList = emojiList.ToArray();
+			EmojiList = emojis.ToArray();
 		}
-
-		/// <summary>
-		/// Initializes a new input sticker to create or add sticker sets
-		/// </summary>
-		public InputSticker()
-		{ }
 	}
 
 	namespace ReplyMarkups

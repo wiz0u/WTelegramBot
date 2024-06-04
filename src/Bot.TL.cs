@@ -443,22 +443,22 @@ public partial class Bot
 
 	}
 
-	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, double? horizontalAccuracy, int? heading, int? proximityAlertRadius, int livePeriod = 0)
+	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, int horizontalAccuracy, int heading, int proximityAlertRadius, int livePeriod = 0)
 	=> new()
 	{
 		geo_point = new InputGeoPoint
 		{
 			lat = latitude,
 			lon = longitude,
-			accuracy_radius = (int)horizontalAccuracy.GetValueOrDefault(),
-			flags = horizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0
+			accuracy_radius = horizontalAccuracy,
+			flags = horizontalAccuracy > 0 ? InputGeoPoint.Flags.has_accuracy_radius : 0
 		},
 		period = livePeriod,
-		heading = heading.GetValueOrDefault(),
-		proximity_notification_radius = proximityAlertRadius.GetValueOrDefault(),
+		heading = heading,
+		proximity_notification_radius = proximityAlertRadius,
 		flags = (livePeriod > 0 ? InputMediaGeoLive.Flags.has_period : 0)
-			| (heading.HasValue ? InputMediaGeoLive.Flags.has_heading : 0)
-			| (proximityAlertRadius.HasValue ? InputMediaGeoLive.Flags.has_proximity_notification_radius : 0)
+			| (heading > 0 ? InputMediaGeoLive.Flags.has_heading : 0)
+			| (proximityAlertRadius > 0 ? InputMediaGeoLive.Flags.has_proximity_notification_radius : 0)
 	};
 
 	private async Task<InputBotInlineResultBase[]> InputBotInlineResults(IEnumerable<InlineQueryResult> results)

@@ -11,9 +11,9 @@ public abstract partial class PassportElementError
     public abstract PassportElementErrorSource Source { get; }
 
     /// <summary>
-    /// T
+    /// Type of element of the user's Telegram Passport which has the issue
     /// </summary>
-    public string Type { get; set; } = default!;
+    public EncryptedPassportElementType Type { get; set; }
 
     /// <summary>
     /// Error message

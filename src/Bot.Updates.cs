@@ -842,12 +842,12 @@ public partial class Bot
 
 	private static Telegram.Bot.Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
 	{
-		int correctOption = Array.FindIndex(pollResults.results, pav => pav.flags.HasFlag(PollAnswerVoters.Flags.correct));
+		int? correctOption = pollResults.results == null ? null : Array.FindIndex(pollResults.results, pav => pav.flags.HasFlag(PollAnswerVoters.Flags.correct));
 		return new Telegram.Bot.Types.Poll
 		{
 			Id = poll.id.ToString(),
 			Question = poll.question.text,
-			Options = poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results[i].voters }).ToArray(),
+			Options = poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results?[i].voters ?? 0 }).ToArray(),
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
 			IsAnonymous = !poll.flags.HasFlag(TL.Poll.Flags.public_voters),

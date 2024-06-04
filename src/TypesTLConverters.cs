@@ -312,7 +312,7 @@ public static class TypesTLConverters
 	/// <summary>Decode FileId into TL.InputFileLocation</summary>
 	public static (File file, InputFileLocationBase location, int dc_id) ParseFileId(this string fileId, bool generateFile = false)
 	{
-		var idBytes = Convert.FromBase64String(fileId.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - fileId.Length) % 4));
+		var idBytes = fileId.FromBase64();
 		if (idBytes[^1] != 42) throw new WTException("Unsupported file_id format");
 		using var memStream = new MemoryStream(idBytes);
 		using var reader = new BinaryReader(memStream);
@@ -369,7 +369,7 @@ public static class TypesTLConverters
 
 	internal static string? InlineMessageId(this InputBotInlineMessageIDBase? msg_id)
 	{
-		if (msg_id == null) return "";
+		if (msg_id == null) return null;
 		using var memStream = new MemoryStream(128);
 		using (var writer = new BinaryWriter(memStream))
 			msg_id.WriteTL(writer);
@@ -379,12 +379,13 @@ public static class TypesTLConverters
 
 	internal static InputBotInlineMessageIDBase ParseInlineMsgID(this string inlineMessageId)
 	{
-		var idBytes = Convert.FromBase64String(inlineMessageId.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - inlineMessageId.Length) % 4));
+		var idBytes = inlineMessageId.FromBase64();
 		using var memStream = new MemoryStream(idBytes);
 		using var reader = new BinaryReader(memStream);
 		return (InputBotInlineMessageIDBase)reader.ReadTLObject();
 	}
 
+	private static byte[] FromBase64(this string str) => Convert.FromBase64String(str.Replace('_', '/').Replace('-', '+') + new string('=', (2147483644 - str.Length) % 4));
 	private static string ToBase64(this byte[] bytes) => ToBase64(bytes, 0, bytes.Length);
 	private static string ToBase64(this byte[] bytes, int offset, int length) => Convert.ToBase64String(bytes, offset, length).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
@@ -505,10 +506,41 @@ public static class TypesTLConverters
 		return [.. result];
 	}
 
-	internal static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
+	internal static SecureValueErrorBase SecureValueError(Passport.PassportElementError error)
 	{
-		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
-		Credentials = new Passport.EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
+		var type = error.Type.ToSecureValueType();
+		var text = error.Message;
+		return error switch
+		{
+			Passport.PassportElementErrorDataField e => new SecureValueErrorData { type = type, text = text, data_hash = e.DataHash.FromBase64(), field = e.FieldName },
+			Passport.PassportElementErrorFrontSide e => new SecureValueErrorFrontSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			Passport.PassportElementErrorReverseSide e => new SecureValueErrorReverseSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			Passport.PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64()},
+			Passport.PassportElementErrorFile e => new SecureValueErrorFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			Passport.PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			Passport.PassportElementErrorTranslationFile e => new SecureValueErrorTranslationFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			Passport.PassportElementErrorTranslationFiles e => new SecureValueErrorTranslationFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			Passport.PassportElementErrorUnspecified e => new SecureValueError { type = type, text = text, hash = e.ElementHash.FromBase64() },
+			_ => throw new WTException("Unrecognized PassportElementError")
+		};
+	}
+
+	internal static SecureValueType ToSecureValueType(this Passport.EncryptedPassportElementType type) => type switch
+	{
+		Passport.EncryptedPassportElementType.PersonalDetails => SecureValueType.PersonalDetails,
+		Passport.EncryptedPassportElementType.Passport => SecureValueType.Passport,
+		Passport.EncryptedPassportElementType.DriverLicense => SecureValueType.DriverLicense,
+		Passport.EncryptedPassportElementType.IdentityCard => SecureValueType.IdentityCard,
+		Passport.EncryptedPassportElementType.InternalPassport => SecureValueType.InternalPassport,
+		Passport.EncryptedPassportElementType.Address => SecureValueType.Address,
+		Passport.EncryptedPassportElementType.UtilityBill => SecureValueType.UtilityBill,
+		Passport.EncryptedPassportElementType.BankStatement => SecureValueType.BankStatement,
+		Passport.EncryptedPassportElementType.RentalAgreement => SecureValueType.RentalAgreement,
+		Passport.EncryptedPassportElementType.PassportRegistration => SecureValueType.PassportRegistration,
+		Passport.EncryptedPassportElementType.TemporaryRegistration => SecureValueType.TemporaryRegistration,
+		Passport.EncryptedPassportElementType.PhoneNumber => SecureValueType.Phone,
+		Passport.EncryptedPassportElementType.Email => SecureValueType.Email,
+		_ => throw new WTException("Unrecognized EncryptedPassportElementType")
 	};
 
 	internal static Passport.EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
@@ -539,6 +571,12 @@ public static class TypesTLConverters
 		Selfie = sv.selfie?.PassportFile(),
 		Translation = sv.translation?.Select(PassportFile).ToArray(),
 		Hash = sv.hash.ToBase64()
+	};
+
+	internal static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
+	{
+		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
+		Credentials = new Passport.EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
 	};
 
 	private static Passport.PassportFile PassportFile(this SecureFile file)
@@ -650,5 +688,4 @@ public static class TypesTLConverters
 			BottomColor = settings.second_background_color,
 			RotationAngle = settings.rotation
 		};
-
 }
