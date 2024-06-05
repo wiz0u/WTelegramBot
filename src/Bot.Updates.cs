@@ -72,7 +72,7 @@ public partial class Bot
 					{
 						Id = ubcq.query_id.ToString(),
 						From = await UserOrResolve(ubcq.user_id),
-						Message = await GetMIMessage(await ChatFromPeer(ubcq.peer, true), ubcq.msg_id),
+						Message = await GetMIMessage(await ChatFromPeer(ubcq.peer, true), ubcq.msg_id, replyToo: true),
 						ChatInstance = ubcq.chat_instance.ToString(),
 						Data = ubcq.data == null ? null : Encoding.UTF8.GetString(ubcq.data),
 						GameShortName = ubcq.game_short_name

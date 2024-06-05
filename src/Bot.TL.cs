@@ -170,15 +170,15 @@ public partial class Bot
 		return null;
 	}
 
-	private async Task<Message?> GetMIMessage(InputPeer peer, int messageId)
+	private async Task<Message?> GetMIMessage(InputPeer peer, int messageId, bool replyToo = false)
 	{
-		var msg = await GetMessage(peer, messageId);
+		var msg = await GetMessage(peer, messageId, replyToo);
 		if (msg != null && msg.Date != default) return msg;
 		return new Message { Chat = await ChatFromPeer(peer), MessageId = messageId };
 	}
 
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
-	protected async Task<Message?> GetMessage(InputPeer? peer, int messageId)
+	protected async Task<Message?> GetMessage(InputPeer? peer, int messageId, bool replyToo = false)
 	{
 		if (peer == null || messageId == 0) return null;
 		lock (CachedMessages)
@@ -186,7 +186,8 @@ public partial class Bot
 				return cachedMsg;
 		var msgs = await Client.GetMessages(peer, messageId);
 		msgs.UserOrChat(_collector);
-		var msg = await MakeMessage(msgs.Messages.FirstOrDefault());
+		var msgBase = msgs.Messages.FirstOrDefault();
+		var msg = replyToo ? await MakeMessageAndReply(msgBase) : await MakeMessage(msgBase);
 		lock (CachedMessages)
 			return CachedMessages[(peer.ID, messageId)] = msg;
 	}
