@@ -131,6 +131,11 @@ public partial class Message
     public LinkPreviewOptions? LinkPreviewOptions { get; set; }
 
     /// <summary>
+    /// <em>Optional</em>. Unique identifier of the message effect added to the message
+    /// </summary>
+    public string? EffectId { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Message is an animation, information about the animation. For backward compatibility, when this field is set, the <see cref="Document">Document</see> field will also be set
     /// </summary>
     public Animation? Animation { get; set; }
@@ -184,6 +189,11 @@ public partial class Message
     /// <em>Optional</em>. For messages with a caption, special entities like usernames, URLs, bot commands, etc. that appear in the caption
     /// </summary>
     public MessageEntity[]? CaptionEntities { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool? ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. <see langword="true"/>, if the message media is covered by a spoiler animation

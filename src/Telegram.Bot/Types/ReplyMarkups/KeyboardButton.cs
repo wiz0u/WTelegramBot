@@ -1,7 +1,7 @@
 ﻿namespace Telegram.Bot.Types.ReplyMarkups;
 
 /// <summary>
-/// This object represents one button of the reply keyboard. For simple text buttons, <em>String</em> can be used instead of this object to specify the button text. The optional fields <see cref="WebApp">WebApp</see>, <see cref="RequestUsers">RequestUsers</see>, <see cref="RequestChat">RequestChat</see>, <see cref="RequestContact">RequestContact</see>, <see cref="RequestLocation">RequestLocation</see>, and <see cref="RequestPoll">RequestPoll</see> are mutually exclusive.<br/><b>Note:</b> <see cref="RequestUsers">RequestUsers</see> and <see cref="RequestChat">RequestChat</see> options will only work in Telegram versions released after 3 February, 2023. Older clients will display <em>unsupported message</em>.
+/// This object represents one button of the reply keyboard. At most one of the optional fields must be used to specify type of the button. For simple text buttons, <em>String</em> can be used instead of this object to specify the button text.<br/><b>Note:</b> <see cref="RequestUsers">RequestUsers</see> and <see cref="RequestChat">RequestChat</see> options will only work in Telegram versions released after 3 February, 2023. Older clients will display <em>unsupported message</em>.
 /// </summary>
 public partial class KeyboardButton : IKeyboardButton
 {

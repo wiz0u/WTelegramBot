@@ -1,7 +1,7 @@
 ﻿namespace Telegram.Bot.Types.ReplyMarkups;
 
 /// <summary>
-/// This object represents one button of an inline keyboard. You <b>must</b> use exactly one of the optional fields.
+/// This object represents one button of an inline keyboard. Exactly one of the optional fields must be used to specify type of the button.
 /// </summary>
 public partial class InlineKeyboardButton : IKeyboardButton
 {
@@ -51,7 +51,7 @@ public partial class InlineKeyboardButton : IKeyboardButton
     public CallbackGame? CallbackGame { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Specify <see langword="true"/>, to send a <a href="https://core.telegram.org/bots/api#payments">Pay button</a>.<br/><br/><b>NOTE:</b> This type of button <b>must</b> always be the first button in the first row and can only be used in invoice messages.
+    /// <em>Optional</em>. Specify <see langword="true"/>, to send a <a href="https://core.telegram.org/bots/api#payments">Pay button</a>. Substrings “⭐” and “XTR” in the buttons's text will be replaced with a Telegram Star icon.<br/><br/><b>NOTE:</b> This type of button <b>must</b> always be the first button in the first row and can only be used in invoice messages.
     /// </summary>
     public bool Pay { get; set; }
 
@@ -132,7 +132,7 @@ public partial class InlineKeyboardButton : IKeyboardButton
         new(text) { CallbackGame = new() };
 
     /// <summary>
-    /// Creates an inline keyboard button <a href="https://core.telegram.org/bots/api#payments">Pay button</a>.<br/><br/><b>NOTE:</b> This type of button <b>must</b> always be the first button in the first row and can only be used in invoice messages.
+    /// Creates an inline keyboard button <a href="https://core.telegram.org/bots/api#payments">Pay button</a>. Substrings “⭐” and “XTR” in the buttons's text will be replaced with a Telegram Star icon.<br/><br/><b>NOTE:</b> This type of button <b>must</b> always be the first button in the first row and can only be used in invoice messages.
     /// </summary>
     /// <param name="text">Label text on the button</param>
     public static InlineKeyboardButton WithPay(string text) =>

@@ -565,5 +565,28 @@ namespace Telegram.Bot.Types
 				}
 			}
 		}
+
+		public partial class InputInvoiceMessageContent
+		{
+			/// <summary>
+			/// Initializes an instance of <see cref="InputInvoiceMessageContent"/>
+			/// </summary>
+			/// <param name="title">Product name, 1-32 characters</param>
+			/// <param name="description">Product description, 1-255 characters</param>
+			/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
+			/// <param name="providerToken"><em>Optional</em>. Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+			/// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+			/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+			[SetsRequiredMembers]
+			public InputInvoiceMessageContent(string title, string description, string payload, string? providerToken, string currency, IEnumerable<LabeledPrice> prices)
+			{
+				Title = title;
+				Description = description;
+				Payload = payload;
+				ProviderToken = providerToken;
+				Currency = currency;
+				Prices = prices;
+			}
+		}
 	}
 }

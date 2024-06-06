@@ -93,12 +93,13 @@ public partial class Bot
 	/// <param name="entities">List of special entities that appear in message text, which can be specified instead of <see cref="ParseMode"/></param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendTextMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		ApplyParse(parseMode, ref text!, ref entities);
 		var peer = await InputPeerChat(chatId);
@@ -107,12 +108,13 @@ public partial class Bot
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true,
-				silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
+				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), disableNotification, protectContent, messageEffectId,
+				invert_media: linkPreviewOptions?.ShowAboveText == true, no_webpage: linkPreviewOptions?.IsDisabled == true),
+				peer, text, replyToMessage);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), invert_media: linkPreviewOptions?.ShowAboveText == true,
-				silent: disableNotification == true, noforwards: protectContent == true), peer, text, replyToMessage);
+				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), disableNotification, protectContent, messageEffectId, linkPreviewOptions?.ShowAboveText == true),
+				peer, text, replyToMessage);
 	}
 
 	/// <summary>Use this method to forward messages of any kind. Service messages can't be forwarded.</summary>
@@ -129,7 +131,7 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), [messageId], [Helpers.RandomLong()], peer,
-			top_msg_id: messageThreadId, silent: disableNotification == true, noforwards: protectContent == true), peer);
+			top_msg_id: messageThreadId, silent: disableNotification, noforwards: protectContent), peer);
 	}
 
 	/// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found
@@ -153,7 +155,7 @@ public partial class Bot
 		var random_ids = new long[ids.Length];
 		for (int i = 0; i < ids.Length; i++) random_ids[i] = random_id + i;
 		var msgs = await PostedMsgs(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), ids, random_ids, peer,
-			top_msg_id: messageThreadId, silent: disableNotification == true, noforwards: protectContent == true),
+			top_msg_id: messageThreadId, silent: disableNotification, noforwards: protectContent),
 			ids.Length, random_id, null);
 		return msgs.Select(m => (MessageId)m).ToArray();
 	}
@@ -176,12 +178,13 @@ public partial class Bot
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <returns>Returns the <see cref="MessageId"/> of the sent message on success.</returns>
 	public async Task<MessageId> CopyMessage(ChatId chatId, ChatId fromChatId, int messageId,
 		string? caption = default, ParseMode parseMode = default, ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
 		bool disableNotification = default, bool protectContent = default)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
@@ -192,12 +195,12 @@ public partial class Bot
 		var text = caption ?? msg.message;
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var task = msg.media == null
-			? Client.Messages_SendMessage(peer, text, Helpers.RandomLong(), reply_to,
+			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
-				no_webpage: true, silent: disableNotification == true, noforwards: protectContent == true)
-			: Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), text, Helpers.RandomLong(), reply_to,
+				disableNotification, protectContent, 0, showCaptionAboveMedia, no_webpage: true)
+			: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
-				silent: disableNotification == true, noforwards: protectContent == true);
+				disableNotification, protectContent, 0, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text);
 		return postedMsg;
 	}
@@ -228,13 +231,15 @@ public partial class Bot
 		var msgIds = new List<MessageId>();
 		long cur_grouped_id = 0;
 		long start_random_id = Helpers.RandomLong(), random_id = start_random_id;
+		bool grouped_invert_media = false;
 		List<InputSingleMedia>? multiMedia = null;
 		foreach (var msg in msgs.Messages.OfType<TL.Message>())
 		{
-			if (removeCaption == true && msg.media is not null and not MessageMediaWebPage) { msg.message = null; msg.entities = null; }
+			if (removeCaption && msg.media is not null and not MessageMediaWebPage) { msg.message = null; msg.entities = null; }
 			if (msg.grouped_id != 0)
 			{
 				if (msg.grouped_id != cur_grouped_id && multiMedia != null) await FlushMediaGroup();
+				grouped_invert_media |= msg.flags.HasFlag(TL.Message.Flags.invert_media);
 				(multiMedia ??= []).Add(new InputSingleMedia
 				{
 					media = msg.media?.ToInputMedia(),
@@ -249,10 +254,10 @@ public partial class Bot
 			if (multiMedia != null) await FlushMediaGroup();
 			cur_grouped_id = 0;
 			var task = msg.media == null
-				? Client.Messages_SendMessage(peer, msg.message, random_id++, reply_to, entities: msg.entities,
-					no_webpage: true, silent: disableNotification == true, noforwards: protectContent == true)
-				: Client.Messages_SendMedia(peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to, entities: msg.entities,
-					silent: disableNotification == true, noforwards: protectContent == true);
+				? Messages_SendMessage(null, peer, msg.message, random_id++, reply_to, 
+					null, msg.entities, disableNotification, protectContent, 0, no_webpage: true)
+				: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to,
+					null, msg.entities, disableNotification, protectContent, 0, msg.flags.HasFlag(TL.Message.Flags.invert_media));
 			var postedMsg = await PostedMsg(task, peer);
 			msgIds.Add(postedMsg);
 		}
@@ -262,10 +267,11 @@ public partial class Bot
 		async Task FlushMediaGroup()
 		{
 			var postedMsgs = await PostedMsgs(Client.Messages_SendMultiMedia(peer, multiMedia?.ToArray(), reply_to,
-				silent: disableNotification == true, noforwards: protectContent == true),
+				silent: disableNotification, noforwards: protectContent, invert_media: grouped_invert_media),
 				multiMedia!.Count, multiMedia[0].random_id, null);
 			msgIds.AddRange(postedMsgs.Select(m => (MessageId)m));
 			multiMedia = null;
+			grouped_invert_media = false;
 		}
 	}
 
@@ -286,15 +292,17 @@ public partial class Bot
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the photo needs to be covered with a spoiler animation</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPhoto(ChatId chatId, InputFile photo, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
-		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default, 
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		ApplyParse(parseMode, ref caption, ref captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -302,14 +310,14 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
-			silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
+			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			peer, caption, replyToMessage);
 	}
 
 	private async Task<Message> SendDocument(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
-		ReplyParameters? replyParameters, IReplyMarkup? replyMarkup, InputFile? thumbnail, 
-		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, 
-		bool disableNotification, bool protectContent, string? businessConnectionId, 
+		ReplyParameters? replyParameters, IReplyMarkup? replyMarkup, InputFile? thumbnail,
+		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, bool disableNotification,
+		bool protectContent, long messageEffectId, bool showCaptionAboveMedia, string? businessConnectionId,
 		string? defaultFilename, bool hasSpoiler, Action<InputMediaUploadedDocument>? prepareDoc)
 	{
 		ApplyParse(parseMode, ref caption, ref captionEntities);
@@ -323,8 +331,8 @@ public partial class Bot
 			await SetDocThumb(doc, thumbnail);
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(),
-			silent: disableNotification == true, noforwards: protectContent == true), peer, caption, replyToMessage);
+			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			peer, caption, replyToMessage);
 	}
 
 	/// <summary>Use this method to send audio files, if you want Telegram clients to display them in the music player.
@@ -354,16 +362,17 @@ public partial class Bot
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAudio(ChatId chatId, InputFile audio, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, string? performer = default, string? title = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 				duration = duration, performer = performer, title = title,
 				flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }]);
@@ -394,16 +403,17 @@ public partial class Bot
 	/// <param name="disableContentTypeDetection">Disables automatic server-side content type detection for files uploaded using multipart/form-data</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDocument(ChatId chatId, InputFile document, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, businessConnectionId, "document", default, doc =>
-			{ if (disableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file; });
+			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, "document", default, doc =>
+			{ if (disableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file; });
 	}
 
 	/// <summary>Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as
@@ -431,23 +441,25 @@ public partial class Bot
 	/// thumbnail was uploaded using multipart/form-data under &lt;file_attach_name&gt;</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the video needs to be covered with a spoiler animation</param>
 	/// <param name="supportsStreaming">Pass <see langword="true"/>, if the uploaded video is suitable for streaming</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideo(ChatId chatId, InputFile video, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default,
-		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, bool supportsStreaming = default,
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default, bool supportsStreaming = default,
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, businessConnectionId, default, hasSpoiler, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, default, hasSpoiler, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 				duration = duration, h = height, w = width,
-				flags = supportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }]);
+				flags = supportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }]);
 	}
 
 	/// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). Bots can currently
@@ -475,19 +487,21 @@ public partial class Bot
 	/// thumbnail was uploaded using multipart/form-data under &lt;file_attach_name&gt;</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAnimation(ChatId chatId, InputFile animation, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default,
-		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool hasSpoiler = default, 
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default, 
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, businessConnectionId, "animation", hasSpoiler, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, "animation", hasSpoiler, doc =>
 			{
 				doc.attributes ??= [];
 				if (doc.mime_type == "video/mp4")
@@ -505,31 +519,32 @@ public partial class Bot
 	/// as <see cref="Audio"/> or <see cref="Document"/>). Bots can currently send voice messages of up to 50 MB
 	/// in size, this limit may be changed in the future.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="voice">Audio file to send. Pass a <see cref="InputFileId"/> as String to send a file that exists
 	/// on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a file from
 	/// the Internet, or upload a new one using multipart/form-data</param>
 	/// <param name="caption">Voice message caption, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the new caption. See
 	/// <a href="https://core.telegram.org/bots/api#formatting-options">formatting</a> options for more details</param>
-	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
-	/// <param name="duration">Duration of the voice message in seconds</param>
-	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
-	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="duration">Duration of the voice message in seconds</param>
+	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
+	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVoice(ChatId chatId, InputFile voice, string? caption = default, ParseMode parseMode = default, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int duration = 0, 
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, 
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
-			captionEntities, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			{
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 					duration = duration, flags = DocumentAttributeAudio.Flags.voice }];
@@ -558,15 +573,16 @@ public partial class Bot
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideoNote(ChatId chatId, InputFile videoNote, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
 		int duration = 0, int? length = default, InputFile? thumbnail = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		return await SendDocument(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			default, disableNotification, protectContent, businessConnectionId, default, default, doc =>
+			default, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			{
 				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
@@ -582,19 +598,22 @@ public partial class Bot
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, an array of <see cref="Message"/>s that were sent is returned.</returns>
 	public async Task<Message[]> SendMediaGroup(ChatId chatId, IEnumerable<IAlbumInputMedia> medias, ReplyParameters? replyParameters = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		List<InputSingleMedia> multimedia = [];
 		var random_id = Helpers.RandomLong();
+		bool invert_media = false;
 		foreach (var aim in medias)
 		{
 			var media = (InputMedia)aim;
+			invert_media |= media switch { Telegram.Bot.Types.InputMediaPhoto imp => imp.ShowCaptionAboveMedia, InputMediaVideo imv => imv.ShowCaptionAboveMedia, InputMediaAnimation ima => ima.ShowCaptionAboveMedia, _ => false };
 			var ism = await InputSingleMedia(media);
 			ism.random_id = random_id + multimedia.Count;
 			if (media.Media.FileType != FileType.Id) // External or Uploaded
@@ -602,7 +621,7 @@ public partial class Bot
 			multimedia.Add(ism);
 		}
 		return await PostedMsgs(Messages_SendMultiMedia(businessConnectionId, peer, [.. multimedia], reply_to,
-			silent: disableNotification == true, noforwards: protectContent == true),
+			silent: disableNotification, noforwards: protectContent, invert_media: invert_media, effect: messageEffectId),
 			multimedia.Count, random_id, replyToMessage);
 	}
 
@@ -623,12 +642,13 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLocation(ChatId chatId, double latitude, double longitude,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
 		int horizontalAccuracy = 0, int livePeriod = 0, int heading = 0, int proximityAlertRadius = 0, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -636,86 +656,8 @@ public partial class Bot
 		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod)
 			: new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
-	}
-
-	/// <summary>Use this method to edit live location messages. A location can be edited until its
-	/// <see cref="Location.LivePeriod"/> expires or editing is explicitly disabled by a call to
-	/// <see cref="StopMessageLiveLocation( ChatId, int, InlineKeyboardMarkup?)"/>.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="latitude">Latitude of new location</param>
-	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
-	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
-	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
-	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
-	/// Must be between 1 and 100000 if specified</param>
-	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
-	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
-	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
-	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	/// <returns>On success the edited <see cref="Message"/> is returned.</returns>
-	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, int livePeriod = 0,
-		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
-		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
-	}
-
-	/// <summary>Use this method to edit live location messages. A location can be edited until its
-	/// <see cref="Location.LivePeriod"/> expires or editing is explicitly disabled by a call to
-	/// <see cref="StopMessageLiveLocation( string, InlineKeyboardMarkup?)"/>.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="latitude">Latitude of new location</param>
-	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
-	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
-	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
-	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
-	/// Must be between 1 and 100000 if specified</param>
-	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
-	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
-	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
-	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = 0,
-		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
-	{
-		var id = inlineMessageId.ParseInlineMsgID();
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
-		await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
-	}
-
-	/// <summary>Use this method to stop updating a live location message before
-	/// <see cref="Location.LivePeriod"/> expires.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the sent message</param>
-	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
-	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
-	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
-	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	/// <returns>On success the sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> StopMessageLiveLocation(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
-		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
-	}
-
-	/// <summary>Use this method to stop updating a live location message before
-	/// <see cref="Location.LivePeriod"/> expires.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
-	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
-	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
-	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	public async Task StopMessageLiveLocation(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default)
-	{
-		var id = inlineMessageId.ParseInlineMsgID();
-		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
-		await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
 
 	/// <summary>Use this method to send information about a venue.</summary>
@@ -738,13 +680,14 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	/// <a href="https://core.telegram.org/bots/api#sendvenue"/>
 	public async Task<Message> SendVenue(ChatId chatId, double latitude, double longitude, string title, string address,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
 		string? foursquareId = default, string? foursquareType = default, string? googlePlaceId = default, string? googlePlaceType = default,
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -768,7 +711,7 @@ public partial class Bot
 			media.venue_type = foursquareType;
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -786,11 +729,12 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default, string? vcard = default, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -803,7 +747,7 @@ public partial class Bot
 			vcard = vcard
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -836,6 +780,7 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPoll(ChatId chatId, string question, IEnumerable<InputPollOption> options,
@@ -844,7 +789,7 @@ public partial class Bot
 		string? explanation = default, ParseMode explanationParseMode = default, IEnumerable<MessageEntity>? explanationEntities = default,
 		ParseMode questionParseMode = default, IEnumerable<MessageEntity>? questionEntities = default,
 		int? openPeriod = default, DateTime? closeDate = default, bool isClosed = default,
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
 		ApplyParse(questionParseMode, ref question!, ref questionEntities);
@@ -855,9 +800,9 @@ public partial class Bot
 		{
 			poll = new TL.Poll
 			{
-				flags = (isClosed == true ? TL.Poll.Flags.closed : 0)
+				flags = (isClosed ? TL.Poll.Flags.closed : 0)
 					| (isAnonymous == false ? TL.Poll.Flags.public_voters : 0)
-					| (allowsMultipleAnswers == true ? TL.Poll.Flags.multiple_choice : 0)
+					| (allowsMultipleAnswers ? TL.Poll.Flags.multiple_choice : 0)
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
@@ -873,7 +818,7 @@ public partial class Bot
 				| (correctOptionId >= 0 ? InputMediaPoll.Flags.has_correct_answers : 0)
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -893,18 +838,19 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDice(ChatId chatId, Emoji emoji = Emoji.Dice, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = new InputMediaDice { emoticon = emoji.GetDisplayName() };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -964,7 +910,7 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		reaction ??= [];
-		var updates = await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig == true);
+		var updates = await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig);
 	}
 
 	/// <summary>Use this method to get a list of profile pictures for a user.</summary>
@@ -1059,7 +1005,7 @@ public partial class Bot
 	{
 		var channel = await InputChannel(chatId);
 		var user = InputPeerUser(userId);
-		if (onlyIfBanned == true)
+		if (onlyIfBanned)
 		{
 			try
 			{
@@ -1174,7 +1120,7 @@ public partial class Bot
 	public async Task<ChatInviteLink> CreateChatInviteLink(ChatId chatId, string? name = default, DateTime? expireDate = default, int? memberLimit = default, bool createsJoinRequest = default)
 	{
 		var peer = await InputPeerChat(chatId);
-		ExportedChatInvite exported = await Client.Messages_ExportChatInvite(peer, expireDate, memberLimit, name, request_needed: createsJoinRequest == true);
+		ExportedChatInvite exported = await Client.Messages_ExportChatInvite(peer, expireDate, memberLimit, name, request_needed: createsJoinRequest);
 		return (await MakeChatInviteLink(exported))!;
 	}
 
@@ -1192,7 +1138,7 @@ public partial class Bot
 	public async Task<ChatInviteLink> EditChatInviteLink(ChatId chatId, string inviteLink, string? name = default, DateTime? expireDate = default, int? memberLimit = default, bool createsJoinRequest = default)
 	{
 		var peer = await InputPeerChat(chatId);
-		var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, expireDate, memberLimit, title: name, request_needed: createsJoinRequest == true);
+		var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, expireDate, memberLimit, title: name, request_needed: createsJoinRequest);
 		return (await MakeChatInviteLink(result.Invite))!;
 	}
 
@@ -1275,7 +1221,7 @@ public partial class Bot
 				messageId = (await Client.Users_GetFullUser(user)).full_user.pinned_msg_id;
 			else
 				messageId = (await Client.GetFullChat(peer)).full_chat.PinnedMsg;
-		await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification == true, unpin: !pin);
+		await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification, unpin: !pin);
 	}
 
 	/// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat,
@@ -1585,7 +1531,7 @@ public partial class Bot
 	/// Telegram apps will support caching starting in version 3.14</param>
 	public async Task AnswerCallbackQuery(string callbackQueryId, string? text = default, bool showAlert = default, string? url = default, int cacheTime = 0)
 	{
-		await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime, text, url, showAlert == true);
+		await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime, text, url, showAlert);
 	}
 
 	/// <summary>Use this method to get the list of boosts added to a chat by a user. Requires administrator rights in the chat.</summary>
@@ -1690,7 +1636,7 @@ public partial class Bot
 	public async Task SetMyDefaultAdministratorRights(ChatAdministratorRights? rights = default, bool forChannels = default)
 	{
 		var admin_rights = rights.ChatAdminRights();
-		if (forChannels == true)
+		if (forChannels)
 			await Client.Bots_SetBotBroadcastDefaultAdminRights(admin_rights);
 		else
 			await Client.Bots_SetBotGroupDefaultAdminRights(admin_rights);
@@ -1703,7 +1649,7 @@ public partial class Bot
 	public async Task<ChatAdministratorRights> GetMyDefaultAdministratorRights(bool forChannels = default)
 	{
 		var full = await Client.Users_GetFullUser(Client.User);
-		return (forChannels == true ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
+		return (forChannels ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
 	}
 	#endregion Available methods
 
@@ -1758,17 +1704,19 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the new caption. See
 	/// <a href="https://core.telegram.org/bots/api#formatting-options">formatting</a> options for more details</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <returns>On success the edited <see cref="Message"/> is returned.</returns>
-	public async Task<Message> EditMessageCaption(ChatId chatId, int messageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, InlineKeyboardMarkup? replyMarkup = default)
+	public async Task<Message> EditMessageCaption(ChatId chatId, int messageId, string? caption, ParseMode parseMode = default, 
+		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		ApplyParse(parseMode, ref caption!, ref captionEntities);
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, caption, null,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray()), peer, caption);
+			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), invert_media: showCaptionAboveMedia), peer, caption);
 	}
 
 	/// <summary>Use this method to edit captions of messages.</summary>
@@ -1777,15 +1725,17 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the new caption. See
 	/// <a href="https://core.telegram.org/bots/api#formatting-options">formatting</a> options for more details</param>
 	/// <param name="captionEntities">List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
-	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, InlineKeyboardMarkup? replyMarkup = default)
+	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default,
+		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
 		ApplyParse(parseMode, ref caption!, ref captionEntities);
 		var id = inlineMessageId.ParseInlineMsgID();
-		await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray());
+		await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), invert_media: showCaptionAboveMedia);
 	}
 
 	/// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of
@@ -1822,6 +1772,84 @@ public partial class Bot
 		var ism = await InputSingleMedia(media);
 		await Client.Messages_EditInlineBotMessage(id, ism.message ?? "", ism.media,
 			await MakeReplyMarkup(replyMarkup), ism.entities);
+	}
+
+	/// <summary>Use this method to edit live location messages. A location can be edited until its
+	/// <see cref="Location.LivePeriod"/> expires or editing is explicitly disabled by a call to
+	/// <see cref="StopMessageLiveLocation( ChatId, int, InlineKeyboardMarkup?)"/>.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="latitude">Latitude of new location</param>
+	/// <param name="longitude">Longitude of new location</param>
+	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
+	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
+	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
+	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
+	/// Must be between 1 and 100000 if specified</param>
+	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
+	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
+	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
+	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <returns>On success the edited <see cref="Message"/> is returned.</returns>
+	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude, int livePeriod = 0,
+		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
+		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
+	}
+
+	/// <summary>Use this method to edit live location messages. A location can be edited until its
+	/// <see cref="Location.LivePeriod"/> expires or editing is explicitly disabled by a call to
+	/// <see cref="StopMessageLiveLocation( string, InlineKeyboardMarkup?)"/>.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="latitude">Latitude of new location</param>
+	/// <param name="longitude">Longitude of new location</param>
+	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
+	/// <param name="livePeriod">Period in seconds for which the location will be updated, should be between 60 and 86400</param>
+	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified</param>
+	/// <param name="proximityAlertRadius">Maximum distance for proximity alerts about approaching another chat member, in meters.
+	/// Must be between 1 and 100000 if specified</param>
+	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
+	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
+	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
+	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = 0,
+		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var id = inlineMessageId.ParseInlineMsgID();
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
+		await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
+	}
+
+	/// <summary>Use this method to stop updating a live location message before
+	/// <see cref="Location.LivePeriod"/> expires.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the sent message</param>
+	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
+	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
+	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
+	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <returns>On success the sent <see cref="Message"/> is returned.</returns>
+	public async Task<Message> StopMessageLiveLocation(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
+		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
+	}
+
+	/// <summary>Use this method to stop updating a live location message before
+	/// <see cref="Location.LivePeriod"/> expires.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
+	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
+	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
+	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	public async Task StopMessageLiveLocation(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var id = inlineMessageId.ParseInlineMsgID();
+		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
+		await Client.Messages_EditInlineBotMessage(id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
 
 	/// <summary>Use this method to edit only the reply markup of messages.</summary>
@@ -1900,11 +1928,12 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendSticker(ChatId chatId, InputFile sticker, 
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? emoji = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -1913,7 +1942,7 @@ public partial class Bot
 		if (media is TL.InputMediaUploadedDocument doc)
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -2000,7 +2029,7 @@ public partial class Bot
 	{
 		var tlStickers = await Task.WhenAll(stickers.Select(sticker => InputStickerSetItem(userId, sticker)));
 		var mss = await Client.Stickers_CreateStickerSet(InputPeerUser(userId), title, name, tlStickers, null, "bot" + BotId,
-			stickerType == StickerType.Mask, stickerType == StickerType.CustomEmoji, needsRepainting == true);
+			stickerType == StickerType.Mask, stickerType == StickerType.CustomEmoji, needsRepainting);
 		CacheStickerSet(mss);
 	}
 
@@ -2137,7 +2166,7 @@ public partial class Bot
 		var switch_pm = button?.StartParameter == null ? null : new InlineBotSwitchPM { text = button.Text, start_param = button.StartParameter };
 		var switch_webview = button?.WebApp == null ? null : new InlineBotWebView { text = button.Text, url = button.WebApp.Url };
 		await Client.Messages_SetInlineBotResults(long.Parse(inlineQueryId), await InputBotInlineResults(results), cacheTime,
-			nextOffset, switch_pm, switch_webview, private_: isPersonal == true);
+			nextOffset, switch_pm, switch_webview, private_: isPersonal);
 	}
 
 	/// <summary>Use this method to set the result of an interaction with a Web App and send a corresponding message on behalf of
@@ -2160,7 +2189,7 @@ public partial class Bot
 	/// <param name="title">Product name, 1-32 characters</param>
 	/// <param name="description">Product description, 1-255 characters</param>
 	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes</param>
-	/// <param name="providerToken">Payments provider token, obtained via <a href="https://t.me/botfather">@BotFather</a></param>
+	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="currency">Three-letter ISO 4217 currency code, see
 	/// <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a></param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)</param>
@@ -2192,20 +2221,21 @@ public partial class Bot
 	/// <param name="isFlexible">Pass <see langword="true"/>, if the final price depends on the shipping method</param>
 	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound</param>
 	/// <param name="protectContent">Protects the contents of sent messages from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An <see cref="InlineKeyboardMarkup">inline keyboard</see>,
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendInvoice(ChatId chatId, string title, string description, string payload, string providerToken,
-		string currency, IEnumerable<LabeledPrice> prices, string? providerData = default, 
+	public async Task<Message> SendInvoice(ChatId chatId, string title, string description, string payload, 
+		string currency, IEnumerable<LabeledPrice> prices, string? providerToken = default, string? providerData = default, 
 		int? maxTipAmount = default, IEnumerable<int>? suggestedTipAmounts = default,
 		string? photoUrl = default, int? photoSize = default, int? photoWidth = default, int? photoHeight = default,
 		bool needName = default, bool needPhoneNumber = default, bool needEmail = default, bool needShippingAddress = default,
 		bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default, bool isFlexible = default,
 		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default, string? startParameter = default,
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -2213,8 +2243,8 @@ public partial class Bot
 		var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
-		return await PostedMsg(Client.Messages_SendMedia(peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -2222,7 +2252,7 @@ public partial class Bot
 	/// <param name="title">Product name, 1-32 characters</param>
 	/// <param name="description">Product description, 1-255 characters</param>
 	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes</param>
-	/// <param name="providerToken">Payments provider token, obtained via <a href="https://t.me/botfather">@BotFather</a></param>
+	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="currency">Three-letter ISO 4217 currency code, see
 	/// <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a></param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)</param>
@@ -2247,7 +2277,7 @@ public partial class Bot
 	/// <param name="sendEmailToProvider">Pass <see langword="true"/>, if user's email address should be sent to provider</param>
 	/// <param name="isFlexible">Pass <see langword="true"/>, if the final price depends on the shipping method</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
-	public async Task<string> CreateInvoiceLink(string title, string description, string payload, string providerToken,
+	public async Task<string> CreateInvoiceLink(string title, string description, string payload, string? providerToken,
 		string currency, IEnumerable<LabeledPrice> prices, string? providerData = default, 
 		int? maxTipAmount = default, IEnumerable<int>? suggestedTipAmounts = default,
 		string? photoUrl = default, int? photoSize = default, int? photoWidth = default, int? photoHeight = default,
@@ -2316,18 +2346,19 @@ public partial class Bot
 	/// <see cref="ReplyKeyboardMarkup">custom reply keyboard</see>, instructions to
 	/// <see cref="ReplyKeyboardRemove">remove reply keyboard</see> or to
 	/// <see cref="ForceReplyMarkup">force a reply</see> from the user</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>On success, the sent <see cref="Message"/> is returned.</returns>
 	public async Task<Telegram.Bot.Types.Message> SendGame(long chatId, string gameShortName, 
 		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default, 
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, silent: disableNotification == true, noforwards: protectContent == true),
+			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
 	}
 
@@ -2344,7 +2375,7 @@ public partial class Bot
 	public async Task<Message> SetGameScore(long userId, int score, long chatId, int messageId, bool force = default, bool disableEditMessage = default)
 	{
 		var peer = await InputPeerChat(chatId);
-		var updates = await Client.Messages_SetGameScore(peer, messageId, InputUser(userId), score, disableEditMessage != true, force == true);
+		var updates = await Client.Messages_SetGameScore(peer, messageId, InputUser(userId), score, disableEditMessage != true, force);
 		updates.UserOrChat(_collector);
 		var editUpdate = updates.UpdateList.OfType<UpdateEditMessage>().FirstOrDefault(uem => uem.message.Peer.ID == peer.ID && uem.message.ID == messageId);
 		if (editUpdate != null) return (await MakeMessage(editUpdate.message))!;
@@ -2363,7 +2394,7 @@ public partial class Bot
 	public async Task SetGameScore(long userId, int score, string inlineMessageId, bool force = default, bool disableEditMessage = default)
 	{
 		var id = inlineMessageId.ParseInlineMsgID();
-		await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force == true);
+		await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force);
 	}
 
 	/// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>

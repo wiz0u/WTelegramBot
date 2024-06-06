@@ -142,4 +142,6 @@ public static partial class TelegramBotClientExtensions
 		CancellationToken cancellationToken = default
 	) =>
 		await botClient.Bot(cancellationToken).GetInfoAndDownloadFile(fileId, destination, cancellationToken).ThrowAsApi();
+
+	internal static long LongOrDefault(this string? s) => s == null ? 0 : long.Parse(s);
 }

@@ -6,7 +6,7 @@
 public partial class SuccessfulPayment
 {
     /// <summary>
-    /// Three-letter ISO 4217 <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> code
+    /// Three-letter ISO 4217 <a href="https://core.telegram.org/bots/payments#supported-currencies">currency</a> code, or “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>
     /// </summary>
     public string Currency { get; set; } = default!;
 

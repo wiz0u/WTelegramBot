@@ -481,6 +481,7 @@ public partial class Bot
 					SenderBoostCount = message.from_boosts_applied > 0 ? message.from_boosts_applied : null,
 					SenderBusinessBot = User(message.via_business_bot_id),
 					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
+					EffectId = message.flags2.HasFlag(TL.Message.Flags2.has_effect) ? message.effect.ToString() : null,
 				};
 				if (message.fwd_from is { } fwd)
 				{
@@ -579,6 +580,7 @@ public partial class Bot
 				return msg;
 			case MessageMediaDocument { document: TL.Document document } mmd:
 				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.spoiler)) msg.HasMediaSpoiler = true;
+				msg.ShowCaptionAboveMedia = invert_media;
 				var thumb = document.LargestThumbSize;
 				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.voice))
 				{
@@ -641,6 +643,7 @@ public partial class Bot
 				break;
 			case MessageMediaPhoto { photo: TL.Photo photo } mmp:
 				if (mmp.flags.HasFlag(MessageMediaPhoto.Flags.spoiler)) msg.HasMediaSpoiler = true;
+				msg.ShowCaptionAboveMedia = invert_media;
 				msg.Photo = photo.PhotoSizes();
 				break;
 			case MessageMediaVenue mmv:

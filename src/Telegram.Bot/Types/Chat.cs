@@ -142,7 +142,7 @@ public partial class ChatFullInfo : Chat
     public bool JoinToSendMessages { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if all users directly joining the supergroup need to be approved by supergroup administrators
+    /// <em>Optional</em>. <see langword="true"/>, if all users directly joining the supergroup without using an invite link need to be approved by supergroup administrators
     /// </summary>
     public bool JoinByRequest { get; set; }
 

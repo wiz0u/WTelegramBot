@@ -478,13 +478,13 @@ public partial class Bot
 					flags = game.ReplyMarkup != null ? InputBotInlineMessageGame.Flags.has_reply_markup : 0
 				}
 			};
-		if (result is InlineQueryResultCachedPhoto cachedPhoto)
+		if (result is InlineQueryResultCachedPhoto cp)
 			return new InputBotInlineResultPhoto
 			{
 				id = result.Id,
 				type = "photo",
-				photo = InputPhoto(cachedPhoto.PhotoFileId),
-				send_message = await InputBotInlineMessage(result, cachedPhoto.InputMessageContent, cachedPhoto.Caption, cachedPhoto.ParseMode, cachedPhoto.CaptionEntities)
+				photo = InputPhoto(cp.PhotoFileId),
+				send_message = await InputBotInlineMessage(result, cp.InputMessageContent, cp.Caption, cp.ParseMode, cp.CaptionEntities, cp.ShowCaptionAboveMedia)
 			};
 		InputBotInlineResultDocument? cached = result switch
 		{
@@ -493,13 +493,13 @@ public partial class Bot
 			InlineQueryResultCachedDocument c => new()
 			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities), id = c.DocumentFileId, title = c.Title, description = c.Description, type = "file" },
 			InlineQueryResultCachedGif c => new()
-			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities), id = c.GifFileId, title = c.Title },
+			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities, c.ShowCaptionAboveMedia), id = c.GifFileId, title = c.Title },
 			InlineQueryResultCachedMpeg4Gif c => new()
-			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities), id = c.Mpeg4FileId, title = c.Title, type = "gif" },
+			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities, c.ShowCaptionAboveMedia), id = c.Mpeg4FileId, title = c.Title, type = "gif" },
 			InlineQueryResultCachedSticker c => new()
 			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent), id = c.StickerFileId },
 			InlineQueryResultCachedVideo c => new()
-			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities), id = c.VideoFileId, title = c.Title, description = c.Description },
+			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities, c.ShowCaptionAboveMedia), id = c.VideoFileId, title = c.Title, description = c.Description },
 			InlineQueryResultCachedVoice c => new()
 			{ send_message = await InputBotInlineMessage(c, c.InputMessageContent, c.Caption, c.ParseMode, c.CaptionEntities), id = c.VoiceFileId, title = c.Title },
 			_ => null
@@ -516,34 +516,34 @@ public partial class Bot
 
 		return await (result switch
 		{
-			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, default, null,
+			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, default, null, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
 				r.Url, "text/html", url: r.HideUrl == true ? null : r.Url),
-			InlineQueryResultAudio r => MakeIbir(r, r.Title, r.Performer, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultAudio r => MakeIbir(r, r.Title, r.Performer, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, false,
 				null, null, 0, 0,
 				r.AudioUrl, "audio/mpeg", new DocumentAttributeAudio { duration = r.AudioDuration ?? 0, title = r.Title, performer = r.Performer, flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }),
-			InlineQueryResultContact r => MakeIbir(r, r.LastName == null ? r.FirstName : $"{r.FirstName} {r.LastName}", r.PhoneNumber, r.InputMessageContent, null, default, null,
+			InlineQueryResultContact r => MakeIbir(r, r.LastName == null ? r.FirstName : $"{r.FirstName} {r.LastName}", r.PhoneNumber, r.InputMessageContent, null, default, null, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
-			InlineQueryResultDocument r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultDocument r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
 				r.DocumentUrl, r.MimeType, null, "file"),
-			InlineQueryResultGif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultGif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia,
 				r.ThumbnailUrl, r.ThumbnailMimeType, 0, 0,
 				r.GifUrl, "image/gif", r.GifWidth + r.GifHeight > 0 ? new DocumentAttributeImageSize { w = r.GifWidth ?? 0, h = r.GifHeight ?? 0 } : null),
-			InlineQueryResultLocation r => MakeIbir(r, r.Title, $"{r.Latitude} {r.Longitude}", r.InputMessageContent, null, default, null,
+			InlineQueryResultLocation r => MakeIbir(r, r.Title, $"{r.Latitude} {r.Longitude}", r.InputMessageContent, null, default, null, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight, type: "geo"),
-			InlineQueryResultMpeg4Gif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultMpeg4Gif r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia,
 				r.ThumbnailUrl, r.ThumbnailMimeType ?? "image/jpeg", 0, 0,
 				r.Mpeg4Url, "video/mp4", r.Mpeg4Width + r.Mpeg4Height > 0 ? new DocumentAttributeVideo { w = r.Mpeg4Width ?? 0, h = r.Mpeg4Height ?? 0, duration = r.Mpeg4Duration ?? 0 } : null, "gif"),
-			InlineQueryResultPhoto r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultPhoto r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia,
 				r.ThumbnailUrl, "image/jpeg", 0, 0,
 				r.PhotoUrl, "image/jpeg", r.PhotoWidth + r.PhotoHeight > 0 ? new DocumentAttributeImageSize { w = r.PhotoWidth ?? 0, h = r.PhotoHeight ?? 0 } : null),
-			InlineQueryResultVenue r => MakeIbir(r, r.Title, r.Address, r.InputMessageContent, null, default, null,
+			InlineQueryResultVenue r => MakeIbir(r, r.Title, r.Address, r.InputMessageContent, null, default, null, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight),
-			InlineQueryResultVideo r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultVideo r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia,
 				r.ThumbnailUrl, "image/jpeg", 0, 0,
 				r.VideoUrl, r.MimeType, r.VideoWidth + r.VideoHeight > 0 ? new DocumentAttributeVideo { w = r.VideoWidth ?? 0, h = r.VideoHeight ?? 0, duration = r.VideoDuration ?? 0 } : null),
-			InlineQueryResultVoice r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities,
+			InlineQueryResultVoice r => MakeIbir(r, r.Title, null, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, false,
 				null, null, 0, 0,
 				r.VoiceUrl, "audio/ogg", new DocumentAttributeAudio { duration = r.VoiceDuration ?? 0, flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.voice }),
 			_ => throw new NotSupportedException()
@@ -551,7 +551,7 @@ public partial class Bot
 	}
 
 	private async Task<InputBotInlineResult> MakeIbir(InlineQueryResult r, string? title, string? description,
-		InputMessageContent? imc, string? caption, ParseMode parseMode, MessageEntity[]? captionEntities,
+		InputMessageContent? imc, string? caption, ParseMode parseMode, MessageEntity[]? captionEntities, bool invert_media = false,
 		string? thumbnail_url = null, string? thumbnail_type = null, int? thumbWidth = 0, int? thumbHeight = 0,
 		string? content_url = null, string? content_type = null, DocumentAttribute? attribute = null,
 		string? type = null, string? url = null)
@@ -577,7 +577,7 @@ public partial class Bot
 			thumb = thumb,
 			content = content,
 			type = type ?? r.Type.ToString().ToLower(),
-			send_message = await InputBotInlineMessage(r, imc, caption, parseMode, captionEntities),
+			send_message = await InputBotInlineMessage(r, imc, caption, parseMode, captionEntities, invert_media),
 			flags = (title != null ? TL.InputBotInlineResult.Flags.has_title : 0)
 			| (description != null ? TL.InputBotInlineResult.Flags.has_description : 0)
 			| (url != null ? TL.InputBotInlineResult.Flags.has_url : 0)
@@ -586,8 +586,8 @@ public partial class Bot
 		};
 	}
 
-	private async Task<InputBotInlineMessage> InputBotInlineMessage(InlineQueryResult iqr,
-		InputMessageContent? message, string? caption = null, ParseMode parseMode = default, MessageEntity[]? captionEntities = null)
+	private async Task<InputBotInlineMessage> InputBotInlineMessage(InlineQueryResult iqr, InputMessageContent? message,
+		string? caption = null, ParseMode parseMode = default, MessageEntity[]? captionEntities = null, bool invert_media = false)
 	{
 		if (message != null) captionEntities = null;
 		var reply_markup = await MakeReplyMarkup(iqr.ReplyMarkup);
@@ -731,7 +731,8 @@ public partial class Bot
 					message = ApplyParse(parseMode, caption, ref captionEntities),
 					entities = captionEntities,
 					flags = (reply_markup != null ? InputBotInlineMessageMediaAuto.Flags.has_reply_markup : 0) |
-							(captionEntities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities : 0)
+							(captionEntities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities : 0) |
+							(invert_media ? InputBotInlineMessageMediaAuto.Flags.invert_media : 0)
 				},
 			},
 			_ => throw new NotImplementedException()
@@ -745,13 +746,14 @@ public partial class Bot
 		_ => "image/webp"
 	};
 
-	private static InputMediaInvoice InputMediaInvoice(string title, string description, string payload, string providerToken,
+	private static InputMediaInvoice InputMediaInvoice(string title, string description, string payload, string? providerToken,
 		string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
 		string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
 		bool needName, bool needPhoneNumber, bool needEmail, bool needShippingAddress,
 		bool sendPhoneNumberToProvider, bool sendEmailToProvider, bool isFlexible) => new()
 		{
-			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0),
+			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0)
+				| (providerToken != null ? TL.InputMediaInvoice.Flags.has_provider : 0),
 			title = title,
 			description = description,
 			photo = photoUrl == null ? null : new InputWebDocument
@@ -776,7 +778,7 @@ public partial class Bot
 				max_tip_amount = maxTipAmount ?? 0,
 				suggested_tip_amounts = suggestedTipAmounts?.Select(sta => (long)sta).ToArray(),
 			},
-			payload = System.Text.Encoding.UTF8.GetBytes(payload),
+			payload = Encoding.UTF8.GetBytes(payload),
 			provider = providerToken,
 			provider_data = new DataJSON { data = providerData ?? "null" },
 			start_param = startParameter,
@@ -804,29 +806,31 @@ public partial class Bot
 		return cb;
 	}
 
-	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string message, long random_id, InputReplyTo? reply_to = null, ReplyMarkup? reply_markup = null, MessageEntity[]? entities = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool no_webpage = false, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, MessageEntity[]? entities, bool silent, bool noforwards, long effect,
+		bool invert_media = false, bool no_webpage = false)
 	{
 		var query = new TL.Methods.Messages_SendMessage
 		{
-			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			message = message,
 			random_id = random_id,
 			reply_markup = reply_markup,
 			entities = entities,
-			schedule_date = schedule_date.GetValueOrDefault(),
-			send_as = send_as,
-			quick_reply_shortcut = quick_reply_shortcut,
+			effect = effect
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id, InputReplyTo? reply_to = null, ReplyMarkup? reply_markup = null, MessageEntity[]? entities = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, MessageEntity[]? entities, bool silent, bool noforwards, long effect,
+		bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_SendMedia
 		{
-			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			media = media,
@@ -834,24 +838,21 @@ public partial class Bot
 			random_id = random_id,
 			reply_markup = reply_markup,
 			entities = entities,
-			schedule_date = schedule_date.GetValueOrDefault(),
-			send_as = send_as,
-			quick_reply_shortcut = quick_reply_shortcut,
+			effect = effect
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	Task<UpdatesBase> Messages_SendMultiMedia(string? bConnId, InputPeer peer, InputSingleMedia[] multi_media, InputReplyTo? reply_to = null, DateTime? schedule_date = null, InputPeer? send_as = null, InputQuickReplyShortcutBase? quick_reply_shortcut = null, bool silent = false, bool background = false, bool clear_draft = false, bool noforwards = false, bool update_stickersets_order = false, bool invert_media = false)
+	Task<UpdatesBase> Messages_SendMultiMedia(string? bConnId, InputPeer peer, InputSingleMedia[] multi_media, 
+		InputReplyTo? reply_to, bool silent, bool noforwards, long effect, bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_SendMultiMedia
 		{
-			flags = (TL.Methods.Messages_SendMultiMedia.Flags)((reply_to != null ? 0x1 : 0) | (schedule_date != null ? 0x400 : 0) | (send_as != null ? 0x2000 : 0) | (quick_reply_shortcut != null ? 0x20000 : 0) | (silent ? 0x20 : 0) | (background ? 0x40 : 0) | (clear_draft ? 0x80 : 0) | (noforwards ? 0x4000 : 0) | (update_stickersets_order ? 0x8000 : 0) | (invert_media ? 0x10000 : 0)),
+			flags = (TL.Methods.Messages_SendMultiMedia.Flags)((reply_to != null ? 0x1 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			multi_media = multi_media,
-			schedule_date = schedule_date.GetValueOrDefault(),
-			send_as = send_as,
-			quick_reply_shortcut = quick_reply_shortcut,
+			effect = effect
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}

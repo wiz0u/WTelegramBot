@@ -19,10 +19,7 @@ global using User = Telegram.Bot.Types.User;
 global using MessageEntity = TL.MessageEntity;
 using System.ComponentModel;
 
-[assembly: SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>", Scope = "type", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]
-[assembly: SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.Types.InlineQueryResults.Documentation")]
+[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "member", Target = "~M:Telegram.Bot.TelegramBotClientExtensions.StartReceiving(Telegram.Bot.ITelegramBotClient,Telegram.Bot.Polling.IUpdateHandler,Telegram.Bot.Polling.ReceiverOptions,System.Threading.CancellationToken)")]
 [assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "namespace", Target = "~N:Telegram.Bot.Types.InlineQueryResults")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClient.LocalBotServer")]

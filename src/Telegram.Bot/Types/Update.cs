@@ -36,7 +36,7 @@ public partial class Update
     public BusinessConnection? BusinessConnection { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. New non-service message from a connected business account
+    /// <em>Optional</em>. New message from a connected business account
     /// </summary>
     public Message? BusinessMessage { get; set; }
 

@@ -232,22 +232,22 @@ public partial class InputInvoiceMessageContent : InputMessageContent
     public required string Payload { get; set; }
 
     /// <summary>
-    /// Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>
+    /// <em>Optional</em>. Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
-    public required string ProviderToken { get; set; }
+    public string? ProviderToken { get; set; }
 
     /// <summary>
-    /// Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>
+    /// Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public required string Currency { get; set; }
 
     /// <summary>
-    /// Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)
+    /// Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public required IEnumerable<LabeledPrice> Prices { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0
+    /// <em>Optional</em>. The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public int? MaxTipAmount { get; set; }
 
@@ -282,37 +282,37 @@ public partial class InputInvoiceMessageContent : InputMessageContent
     public int? PhotoHeight { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's full name to complete the order
+    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's full name to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool NeedName { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's phone number to complete the order
+    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's phone number to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool NeedPhoneNumber { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's email address to complete the order
+    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's email address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool NeedEmail { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's shipping address to complete the order
+    /// <em>Optional</em>. Pass <see langword="true"/> if you require the user's shipping address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool NeedShippingAddress { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if the user's phone number should be sent to provider
+    /// <em>Optional</em>. Pass <see langword="true"/> if the user's phone number should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool SendPhoneNumberToProvider { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if the user's email address should be sent to provider
+    /// <em>Optional</em>. Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool SendEmailToProvider { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. Pass <see langword="true"/> if the final price depends on the shipping method
+    /// <em>Optional</em>. Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
     /// </summary>
     public bool IsFlexible { get; set; }
 
@@ -322,16 +322,14 @@ public partial class InputInvoiceMessageContent : InputMessageContent
     /// <param name="title">Product name, 1-32 characters</param>
     /// <param name="description">Product description, 1-255 characters</param>
     /// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
-    /// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a></param>
-    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a></param>
-    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)</param>
+    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     [SetsRequiredMembers]
-    public InputInvoiceMessageContent(string title, string description, string payload, string providerToken, string currency, IEnumerable<LabeledPrice> prices)
+    public InputInvoiceMessageContent(string title, string description, string payload, string currency, IEnumerable<LabeledPrice> prices)
     {
         Title = title;
         Description = description;
         Payload = payload;
-        ProviderToken = providerToken;
         Currency = currency;
         Prices = prices;
     }

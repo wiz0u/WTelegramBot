@@ -171,6 +171,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -188,12 +189,13 @@ public static partial class TelegramBotClientExtensions
         LinkPreviewOptions? linkPreviewOptions = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendTextMessage(chatId, text, parseMode ?? default, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendTextMessage(chatId, text, parseMode ?? default, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.
@@ -258,6 +260,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">New caption for media, 0-1024 characters after entities parsing. If not specified, the original caption is kept</param>
     /// <param name="parseMode">Mode for parsing entities in the new caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the new caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
@@ -275,13 +278,14 @@ public static partial class TelegramBotClientExtensions
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         bool disableNotification = default,
         bool protectContent = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent).ThrowAsApi();
 
     /// <summary>
     /// Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.
@@ -321,9 +325,11 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">Photo caption (may also be used when resending photos by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the photo caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
     /// <param name="hasSpoiler">Pass <see langword="true"/> if the photo needs to be covered with a spoiler animation</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -339,15 +345,17 @@ public static partial class TelegramBotClientExtensions
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         bool hasSpoiler = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, hasSpoiler, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPhoto(chatId, photo, caption, parseMode ?? default, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format.
@@ -365,6 +373,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -386,12 +395,13 @@ public static partial class TelegramBotClientExtensions
         InputFile? thumbnail = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendAudio(chatId, audio, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendAudio(chatId, audio, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send general files.
@@ -407,6 +417,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="disableContentTypeDetection">Disables automatic server-side content type detection for files uploaded using <see cref="InputFileStream"/></param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -426,12 +437,13 @@ public static partial class TelegramBotClientExtensions
         bool disableContentTypeDetection = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode ?? default, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendDocument(chatId, document, caption, parseMode ?? default, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send video files, Telegram clients support MPEG4 videos (other formats may be sent as <see cref="Document"/>).
@@ -447,10 +459,12 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">Video caption (may also be used when resending videos by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the video caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
     /// <param name="hasSpoiler">Pass <see langword="true"/> if the video needs to be covered with a spoiler animation</param>
     /// <param name="supportsStreaming">Pass <see langword="true"/> if the uploaded video is suitable for streaming</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -470,16 +484,18 @@ public static partial class TelegramBotClientExtensions
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         bool hasSpoiler = default,
         bool supportsStreaming = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, hasSpoiler, supportsStreaming, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVideo(chatId, video, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound).
@@ -495,9 +511,11 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">Animation caption (may also be used when resending animation by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the animation caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
     /// <param name="hasSpoiler">Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -517,15 +535,17 @@ public static partial class TelegramBotClientExtensions
         string? caption = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         bool hasSpoiler = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, hasSpoiler, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendAnimation(chatId, animation, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .OGG file encoded with OPUS, or in .MP3 format, or in .M4A format (other formats may be sent as <see cref="Audio"/> or <see cref="Document"/>).
@@ -540,6 +560,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="duration">Duration of the voice message in seconds</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -558,12 +579,13 @@ public static partial class TelegramBotClientExtensions
         int? duration = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVoice(chatId, voice, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVoice(chatId, voice, caption, parseMode ?? default, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients support rounded square MPEG4 videos of up to 1 minute long. Use this method to send video messages.
@@ -577,6 +599,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -594,12 +617,13 @@ public static partial class TelegramBotClientExtensions
         InputFile? thumbnail = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.
@@ -610,6 +634,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
     /// <param name="disableNotification">Sends messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -623,11 +648,12 @@ public static partial class TelegramBotClientExtensions
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send point on the map.
@@ -643,6 +669,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="proximityAlertRadius">For live locations, a maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -662,12 +689,13 @@ public static partial class TelegramBotClientExtensions
         int? proximityAlertRadius = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send information about a venue.
@@ -685,6 +713,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="googlePlaceType">Google Places type of the venue. (See <a href="https://developers.google.com/places/web-service/supported_types">supported types</a>.)</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -706,12 +735,13 @@ public static partial class TelegramBotClientExtensions
         string? googlePlaceType = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send phone contacts.
@@ -725,6 +755,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="vcard">Additional data about the contact in the form of a <a href="https://en.wikipedia.org/wiki/VCard">vCard</a>, 0-2048 bytes</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -742,12 +773,13 @@ public static partial class TelegramBotClientExtensions
         string? vcard = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send a native poll.
@@ -769,6 +801,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="isClosed">Pass <see langword="true"/> if the poll needs to be immediately closed. This can be useful for poll preview.</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -794,12 +827,13 @@ public static partial class TelegramBotClientExtensions
         bool isClosed = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options.Select(os => (InputPollOption)os), isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode ?? default, explanationEntities, default, default, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendPoll(chatId, question, options.Select(os => (InputPollOption)os), isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode ?? default, explanationEntities, default, default, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to send an animated emoji that will display a random value.
@@ -810,6 +844,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="emoji">Emoji on which the dice throw animation is based. Currently, must be one of “🎲”, “🎯”, “🏀”, “⚽”, “🎳”, or “🎰”. Dice can have values 1-6 for “🎲”, “🎯” and “🎳”, values 1-5 for “🏀” and “⚽”, and values 1-64 for “🎰”. Defaults to “🎲”</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -824,12 +859,13 @@ public static partial class TelegramBotClientExtensions
         Emoji? emoji = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendDice(chatId, emoji ?? Emoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendDice(chatId, emoji ?? Emoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.
@@ -1941,6 +1977,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>
@@ -1953,10 +1990,11 @@ public static partial class TelegramBotClientExtensions
         string? caption,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode ?? default, captionEntities, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode ?? default, captionEntities, showCaptionAboveMedia, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit captions of messages.
@@ -1966,6 +2004,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public static async Task EditMessageCaptionAsync(
@@ -1974,10 +2013,11 @@ public static partial class TelegramBotClientExtensions
         string? caption,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode ?? default, captionEntities, replyMarkup).ThrowAsApi();
+        await botClient.Bot(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode ?? default, captionEntities, showCaptionAboveMedia, replyMarkup).ThrowAsApi();
 
     /// <summary>
     /// Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.
@@ -2211,6 +2251,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="emoji">Emoji associated with the sticker; only for just uploaded stickers</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -2226,12 +2267,13 @@ public static partial class TelegramBotClientExtensions
         string? emoji = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to get a sticker set.
@@ -2539,11 +2581,11 @@ public static partial class TelegramBotClientExtensions
     /// <param name="title">Product name, 1-32 characters</param>
     /// <param name="description">Product description, 1-255 characters</param>
     /// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
-    /// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a></param>
-    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a></param>
-    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)</param>
+    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-    /// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0</param>
+    /// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <see cref="MaxTipAmount">MaxTipAmount</see>.</param>
     /// <param name="startParameter">Unique deep-linking parameter. If left empty, <b>forwarded copies</b> of the sent message will have a <em>Pay</em> button, allowing multiple users to pay directly from the forwarded message, using the same invoice. If non-empty, forwarded copies of the sent message will have a <em>URL</em> button with a deep link to the bot (instead of a <em>Pay</em> button), with the value used as the start parameter</param>
     /// <param name="providerData">JSON-serialized data about the invoice, which will be shared with the payment provider. A detailed description of required fields should be provided by the payment provider.</param>
@@ -2551,15 +2593,16 @@ public static partial class TelegramBotClientExtensions
     /// <param name="photoSize">Photo size in bytes</param>
     /// <param name="photoWidth">Photo width</param>
     /// <param name="photoHeight">Photo height</param>
-    /// <param name="needName">Pass <see langword="true"/> if you require the user's full name to complete the order</param>
-    /// <param name="needPhoneNumber">Pass <see langword="true"/> if you require the user's phone number to complete the order</param>
-    /// <param name="needEmail">Pass <see langword="true"/> if you require the user's email address to complete the order</param>
-    /// <param name="needShippingAddress">Pass <see langword="true"/> if you require the user's shipping address to complete the order</param>
-    /// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to provider</param>
-    /// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to provider</param>
-    /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method</param>
+    /// <param name="needName">Pass <see langword="true"/> if you require the user's full name to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needPhoneNumber">Pass <see langword="true"/> if you require the user's phone number to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needEmail">Pass <see langword="true"/> if you require the user's email address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needShippingAddress">Pass <see langword="true"/> if you require the user's shipping address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Pay <c>total price</c>' button will be shown. If not empty, the first button must be a Pay button.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -2572,10 +2615,10 @@ public static partial class TelegramBotClientExtensions
         string title,
         string description,
         string payload,
-        string providerToken,
         string currency,
         IEnumerable<LabeledPrice> prices,
         int? messageThreadId = default,
+        string? providerToken = default,
         int? maxTipAmount = default,
         IEnumerable<int>? suggestedTipAmounts = default,
         string? startParameter = default,
@@ -2593,11 +2636,12 @@ public static partial class TelegramBotClientExtensions
         bool isFlexible = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, providerToken, currency, prices, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendInvoice(chatId, title, description, payload, currency, prices, providerToken, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault()).ThrowAsApi();
 
     /// <summary>
     /// Use this method to create a link for an invoice.
@@ -2606,23 +2650,23 @@ public static partial class TelegramBotClientExtensions
     /// <param name="title">Product name, 1-32 characters</param>
     /// <param name="description">Product description, 1-255 characters</param>
     /// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
-    /// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a></param>
-    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a></param>
-    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)</param>
-    /// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0</param>
+    /// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="MaxTipAmount">MaxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <see cref="MaxTipAmount">MaxTipAmount</see>.</param>
     /// <param name="providerData">JSON-serialized data about the invoice, which will be shared with the payment provider. A detailed description of required fields should be provided by the payment provider.</param>
     /// <param name="photoUrl">URL of the product photo for the invoice. Can be a photo of the goods or a marketing image for a service.</param>
     /// <param name="photoSize">Photo size in bytes</param>
     /// <param name="photoWidth">Photo width</param>
     /// <param name="photoHeight">Photo height</param>
-    /// <param name="needName">Pass <see langword="true"/> if you require the user's full name to complete the order</param>
-    /// <param name="needPhoneNumber">Pass <see langword="true"/> if you require the user's phone number to complete the order</param>
-    /// <param name="needEmail">Pass <see langword="true"/> if you require the user's email address to complete the order</param>
-    /// <param name="needShippingAddress">Pass <see langword="true"/> if you require the user's shipping address to complete the order</param>
-    /// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to the provider</param>
-    /// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider</param>
-    /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method</param>
+    /// <param name="needName">Pass <see langword="true"/> if you require the user's full name to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needPhoneNumber">Pass <see langword="true"/> if you require the user's phone number to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needEmail">Pass <see langword="true"/> if you require the user's email address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="needShippingAddress">Pass <see langword="true"/> if you require the user's shipping address to complete the order. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+    /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>
     /// The created invoice link as <em>String</em> on success.
@@ -2632,9 +2676,9 @@ public static partial class TelegramBotClientExtensions
         string title,
         string description,
         string payload,
-        string providerToken,
         string currency,
         IEnumerable<LabeledPrice> prices,
+        string? providerToken,
         int? maxTipAmount = default,
         IEnumerable<int>? suggestedTipAmounts = default,
         string? providerData = default,
@@ -2711,6 +2755,21 @@ public static partial class TelegramBotClientExtensions
     ) =>
         await botClient.Bot(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi();
 
+    /// <summary>
+    /// Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.
+    /// </summary>
+    /// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
+    /// <param name="userId">Identifier of the user whose payment will be refunded</param>
+    /// <param name="telegramPaymentChargeId">Telegram payment identifier</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public static Task RefundStarPayment(
+        this ITelegramBotClient botClient,
+        long userId,
+        string telegramPaymentChargeId,
+        CancellationToken cancellationToken = default
+    ) =>
+        throw new NotImplementedException();
+
     #endregion Payments
 
     #region Games
@@ -2724,6 +2783,7 @@ public static partial class TelegramBotClientExtensions
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Play GameTitle' button will be shown. If not empty, the first button must launch the game.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -2738,12 +2798,13 @@ public static partial class TelegramBotClientExtensions
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
+        string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await botClient.Bot(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, businessConnectionId).ThrowAsApi();
+        await botClient.Bot(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
 
     /// <summary>
     /// Use this method to set the score of the specified user in a game message.

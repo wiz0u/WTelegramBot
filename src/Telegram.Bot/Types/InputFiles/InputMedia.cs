@@ -55,6 +55,11 @@ public partial class InputMediaPhoto : InputMedia, IAlbumInputMedia
     public override Enums.InputMediaType Type => Enums.InputMediaType.Photo;
 
     /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Pass <see langword="true"/> if the photo needs to be covered with a spoiler animation
     /// </summary>
     public bool HasSpoiler { get; set; }
@@ -90,6 +95,11 @@ public partial class InputMediaVideo : InputMedia, IInputMediaThumb, IAlbumInput
     /// <em>Optional</em>. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>
     /// </summary>
     public InputFile? Thumbnail { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Video width
@@ -147,6 +157,11 @@ public partial class InputMediaAnimation : InputMedia, IInputMediaThumb
     /// <em>Optional</em>. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>
     /// </summary>
     public InputFile? Thumbnail { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Animation width

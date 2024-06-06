@@ -161,6 +161,11 @@ public partial class InlineQueryResultPhoto : InlineQueryResult
     public MessageEntity[]? CaptionEntities { get; set; }
 
     /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the photo
     /// </summary>
     public InputMessageContent? InputMessageContent { get; set; }
@@ -245,6 +250,11 @@ public partial class InlineQueryResultGif : InlineQueryResult
     /// <em>Optional</em>. List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see>
     /// </summary>
     public MessageEntity[]? CaptionEntities { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the GIF animation
@@ -333,6 +343,11 @@ public partial class InlineQueryResultMpeg4Gif : InlineQueryResult
     public MessageEntity[]? CaptionEntities { get; set; }
 
     /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the video animation
     /// </summary>
     public InputMessageContent? InputMessageContent { get; set; }
@@ -405,6 +420,11 @@ public partial class InlineQueryResultVideo : InlineQueryResult
     /// <em>Optional</em>. List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see>
     /// </summary>
     public MessageEntity[]? CaptionEntities { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Video width
@@ -1008,6 +1028,11 @@ public partial class InlineQueryResultCachedPhoto : InlineQueryResult
     public MessageEntity[]? CaptionEntities { get; set; }
 
     /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the photo
     /// </summary>
     public InputMessageContent? InputMessageContent { get; set; }
@@ -1064,6 +1089,11 @@ public partial class InlineQueryResultCachedGif : InlineQueryResult
     public MessageEntity[]? CaptionEntities { get; set; }
 
     /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
+
+    /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the GIF animation
     /// </summary>
     public InputMessageContent? InputMessageContent { get; set; }
@@ -1118,6 +1148,11 @@ public partial class InlineQueryResultCachedMpeg4Gif : InlineQueryResult
     /// <em>Optional</em>. List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see>
     /// </summary>
     public MessageEntity[]? CaptionEntities { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the video animation
@@ -1281,6 +1316,11 @@ public partial class InlineQueryResultCachedVideo : InlineQueryResult
     /// <em>Optional</em>. List of special entities that appear in the caption, which can be specified instead of <see cref="ParseMode">ParseMode</see>
     /// </summary>
     public MessageEntity[]? CaptionEntities { get; set; }
+
+    /// <summary>
+    /// <em>Optional</em>. Pass <see langword="true"/>, if the caption must be shown above the message media
+    /// </summary>
+    public bool ShowCaptionAboveMedia { get; set; }
 
     /// <summary>
     /// <em>Optional</em>. Content of the message to be sent instead of the video

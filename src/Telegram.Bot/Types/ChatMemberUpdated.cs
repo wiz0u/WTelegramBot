@@ -36,7 +36,7 @@ public partial class ChatMemberUpdated
     public ChatInviteLink? InviteLink { get; set; }
 
     /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if the user joined the chat after sending a direct join request and being approved by an administrator
+    /// <em>Optional</em>. <see langword="true"/>, if the user joined the chat after sending a direct join request without using an invite link and being approved by an administrator
     /// </summary>
     public bool ViaJoinRequest { get; set; }
 
