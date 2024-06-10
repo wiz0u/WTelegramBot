@@ -1,6 +1,7 @@
 ﻿using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
+using Telegram.Bot.Types.Passport;
 using Telegram.Bot.Types.Payments;
 using Telegram.Bot.Types.ReplyMarkups;
 using TL;
@@ -85,7 +86,7 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -115,7 +116,7 @@ public partial class Bot
 	/// <summary>Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Message identifier in the chat specified in <see cref="fromChatId">fromChatId</see></param>
+	/// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded message from forwarding and saving</param>
@@ -131,7 +132,7 @@ public partial class Bot
 	/// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
-	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <see cref="fromChatId">fromChatId</see> to forward. The identifiers must be specified in a strictly increasing order.</param>
+	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to forward. The identifiers must be specified in a strictly increasing order.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded messages from forwarding and saving</param>
@@ -152,13 +153,13 @@ public partial class Bot
 	/// <summary>Use this method to copy messages of any kind. Service messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessage">ForwardMessage</see>, but the copied message doesn't have a link to the original message.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Message identifier in the chat specified in <see cref="fromChatId">fromChatId</see></param>
+	/// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
 	/// <param name="caption">New caption for media, 0-1024 characters after entities parsing. If not specified, the original caption is kept</param>
 	/// <param name="parseMode">Mode for parsing entities in the new caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the new caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the new caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -189,7 +190,7 @@ public partial class Bot
 	/// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
-	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <see cref="fromChatId">fromChatId</see> to copy. The identifiers must be specified in a strictly increasing order.</param>
+	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to copy. The identifiers must be specified in a strictly increasing order.</param>
 	/// <param name="removeCaption">Pass <see langword="true"/> to copy the messages without their captions</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -257,7 +258,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the photo needs to be covered with a spoiler animation</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -314,7 +315,7 @@ public partial class Bot
 	/// <param name="title">Track name</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -343,7 +344,7 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableContentTypeDetection">Disables automatic server-side content type detection for files uploaded using <see cref="InputFileStream"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -373,7 +374,7 @@ public partial class Bot
 	/// <param name="height">Video height</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the video needs to be covered with a spoiler animation</param>
 	/// <param name="supportsStreaming">Pass <see langword="true"/> if the uploaded video is suitable for streaming</param>
@@ -409,7 +410,7 @@ public partial class Bot
 	/// <param name="height">Animation height</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -447,7 +448,7 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="duration">Duration of the voice message in seconds</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -656,11 +657,11 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="explanation">Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style poll, 0-200 characters with at most 2 line feeds after entities parsing</param>
 	/// <param name="explanationParseMode">Mode for parsing entities in the explanation. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="explanationEntities">A list of special entities that appear in the poll explanation. It can be specified instead of <see cref="explanationParseMode">explanationParseMode</see></param>
+	/// <param name="explanationEntities">A list of special entities that appear in the poll explanation. It can be specified instead of <paramref name="explanationParseMode"/></param>
 	/// <param name="questionParseMode">Mode for parsing entities in the question. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Currently, only custom emoji entities are allowed</param>
-	/// <param name="questionEntities">A list of special entities that appear in the poll question. It can be specified instead of <see cref="questionParseMode">questionParseMode</see></param>
-	/// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-600. Can't be used together with <see cref="closeDate">closeDate</see>.</param>
-	/// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 600 seconds in the future. Can't be used together with <see cref="openPeriod">openPeriod</see>.</param>
+	/// <param name="questionEntities">A list of special entities that appear in the poll question. It can be specified instead of <paramref name="questionParseMode"/></param>
+	/// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-600. Can't be used together with <paramref name="closeDate"/>.</param>
+	/// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 600 seconds in the future. Can't be used together with <paramref name="openPeriod"/>.</param>
 	/// <param name="isClosed">Pass <see langword="true"/> if the poll needs to be immediately closed. This can be useful for poll preview.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -732,7 +733,7 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
-	/// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <see cref="action">action</see> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
+	/// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <a href="https://core.telegram.org/bots/api#sendmessage">text messages</a>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread; for supergroups only</param>
@@ -831,7 +832,7 @@ public partial class Bot
 		}
 	}
 
-	/// <summary>Use this method to unban a previously banned user in a supergroup or channel. The user will <b>not</b> return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. By default, this method guarantees that after the call the user is not a member of the chat, but will be able to join it. So if the user is a member of the chat they will also be <b>removed</b> from the chat. If you don't want this, use the parameter <see cref="onlyIfBanned">onlyIfBanned</see>.</summary>
+	/// <summary>Use this method to unban a previously banned user in a supergroup or channel. The user will <b>not</b> return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. By default, this method guarantees that after the call the user is not a member of the chat, but will be able to join it. So if the user is a member of the chat they will also be <b>removed</b> from the chat. If you don't want this, use the parameter <paramref name="onlyIfBanned"/>.</summary>
 	/// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="userId">Unique identifier of the target user</param>
 	/// <param name="onlyIfBanned">Do nothing if the user is not banned</param>
@@ -938,7 +939,7 @@ public partial class Bot
 	/// <param name="name">Invite link name; 0-32 characters</param>
 	/// <param name="expireDate">Point in time when the link will expire</param>
 	/// <param name="memberLimit">The maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999</param>
-	/// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <see cref="memberLimit">memberLimit</see> can't be specified</param>
+	/// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified</param>
 	/// <returns>The new invite link as <see cref="ChatInviteLink"/> object.</returns>
 	public async Task<ChatInviteLink> CreateChatInviteLink(ChatId chatId, string? name = default, DateTime? expireDate = default,
 		int? memberLimit = default, bool createsJoinRequest = default)
@@ -954,7 +955,7 @@ public partial class Bot
 	/// <param name="name">Invite link name; 0-32 characters</param>
 	/// <param name="expireDate">Point in time when the link will expire</param>
 	/// <param name="memberLimit">The maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999</param>
-	/// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <see cref="memberLimit">memberLimit</see> can't be specified</param>
+	/// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified</param>
 	/// <returns>The edited invite link as a <see cref="ChatInviteLink"/> object.</returns>
 	public async Task<ChatInviteLink> EditChatInviteLink(ChatId chatId, string inviteLink, string? name = default,
 		DateTime? expireDate = default, int? memberLimit = default, bool createsJoinRequest = default)
@@ -1434,7 +1435,7 @@ public partial class Bot
 	/// <param name="messageId">Identifier of the message to edit</param>
 	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
 	/// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -1452,7 +1453,7 @@ public partial class Bot
 	/// <param name="inlineMessageId">Identifier of the inline message</param>
 	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
 	public async Task EditMessageText(string inlineMessageId, string text, ParseMode parseMode = default, IEnumerable<MessageEntity>? entities = default,
@@ -1470,7 +1471,7 @@ public partial class Bot
 	/// <param name="messageId">Identifier of the message to edit</param>
 	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
 	/// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -1487,7 +1488,7 @@ public partial class Bot
 	/// <param name="inlineMessageId">Identifier of the inline message</param>
 	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <see cref="parseMode">parseMode</see></param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
 	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
@@ -1524,12 +1525,12 @@ public partial class Bot
 			await MakeReplyMarkup(replyMarkup), ism.entities);
 	}
 
-	/// <summary>Use this method to edit live location messages. A location can be edited until its <see cref="livePeriod">livePeriod</see> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
+	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="messageId">Identifier of the message to edit</param>
 	/// <param name="latitude">Latitude of new location</param>
 	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <see cref="livePeriod">livePeriod</see> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <see cref="livePeriod">livePeriod</see> remains unchanged</param>
+	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
 	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
 	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
 	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
@@ -1543,11 +1544,11 @@ public partial class Bot
 		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer);
 	}
 
-	/// <summary>Use this method to edit live location messages. A location can be edited until its <see cref="livePeriod">livePeriod</see> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
+	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
 	/// <param name="inlineMessageId">Identifier of the inline message</param>
 	/// <param name="latitude">Latitude of new location</param>
 	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <see cref="livePeriod">livePeriod</see> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <see cref="livePeriod">livePeriod</see> remains unchanged</param>
+	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
 	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
 	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
 	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
@@ -1875,8 +1876,8 @@ public partial class Bot
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="providerData">JSON-serialized data about the invoice, which will be shared with the payment provider. A detailed description of required fields should be provided by the payment provider.</param>
-	/// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="maxTipAmount">maxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
-	/// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <see cref="maxTipAmount">maxTipAmount</see>.</param>
+	/// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><paramref name="maxTipAmount"/> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+	/// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <paramref name="maxTipAmount"/>.</param>
 	/// <param name="photoUrl">URL of the product photo for the invoice. Can be a photo of the goods or a marketing image for a service. People like it better when they see what they are paying for.</param>
 	/// <param name="photoSize">Photo size in bytes</param>
 	/// <param name="photoWidth">Photo width</param>
@@ -1924,8 +1925,8 @@ public partial class Bot
 	/// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="providerData">JSON-serialized data about the invoice, which will be shared with the payment provider. A detailed description of required fields should be provided by the payment provider.</param>
-	/// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><see cref="maxTipAmount">maxTipAmount</see> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
-	/// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <see cref="maxTipAmount">maxTipAmount</see>.</param>
+	/// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><paramref name="maxTipAmount"/> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+	/// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <paramref name="maxTipAmount"/>.</param>
 	/// <param name="photoUrl">URL of the product photo for the invoice. Can be a photo of the goods or a marketing image for a service.</param>
 	/// <param name="photoSize">Photo size in bytes</param>
 	/// <param name="photoWidth">Photo width</param>
@@ -1975,7 +1976,7 @@ public partial class Bot
 	/// <summary>Informs a user that some of the Telegram Passport elements they provided contains errors. The user will not be able to re-submit their Passport to you until the errors are fixed (the contents of the field for which you returned the error must change).<br/>Use this if the data submitted by the user doesn't satisfy the standards your service requires for any reason. For example, if a birthday date seems invalid, a submitted document is blurry, a scan shows evidence of tampering, etc. Supply some details in the error message to make sure the user knows how to correct the issues. </summary>
 	/// <param name="userId">User identifier</param>
 	/// <param name="errors">A array describing the errors</param>
-	public async Task SetPassportDataErrors(long userId, IEnumerable<Telegram.Bot.Types.Passport.PassportElementError> errors)
+	public async Task SetPassportDataErrors(long userId, IEnumerable<PassportElementError> errors)
 	{
 		var peer = InputPeerUser(userId);
 		await Client.Users_SetSecureValueErrors(peer, errors.Select(TypesTLConverters.SecureValueError).ToArray());
@@ -2009,7 +2010,7 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to set the score of the specified user in a game message.</summary>
-	/// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <see cref="force">force</see> is <em>False</em>.</remarks>
+	/// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
 	/// <param name="userId">User identifier</param>
 	/// <param name="score">New score, must be non-negative</param>
 	/// <param name="chatId">Unique identifier for the target chat</param>
@@ -2029,7 +2030,7 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to set the score of the specified user in a game message.</summary>
-	/// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <see cref="force">force</see> is <em>False</em>.</remarks>
+	/// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
 	/// <param name="userId">User identifier</param>
 	/// <param name="score">New score, must be non-negative</param>
 	/// <param name="inlineMessageId">Identifier of the inline message</param>
