@@ -18,8 +18,8 @@ public enum ParseMode
     /// <summary>
     /// <see cref="Message.Text"/> is plain text
     /// </summary>
-    [Display(Name = "Default")]
-    Default = 0,
+    [Display(Name = "None")]
+    None = 0,
 
     /// <summary>
     /// Markdown-formatted A <see cref="Message.Text"/>
@@ -28,7 +28,7 @@ public enum ParseMode
     /// This is a legacy mode, retained for backward compatibility
     /// </remarks>
     [Display(Name = "Markdown")]
-    Markdown = 1,
+    Markdown,
 
     /// <summary>
     /// HTML-formatted <see cref="Message.Text"/>
@@ -41,4 +41,8 @@ public enum ParseMode
     /// </summary>
     [Display(Name = "MarkdownV2")]
     MarkdownV2,
+
+#pragma warning disable CS1591
+    Default = None,
+#pragma warning restore CS1591
 }

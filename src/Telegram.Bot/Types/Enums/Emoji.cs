@@ -45,5 +45,5 @@ public enum Emoji
     /// Bowling. Result value is 1-6
     /// </summary>
     [Display(Name = "🎳")]
-    Bowling
+    Bowling,
 }

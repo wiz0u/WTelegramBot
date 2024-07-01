@@ -37,4 +37,7 @@ public partial class InputFileUrl : InputFile
     /// </summary>
     public InputFileUrl()
     { }
+
+    /// <summary>Implicit operator, same as <see cref="InputFileUrl(string)"/></summary>
+    public static implicit operator InputFileUrl(string url) => new(url);
 }

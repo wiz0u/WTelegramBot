@@ -11,7 +11,7 @@ public sealed partial class ReceiverOptions
 
     /// <summary>
     /// Identifier of the first update to be returned. Will be ignored if
-    /// <see cref="ThrowPendingUpdates"/> is set to <see langword="true"/>.
+    /// <see cref="DropPendingUpdates"/> is set to <see langword="true"/>.
     /// </summary>
     public int? Offset { get; set; }
 
@@ -51,5 +51,14 @@ public sealed partial class ReceiverOptions
     /// <c>null</c>, otherwise <see cref="AllowedUpdates"/> will effectively be set to
     /// receive all <see cref="Update"/>s.
     /// </summary>
-    public bool ThrowPendingUpdates { get; set; }
+    [Obsolete($"This property will be removed in future updates, use {nameof(DropPendingUpdates)} instead")]
+    public bool ThrowPendingUpdates { get => DropPendingUpdates; set => DropPendingUpdates = value; }
+
+    /// <summary>
+    /// Indicates if all pending <see cref="Update"/>s should be thrown out before start
+    /// polling. If set to <see langword="true"/> <see cref="AllowedUpdates"/> should be set to not
+    /// <c>null</c>, otherwise <see cref="AllowedUpdates"/> will effectively be set to
+    /// receive all <see cref="Update"/>s.
+    /// </summary>
+    public bool DropPendingUpdates { get; set; }
 }

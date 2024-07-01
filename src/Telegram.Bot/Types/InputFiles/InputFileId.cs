@@ -6,7 +6,7 @@ namespace Telegram.Bot.Types;
 /// <summary>
 /// This object represents a file that is already stored somewhere on the Telegram servers
 /// </summary>
-public partial class InputFileId : InputFile
+public class InputFileId : InputFile
 {
     /// <inheritdoc/>
     public override FileType FileType => FileType.Id;
@@ -29,4 +29,7 @@ public partial class InputFileId : InputFile
     [SetsRequiredMembers]
     public InputFileId(string id)
         => Id = id;
+
+    /// <summary>Implicit operator, same as <see cref="InputFileId(string)"/></summary>
+    public static implicit operator InputFileId(string fileId) => new(fileId);
 }

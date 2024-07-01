@@ -1,127 +1,79 @@
 ﻿namespace Telegram.Bot.Types;
 
-/// <summary>
-/// This object describes the type of a background. Currently, it can be one of<br/><see cref="BackgroundTypeFill"/>, <see cref="BackgroundTypeWallpaper"/>, <see cref="BackgroundTypePattern"/>, <see cref="BackgroundTypeChatTheme"/>
-/// </summary>
+/// <summary>This object describes the type of a background. Currently, it can be one of<br/><see cref="BackgroundTypeFill"/>, <see cref="BackgroundTypeWallpaper"/>, <see cref="BackgroundTypePattern"/>, <see cref="BackgroundTypeChatTheme"/></summary>
 public abstract partial class BackgroundType
 {
-    /// <summary>
-    /// Type of the background
-    /// </summary>
-    public abstract Enums.BackgroundTypeKind Type { get; }
+    /// <summary>Type of the background</summary>
+    public abstract BackgroundTypeKind Type { get; }
 }
 
-/// <summary>
-/// The background is automatically filled based on the selected colors.
-/// </summary>
+/// <summary>The background is automatically filled based on the selected colors.</summary>
 public partial class BackgroundTypeFill : BackgroundType
 {
-    /// <summary>
-    /// Type of the background, always <see cref="Enums.BackgroundTypeKind.Fill"/>
-    /// </summary>
-    public override Enums.BackgroundTypeKind Type => Enums.BackgroundTypeKind.Fill;
+    /// <summary>Type of the background, always <see cref="BackgroundTypeKind.Fill"/></summary>
+    public override BackgroundTypeKind Type => BackgroundTypeKind.Fill;
 
-    /// <summary>
-    /// The background fill
-    /// </summary>
+    /// <summary>The background fill</summary>
     public BackgroundFill Fill { get; set; } = default!;
 
-    /// <summary>
-    /// Dimming of the background in dark themes, as a percentage; 0-100
-    /// </summary>
+    /// <summary>Dimming of the background in dark themes, as a percentage; 0-100</summary>
     public int DarkThemeDimming { get; set; }
 }
 
-/// <summary>
-/// The background is a wallpaper in the JPEG format.
-/// </summary>
+/// <summary>The background is a wallpaper in the JPEG format.</summary>
 public partial class BackgroundTypeWallpaper : BackgroundType
 {
-    /// <summary>
-    /// Type of the background, always <see cref="Enums.BackgroundTypeKind.Wallpaper"/>
-    /// </summary>
-    public override Enums.BackgroundTypeKind Type => Enums.BackgroundTypeKind.Wallpaper;
+    /// <summary>Type of the background, always <see cref="BackgroundTypeKind.Wallpaper"/></summary>
+    public override BackgroundTypeKind Type => BackgroundTypeKind.Wallpaper;
 
-    /// <summary>
-    /// Document with the wallpaper
-    /// </summary>
+    /// <summary>Document with the wallpaper</summary>
     public Document Document { get; set; } = default!;
 
-    /// <summary>
-    /// Dimming of the background in dark themes, as a percentage; 0-100
-    /// </summary>
+    /// <summary>Dimming of the background in dark themes, as a percentage; 0-100</summary>
     public int DarkThemeDimming { get; set; }
 
-    /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if the wallpaper is downscaled to fit in a 450x450 square and then box-blurred with radius 12
-    /// </summary>
+    /// <summary><em>Optional</em>. <see langword="true"/>, if the wallpaper is downscaled to fit in a 450x450 square and then box-blurred with radius 12</summary>
     public bool IsBlurred { get; set; }
 
-    /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if the background moves slightly when the device is tilted
-    /// </summary>
+    /// <summary><em>Optional</em>. <see langword="true"/>, if the background moves slightly when the device is tilted</summary>
     public bool IsMoving { get; set; }
 }
 
-/// <summary>
-/// The background is a PNG or TGV (gzipped subset of SVG with MIME type “application/x-tgwallpattern”) pattern to be combined with the background fill chosen by the user.
-/// </summary>
+/// <summary>The background is a PNG or TGV (gzipped subset of SVG with MIME type “application/x-tgwallpattern”) pattern to be combined with the background fill chosen by the user.</summary>
 public partial class BackgroundTypePattern : BackgroundType
 {
-    /// <summary>
-    /// Type of the background, always <see cref="Enums.BackgroundTypeKind.Pattern"/>
-    /// </summary>
-    public override Enums.BackgroundTypeKind Type => Enums.BackgroundTypeKind.Pattern;
+    /// <summary>Type of the background, always <see cref="BackgroundTypeKind.Pattern"/></summary>
+    public override BackgroundTypeKind Type => BackgroundTypeKind.Pattern;
 
-    /// <summary>
-    /// Document with the pattern
-    /// </summary>
+    /// <summary>Document with the pattern</summary>
     public Document Document { get; set; } = default!;
 
-    /// <summary>
-    /// The background fill that is combined with the pattern
-    /// </summary>
+    /// <summary>The background fill that is combined with the pattern</summary>
     public BackgroundFill Fill { get; set; } = default!;
 
-    /// <summary>
-    /// Intensity of the pattern when it is shown above the filled background; 0-100
-    /// </summary>
+    /// <summary>Intensity of the pattern when it is shown above the filled background; 0-100</summary>
     public int Intensity { get; set; }
 
-    /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if the background fill must be applied only to the pattern itself. All other pixels are black in this case. For dark themes only
-    /// </summary>
+    /// <summary><em>Optional</em>. <see langword="true"/>, if the background fill must be applied only to the pattern itself. All other pixels are black in this case. For dark themes only</summary>
     public bool IsInverted { get; set; }
 
-    /// <summary>
-    /// <em>Optional</em>. <see langword="true"/>, if the background moves slightly when the device is tilted
-    /// </summary>
+    /// <summary><em>Optional</em>. <see langword="true"/>, if the background moves slightly when the device is tilted</summary>
     public bool IsMoving { get; set; }
 }
 
-/// <summary>
-/// The background is taken directly from a built-in chat theme.
-/// </summary>
+/// <summary>The background is taken directly from a built-in chat theme.</summary>
 public partial class BackgroundTypeChatTheme : BackgroundType
 {
-    /// <summary>
-    /// Type of the background, always <see cref="Enums.BackgroundTypeKind.ChatTheme"/>
-    /// </summary>
-    public override Enums.BackgroundTypeKind Type => Enums.BackgroundTypeKind.ChatTheme;
+    /// <summary>Type of the background, always <see cref="BackgroundTypeKind.ChatTheme"/></summary>
+    public override BackgroundTypeKind Type => BackgroundTypeKind.ChatTheme;
 
-    /// <summary>
-    /// Name of the chat theme, which is usually an emoji
-    /// </summary>
+    /// <summary>Name of the chat theme, which is usually an emoji</summary>
     public string ThemeName { get; set; } = default!;
 }
 
-/// <summary>
-/// This object represents a chat background.
-/// </summary>
+/// <summary>This object represents a chat background.</summary>
 public partial class ChatBackground
 {
-    /// <summary>
-    /// Type of the background
-    /// </summary>
+    /// <summary>Type of the background</summary>
     public BackgroundType Type { get; set; } = default!;
 }

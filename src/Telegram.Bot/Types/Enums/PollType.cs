@@ -17,5 +17,5 @@ public enum PollType
     /// <summary>
     /// Quiz
     /// </summary>
-    Quiz
+    Quiz,
 }

@@ -61,7 +61,7 @@ _(so the new linkPreviewOptions: parameter behaves the same as the old disableWe
 - Not using the annoying `MaybeInaccessibleMessage`, you would just get a `Message` of type Unknown with default Date if inaccessible
 - Removed many [Obsolete] tags for things that still simplify your code
 - Turned many nullable (like `bool?`) into normal type (like `bool`) when `null` meant the same as the default value (like `false`)
-- Turned some `ParseMode?` back into `ParseMode` (restoring the old `ParseMode.Default` which is the same as default/null)
+- Turned some `ParseMode?` back into `ParseMode` (restoring the old `ParseMode.None` which is the same as default/null)
 - Restored some `MessageType` enum value that were removed (renamed) recently (easier compatibility)
 - Not pushing you towards using silly Request-based constructors (seriously!?)
 

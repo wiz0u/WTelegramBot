@@ -8,7 +8,7 @@ namespace Telegram.Bot.Types;
 /// This object represents the contents of a file to be uploaded. Must be posted using multipart/form-data in
 /// the usual way that files are uploaded via the browser
 /// </summary>
-public partial class InputFileStream : InputFile
+public class InputFileStream : InputFile
 {
     /// <inheritdoc/>
     public override FileType FileType => FileType.Stream;
@@ -39,4 +39,7 @@ public partial class InputFileStream : InputFile
     /// </summary>
     public InputFileStream()
     { }
+
+    /// <summary>Implicit operator, same as <see cref="InputFileStream(Stream,string)"/> without given filename</summary>
+    public static implicit operator InputFileStream(Stream stream) => new(stream);
 }

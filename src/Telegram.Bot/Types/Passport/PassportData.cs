@@ -1,17 +1,11 @@
 ﻿namespace Telegram.Bot.Types.Passport;
 
-/// <summary>
-/// Describes Telegram Passport data shared with the bot by the user.
-/// </summary>
+/// <summary>Describes Telegram Passport data shared with the bot by the user.</summary>
 public partial class PassportData
 {
-    /// <summary>
-    /// Array with information about documents and other Telegram Passport elements that was shared with the bot
-    /// </summary>
+    /// <summary>Array with information about documents and other Telegram Passport elements that was shared with the bot</summary>
     public EncryptedPassportElement[] Data { get; set; } = default!;
 
-    /// <summary>
-    /// Encrypted credentials required to decrypt the data
-    /// </summary>
+    /// <summary>Encrypted credentials required to decrypt the data</summary>
     public EncryptedCredentials Credentials { get; set; } = default!;
 }

@@ -7,8 +7,6 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TL;
 using File = Telegram.Bot.Types.File;
 
-#pragma warning disable CS1572, CS1580
-
 namespace WTelegram;
 
 public partial class Bot
@@ -650,7 +648,7 @@ public partial class Bot
 	/// <param name="question">Poll question, 1-300 characters</param>
 	/// <param name="options">A list of 2-10 answer options</param>
 	/// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
-	/// <param name="type">Poll type, “quiz” or “regular”, defaults to “regular”</param>
+	/// <param name="type">Poll type, <see cref="PollType.Quiz">Quiz</see> or <see cref="PollType.Regular">Regular</see>, defaults to <see cref="PollType.Regular">Regular</see></param>
 	/// <param name="allowsMultipleAnswers"><see langword="true"/>, if the poll allows multiple answers, ignored for polls in quiz mode, defaults to <see langword="false"/></param>
 	/// <param name="correctOptionId">0-based identifier of the correct answer option, required for polls in quiz mode</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
@@ -1254,10 +1252,10 @@ public partial class Bot
 	/// <param name="iconColor">Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)</param>
 	/// <param name="iconCustomEmojiId">Unique identifier of the custom emoji shown as the topic icon. Use <see cref="WTelegram.Bot.GetForumTopicIconStickers">GetForumTopicIconStickers</see> to get all allowed custom emoji identifiers.</param>
 	/// <returns>Information about the created topic as a <see cref="ForumTopic"/> object.</returns>
-	public async Task<ForumTopic> CreateForumTopic(ChatId chatId, string name, Color? iconColor = default, string? iconCustomEmojiId = default)
+	public async Task<ForumTopic> CreateForumTopic(ChatId chatId, string name, int? iconColor = default, string? iconCustomEmojiId = default)
 	{
 		var channel = await InputChannel(chatId);
-		var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor?.ToInt(),
+		var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor,
 			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
 		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
 		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId };
@@ -1706,7 +1704,7 @@ public partial class Bot
 	/// <summary>Use this method to upload a file with a sticker for later use in the <see cref="WTelegram.Bot.CreateNewStickerSet">CreateNewStickerSet</see>, <see cref="WTelegram.Bot.AddStickerToSet">AddStickerToSet</see>, or <see cref="WTelegram.Bot.ReplaceStickerInSet">ReplaceStickerInSet</see> methods (the file can be used multiple times).</summary>
 	/// <param name="userId">User identifier of sticker file owner</param>
 	/// <param name="sticker">A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format. See <a href="https://core.telegram.org/stickers">https://core.telegram.org/stickers</a> for technical requirements. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="stickerFormat">Format of the sticker, must be one of <see cref="Enums.StickerFormat.Static">Static</see>, <see cref="Enums.StickerFormat.Animated">Animated</see>, <see cref="Enums.StickerFormat.Video">Video</see></param>
+	/// <param name="stickerFormat">Format of the sticker, must be one of <see cref="StickerFormat.Static">Static</see>, <see cref="StickerFormat.Animated">Animated</see>, <see cref="StickerFormat.Video">Video</see></param>
 	/// <returns>The uploaded <see cref="File"/> on success.</returns>
 	public async Task<File> UploadStickerFile(long userId, InputFileStream sticker, StickerFormat stickerFormat)
 	{
@@ -1728,7 +1726,7 @@ public partial class Bot
 	/// <param name="name">Short name of sticker set, to be used in <c>t.me/addstickers/</c> URLs (e.g., <em>animals</em>). Can contain only English letters, digits and underscores. Must begin with a letter, can't contain consecutive underscores and must end in <c>"_by_&lt;BotUsername&gt;"</c>. <c>&lt;BotUsername&gt;</c> is case insensitive. 1-64 characters.</param>
 	/// <param name="title">Sticker set title, 1-64 characters</param>
 	/// <param name="stickers">A list of 1-50 initial stickers to be added to the sticker set</param>
-	/// <param name="stickerType">Type of stickers in the set, pass <see cref="Enums.StickerType.Regular">Regular</see>, <see cref="Enums.StickerType.Mask">Mask</see>, or <see cref="Enums.StickerType.CustomEmoji">CustomEmoji</see>. By default, a regular sticker set is created.</param>
+	/// <param name="stickerType">Type of stickers in the set, pass <see cref="StickerType.Regular">Regular</see>, <see cref="StickerType.Mask">Mask</see>, or <see cref="StickerType.CustomEmoji">CustomEmoji</see>. By default, a regular sticker set is created.</param>
 	/// <param name="needsRepainting">Pass <see langword="true"/> if stickers in the sticker set must be repainted to the color of text when used in messages, the accent color if used as emoji status, white on chat photos, or another appropriate color based on context; for custom emoji sticker sets only</param>
 	public async Task CreateNewStickerSet(long userId, string name, string title, IEnumerable<InputSticker> stickers,
 		StickerType? stickerType = default, bool needsRepainting = default)
@@ -1803,7 +1801,7 @@ public partial class Bot
 	/// <summary>Use this method to set the thumbnail of a regular or mask sticker set. The format of the thumbnail file must match the format of the stickers in the set.</summary>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="userId">User identifier of the sticker set owner</param>
-	/// <param name="format">Format of the thumbnail, must be one of <see cref="Enums.StickerFormat.Static">Static</see> for a <b>.WEBP</b> or <b>.PNG</b> image, <see cref="Enums.StickerFormat.Animated">Animated</see> for a <b>.TGS</b> animation, or <see cref="Enums.StickerFormat.Video">Video</see> for a <b>WEBM</b> video</param>
+	/// <param name="format">Format of the thumbnail, must be one of <see cref="StickerFormat.Static">Static</see> for a <b>.WEBP</b> or <b>.PNG</b> image, <see cref="StickerFormat.Animated">Animated</see> for a <b>.TGS</b> animation, or <see cref="StickerFormat.Video">Video</see> for a <b>WEBM</b> video</param>
 	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animated-sticker-requirements">https://core.telegram.org/stickers#animated-sticker-requirements</a> for animated sticker technical requirements), or a <b>WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-sticker-requirements">https://core.telegram.org/stickers#video-sticker-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
 	public async Task SetStickerSetThumbnail(string name, long userId, StickerFormat format, InputFile? thumbnail = default)
 	{
@@ -1970,6 +1968,15 @@ public partial class Bot
 	{
 		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), errorMessage, success: errorMessage == null);
 	}
+
+	/// <summary>Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</summary>
+	/// <param name="userId">Identifier of the user whose payment will be refunded</param>
+	/// <param name="telegramPaymentChargeId">Telegram payment identifier</param>
+	public async Task RefundStarPayment(long userId, string telegramPaymentChargeId)
+	{
+		await Client.Payments_RefundStarsCharge(InputUser(userId), telegramPaymentChargeId);
+	}
+
 	#endregion Payments
 
 	#region Telegram Passport

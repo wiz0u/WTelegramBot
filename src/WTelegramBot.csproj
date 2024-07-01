@@ -35,6 +35,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <None Include="..\.github\dev.yml" Link="Data\dev.yml" />
     <None Include="..\.github\release.yml" Link="Data\release.yml" />
     <None Include="..\README.md" Link="Data\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\CHANGES.md" Link="Data\CHANGES.md" Pack="true" PackagePath="\" />
     <None Include="..\logo.png" Link="Data\logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
@@ -48,6 +49,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WTelegramClient" Version="4.1.2-dev.5" />
+    <!--<PackageReference Include="WTelegramClient" Version="4.1.2-dev.5" />-->
+    <ProjectReference Include="..\..\WTelegramClient\src\WTelegramClient.csproj" />
   </ItemGroup>
 </Project>

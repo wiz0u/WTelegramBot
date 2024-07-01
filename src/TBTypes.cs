@@ -122,26 +122,6 @@ namespace Telegram.Bot.Types
 			$"{(Username is null ? $"{FirstName}{LastName?.Insert(0, " ")}" : $"@{Username}")} ({Id})";
 	}
 
-	public partial class InputFile
-	{
-		/// <summary>Implicit operator, same as <see cref="InputFile.FromStream"/></summary>
-		public static implicit operator InputFile(Stream stream) => FromStream(stream);
-		/// <summary>Implicit operator, same as <see cref="InputFile.FromString"/></summary>
-		public static implicit operator InputFile(string urlOrFileId) => FromString(urlOrFileId);
-	}
-
-	public partial class InputFileId
-	{
-		/// <summary>Implicit operator, same as <see cref="InputFileId(string)"/></summary>
-		public static implicit operator InputFileId(string fileId) => new(fileId);
-	}
-
-	public partial class InputFileStream
-	{
-		/// <summary>Implicit operator, same as <see cref="InputFileStream(Stream)"/></summary>
-		public static implicit operator InputFileStream(Stream stream) => new(stream);
-	}
-
 	/// <summary>Type of a <see cref="MessageEntity"/></summary>
 	public static class MessageEntityType // litterals are suffix of MessageEntity* classes
 	{
@@ -247,7 +227,7 @@ namespace Telegram.Bot.Types
 
 	public partial class InputPollOption
 	{
-		/// <summary>Implicit operator, same as <see cref="InputFileId(string)"/></summary>
+		/// <summary>Implicit operator for compatibility</summary>
 		public static implicit operator InputPollOption(string text) => new() { Text = text };
 	}
 

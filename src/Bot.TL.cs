@@ -665,16 +665,16 @@ public partial class Bot
 					mime_type = "image/jpeg",
 					attributes = iimc.PhotoWidth + iimc.PhotoHeight > 0 ? [new TL.DocumentAttributeImageSize { w = iimc.PhotoWidth ?? 0, h = iimc.PhotoHeight ?? 0 }] : null
 				},
-				invoice = new Invoice
+				invoice = new TL.Invoice
 				{
-					flags = (iimc.MaxTipAmount.HasValue ? Invoice.Flags.has_max_tip_amount : 0)
-						| (iimc.NeedName == true ? Invoice.Flags.name_requested : 0)
-						| (iimc.NeedPhoneNumber == true ? Invoice.Flags.phone_requested : 0)
-						| (iimc.NeedEmail == true ? Invoice.Flags.email_requested : 0)
-						| (iimc.NeedShippingAddress == true ? Invoice.Flags.shipping_address_requested : 0)
-						| (iimc.SendPhoneNumberToProvider == true ? Invoice.Flags.phone_to_provider : 0)
-						| (iimc.SendEmailToProvider == true ? Invoice.Flags.email_to_provider : 0)
-						| (iimc.IsFlexible == true ? Invoice.Flags.flexible : 0),
+					flags = (iimc.MaxTipAmount.HasValue ? TL.Invoice.Flags.has_max_tip_amount : 0)
+						| (iimc.NeedName == true ? TL.Invoice.Flags.name_requested : 0)
+						| (iimc.NeedPhoneNumber == true ? TL.Invoice.Flags.phone_requested : 0)
+						| (iimc.NeedEmail == true ? TL.Invoice.Flags.email_requested : 0)
+						| (iimc.NeedShippingAddress == true ? TL.Invoice.Flags.shipping_address_requested : 0)
+						| (iimc.SendPhoneNumberToProvider == true ? TL.Invoice.Flags.phone_to_provider : 0)
+						| (iimc.SendEmailToProvider == true ? TL.Invoice.Flags.email_to_provider : 0)
+						| (iimc.IsFlexible == true ? TL.Invoice.Flags.flexible : 0),
 					currency = iimc.Currency,
 					prices = iimc.Prices.LabeledPrices(),
 					max_tip_amount = iimc.MaxTipAmount ?? 0,

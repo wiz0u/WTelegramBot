@@ -4,7 +4,14 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 global using System.Diagnostics.CodeAnalysis;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
 global using Telegram.Bot.Types;
+global using Telegram.Bot.Types.Enums;
+global using Telegram.Bot.Types.InlineQueryResults;
+global using Telegram.Bot.Types.Passport;
+global using Telegram.Bot.Types.Payments;
+global using Telegram.Bot.Types.ReplyMarkups;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
 global using Chat = Telegram.Bot.Types.Chat;
