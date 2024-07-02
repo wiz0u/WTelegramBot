@@ -1,8 +1,4 @@
 ﻿using System.Text;
-using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InlineQueryResults;
-using Telegram.Bot.Types.ReplyMarkups;
 using TL;
 using KeyboardButton = Telegram.Bot.Types.ReplyMarkups.KeyboardButton;
 using ReplyKeyboardMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyKeyboardMarkup;

@@ -1,8 +1,5 @@
 ﻿using System.Text;
 using TL;
-using Telegram.Bot.Types.Enums;
-using System.Diagnostics.CodeAnalysis;
-using Telegram.Bot.Exceptions;
 
 namespace WTelegram;
 

@@ -1,10 +1,4 @@
-﻿using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InlineQueryResults;
-using Telegram.Bot.Types.Passport;
-using Telegram.Bot.Types.Payments;
-using Telegram.Bot.Types.ReplyMarkups;
-using TL;
+﻿using TL;
 using File = Telegram.Bot.Types.File;
 
 namespace WTelegram;

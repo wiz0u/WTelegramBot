@@ -1,8 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using Telegram.Bot.Exceptions;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿using System.Text;
 using TL;
 using WTelegram;
 
@@ -506,60 +502,60 @@ public static class TypesTLConverters
 		return [.. result];
 	}
 
-	internal static SecureValueErrorBase SecureValueError(Passport.PassportElementError error)
+	internal static SecureValueErrorBase SecureValueError(PassportElementError error)
 	{
 		var type = error.Type.ToSecureValueType();
 		var text = error.Message;
 		return error switch
 		{
-			Passport.PassportElementErrorDataField e => new SecureValueErrorData { type = type, text = text, data_hash = e.DataHash.FromBase64(), field = e.FieldName },
-			Passport.PassportElementErrorFrontSide e => new SecureValueErrorFrontSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			Passport.PassportElementErrorReverseSide e => new SecureValueErrorReverseSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			Passport.PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64()},
-			Passport.PassportElementErrorFile e => new SecureValueErrorFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			Passport.PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
-			Passport.PassportElementErrorTranslationFile e => new SecureValueErrorTranslationFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			Passport.PassportElementErrorTranslationFiles e => new SecureValueErrorTranslationFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
-			Passport.PassportElementErrorUnspecified e => new SecureValueError { type = type, text = text, hash = e.ElementHash.FromBase64() },
+			PassportElementErrorDataField e => new SecureValueErrorData { type = type, text = text, data_hash = e.DataHash.FromBase64(), field = e.FieldName },
+			PassportElementErrorFrontSide e => new SecureValueErrorFrontSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			PassportElementErrorReverseSide e => new SecureValueErrorReverseSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64()},
+			PassportElementErrorFile e => new SecureValueErrorFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			PassportElementErrorTranslationFile e => new SecureValueErrorTranslationFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
+			PassportElementErrorTranslationFiles e => new SecureValueErrorTranslationFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			PassportElementErrorUnspecified e => new SecureValueError { type = type, text = text, hash = e.ElementHash.FromBase64() },
 			_ => throw new WTException("Unrecognized PassportElementError")
 		};
 	}
 
-	internal static SecureValueType ToSecureValueType(this Passport.EncryptedPassportElementType type) => type switch
+	internal static SecureValueType ToSecureValueType(this EncryptedPassportElementType type) => type switch
 	{
-		Passport.EncryptedPassportElementType.PersonalDetails => SecureValueType.PersonalDetails,
-		Passport.EncryptedPassportElementType.Passport => SecureValueType.Passport,
-		Passport.EncryptedPassportElementType.DriverLicense => SecureValueType.DriverLicense,
-		Passport.EncryptedPassportElementType.IdentityCard => SecureValueType.IdentityCard,
-		Passport.EncryptedPassportElementType.InternalPassport => SecureValueType.InternalPassport,
-		Passport.EncryptedPassportElementType.Address => SecureValueType.Address,
-		Passport.EncryptedPassportElementType.UtilityBill => SecureValueType.UtilityBill,
-		Passport.EncryptedPassportElementType.BankStatement => SecureValueType.BankStatement,
-		Passport.EncryptedPassportElementType.RentalAgreement => SecureValueType.RentalAgreement,
-		Passport.EncryptedPassportElementType.PassportRegistration => SecureValueType.PassportRegistration,
-		Passport.EncryptedPassportElementType.TemporaryRegistration => SecureValueType.TemporaryRegistration,
-		Passport.EncryptedPassportElementType.PhoneNumber => SecureValueType.Phone,
-		Passport.EncryptedPassportElementType.Email => SecureValueType.Email,
+		EncryptedPassportElementType.PersonalDetails => SecureValueType.PersonalDetails,
+		EncryptedPassportElementType.Passport => SecureValueType.Passport,
+		EncryptedPassportElementType.DriverLicense => SecureValueType.DriverLicense,
+		EncryptedPassportElementType.IdentityCard => SecureValueType.IdentityCard,
+		EncryptedPassportElementType.InternalPassport => SecureValueType.InternalPassport,
+		EncryptedPassportElementType.Address => SecureValueType.Address,
+		EncryptedPassportElementType.UtilityBill => SecureValueType.UtilityBill,
+		EncryptedPassportElementType.BankStatement => SecureValueType.BankStatement,
+		EncryptedPassportElementType.RentalAgreement => SecureValueType.RentalAgreement,
+		EncryptedPassportElementType.PassportRegistration => SecureValueType.PassportRegistration,
+		EncryptedPassportElementType.TemporaryRegistration => SecureValueType.TemporaryRegistration,
+		EncryptedPassportElementType.PhoneNumber => SecureValueType.Phone,
+		EncryptedPassportElementType.Email => SecureValueType.Email,
 		_ => throw new WTException("Unrecognized EncryptedPassportElementType")
 	};
 
-	internal static Passport.EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
+	internal static EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
 	{
 		Type = sv.type switch
 		{
-			SecureValueType.PersonalDetails => Passport.EncryptedPassportElementType.PersonalDetails,
-			SecureValueType.Passport => Passport.EncryptedPassportElementType.Passport,
-			SecureValueType.DriverLicense => Passport.EncryptedPassportElementType.DriverLicense,
-			SecureValueType.IdentityCard => Passport.EncryptedPassportElementType.IdentityCard,
-			SecureValueType.InternalPassport => Passport.EncryptedPassportElementType.InternalPassport,
-			SecureValueType.Address => Passport.EncryptedPassportElementType.Address,
-			SecureValueType.UtilityBill => Passport.EncryptedPassportElementType.UtilityBill,
-			SecureValueType.BankStatement => Passport.EncryptedPassportElementType.BankStatement,
-			SecureValueType.RentalAgreement => Passport.EncryptedPassportElementType.RentalAgreement,
-			SecureValueType.PassportRegistration => Passport.EncryptedPassportElementType.PassportRegistration,
-			SecureValueType.TemporaryRegistration => Passport.EncryptedPassportElementType.TemporaryRegistration,
-			SecureValueType.Phone => Passport.EncryptedPassportElementType.PhoneNumber,
-			SecureValueType.Email => Passport.EncryptedPassportElementType.Email,
+			SecureValueType.PersonalDetails => EncryptedPassportElementType.PersonalDetails,
+			SecureValueType.Passport => EncryptedPassportElementType.Passport,
+			SecureValueType.DriverLicense => EncryptedPassportElementType.DriverLicense,
+			SecureValueType.IdentityCard => EncryptedPassportElementType.IdentityCard,
+			SecureValueType.InternalPassport => EncryptedPassportElementType.InternalPassport,
+			SecureValueType.Address => EncryptedPassportElementType.Address,
+			SecureValueType.UtilityBill => EncryptedPassportElementType.UtilityBill,
+			SecureValueType.BankStatement => EncryptedPassportElementType.BankStatement,
+			SecureValueType.RentalAgreement => EncryptedPassportElementType.RentalAgreement,
+			SecureValueType.PassportRegistration => EncryptedPassportElementType.PassportRegistration,
+			SecureValueType.TemporaryRegistration => EncryptedPassportElementType.TemporaryRegistration,
+			SecureValueType.Phone => EncryptedPassportElementType.PhoneNumber,
+			SecureValueType.Email => EncryptedPassportElementType.Email,
 			_ => 0,
 		},
 		Data = sv.data?.data.ToBase64(),
@@ -573,14 +569,14 @@ public static class TypesTLConverters
 		Hash = sv.hash.ToBase64()
 	};
 
-	internal static Passport.PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
+	internal static PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
 	{
 		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
-		Credentials = new Passport.EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
+		Credentials = new EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
 	};
 
-	private static Passport.PassportFile PassportFile(this SecureFile file)
-		=> new Passport.PassportFile { FileSize = file.size, FileDate = file.date }.SetFileIds(file.ToFileLocation(), file.dc_id);
+	private static PassportFile PassportFile(this SecureFile file)
+		=> new PassportFile { FileSize = file.size, FileDate = file.date }.SetFileIds(file.ToFileLocation(), file.dc_id);
 
 	internal static SharedUser ToSharedUser(this RequestedPeer peer) => peer is not RequestedPeerUser rpu ? null! :
 		new SharedUser { UserId = rpu.user_id, FirstName = rpu.first_name, LastName = rpu.last_name, Username = rpu.username, Photo = rpu.photo.PhotoSizes() };

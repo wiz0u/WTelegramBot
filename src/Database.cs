@@ -190,16 +190,16 @@ internal partial class Database : IDisposable
 		using var reader = _cmd[LoadChat].ExecuteReader();
 		if (!reader.Read()) return null;
 		var flags = reader.GetInt32(1);
-		var type = (Telegram.Bot.Types.Enums.ChatType)reader.GetInt32(5);
+		var type = (ChatType)reader.GetInt32(5);
 		var firstName = reader.GetString(2);
 		return new Chat
 		{
 			Id = id,
 			AccessHash = reader.GetInt64(0),
 			Type = type,
-			Title = type == Telegram.Bot.Types.Enums.ChatType.Private ? null : firstName,
-			FirstName = type == Telegram.Bot.Types.Enums.ChatType.Private ? firstName : null,
-			LastName = type == Telegram.Bot.Types.Enums.ChatType.Private ? reader.GetString(3).NullIfEmpty() : null,
+			Title = type == ChatType.Private ? null : firstName,
+			FirstName = type == ChatType.Private ? firstName : null,
+			LastName = type == ChatType.Private ? reader.GetString(3).NullIfEmpty() : null,
 			Username = reader.GetString(4).NullIfEmpty(),
 			IsForum = (flags & 1) != 0,
 		};
@@ -211,7 +211,7 @@ internal partial class Database : IDisposable
 		param[0].Value = chat.Id;
 		param[1].Value = chat.AccessHash;
 		param[2].Value = chat.IsForum == true ? 1 : 0;
-		param[3].Value = (chat.Type == Telegram.Bot.Types.Enums.ChatType.Private ? chat.FirstName : chat.Title) ?? "";
+		param[3].Value = (chat.Type == ChatType.Private ? chat.FirstName : chat.Title) ?? "";
 		param[4].Value = chat.LastName ?? "";
 		param[5].Value = chat.Username ?? "";
 		param[6].Value = chat.Type;

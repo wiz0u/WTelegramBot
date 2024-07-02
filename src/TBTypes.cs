@@ -1,6 +1,3 @@
-using Telegram.Bot.Types.Enums;
-
-
 #pragma warning disable CS9113
 namespace Telegram.Bot.Requests
 {
