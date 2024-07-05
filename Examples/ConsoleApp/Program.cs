@@ -3,6 +3,7 @@
 // ----------------------------------------------------------------------------------------------
 using System.Text;
 using Telegram.Bot;
+using Telegram.Bot.Serialization;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TL;
@@ -26,7 +27,6 @@ using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
 //          use new TelegramBotClient(...) instead, if you want the compatibility layer for your existing code
 var my = await bot.GetMe();
 Console.WriteLine($"I am @{my.Username}");
-
 
 // get details about a user via the public username (even if not in discussion with bot)
 if (await bot.InputUser("@spotifysavebot") is { user_id: var userId })
@@ -74,20 +74,21 @@ foreach (var m in messages)
 //---------------------------------------------------------------------------------------
 // show some message info not accessible in Bot API
 var msg = messages[0];
-if (msg.TLMessage is TL.Message tlMsg)
-	Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}");
+var tlMsg = msg.TLMessage() as TL.Message;
+Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}");
 
 //---------------------------------------------------------------------------------------
 // convert message text to HTML
-var html = bot.Client.EntitiesToHtml(msg.Text, msg.Entities, true);
+var html = bot.Client.EntitiesToHtml(msg.Text, tlMsg.entities, true);
 Console.WriteLine("Text in HTML: " + html);
 
 //---------------------------------------------------------------------------------------
 // convert message caption to Markdown
-var markdown = bot.Client.EntitiesToMarkdown(msg.Text, msg.Entities, true);
+var markdown = bot.Client.EntitiesToMarkdown(msg.Text, tlMsg.entities, true);
 
 Console.WriteLine("___________________________________________________\n");
 Console.WriteLine("I'm listening now. Send me a command in private or in a group where I am... Or press Escape to exit");
+await bot.DropPendingUpdates();
 bot.WantUnknownTLUpdates = true;
 for (int offset = 0; ;)
 {
@@ -124,14 +125,14 @@ for (int offset = 0; ;)
 				else if (text == "lastseen")
 				{
 					//---> Show more user info that is normally not accessible in Bot API:
-					var tlUser = message.From?.TLUser;
+					var tlUser = message.From?.TLUser();
 					await bot.SendTextMessage(message.Chat, $"Your last seen is: {tlUser?.status?.ToString()?[13..]}");
 				}
 				else if (text == "getchat")
 				{
 					var chat = await bot.GetChat(message.Chat);
-					//---> Demonstrate how to serialize structure to Json (not using Newtonsoft), and post it in <pre> code
-					var dump = System.Text.Json.JsonSerializer.Serialize(chat, WTelegram.BotHelpers.JsonOptions);
+					//---> Demonstrate how to serialize structure to Json, and post it in <pre> code
+					var dump = System.Text.Json.JsonSerializer.Serialize(chat, JsonSerializerOptionsProvider.Options);
 					dump = $"<pre>{TL.HtmlText.Escape(dump)}</pre>";
 					await bot.SendTextMessage(message.Chat, dump, parseMode: ParseMode.Html);
 				}

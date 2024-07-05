@@ -14,28 +14,26 @@ global using Telegram.Bot.Types.Payments;
 global using Telegram.Bot.Types.ReplyMarkups;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
-global using Chat = Telegram.Bot.Types.Chat;
+global using Chat = WTelegram.Types.Chat;
+global using ChatFullInfo = WTelegram.Types.ChatFullInfo;
 global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using Message = Telegram.Bot.Types.Message;
 global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
 global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
-global using Update = Telegram.Bot.Types.Update;
-global using User = Telegram.Bot.Types.User;
-global using MessageEntity = TL.MessageEntity;
+global using Update = WTelegram.Types.Update;
+global using User = WTelegram.Types.User;
+global using MessageEntity = Telegram.Bot.Types.MessageEntity;
 using System.ComponentModel;
 
-[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "member", Target = "~M:Telegram.Bot.TelegramBotClientExtensions.StartReceiving(Telegram.Bot.ITelegramBotClient,Telegram.Bot.Polling.IUpdateHandler,Telegram.Bot.Polling.ReceiverOptions,System.Threading.CancellationToken)")]
-[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "namespace", Target = "~N:Telegram.Bot.Types.InlineQueryResults")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClient.LocalBotServer")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.TelegramBotClientOptions.LocalBotServer")]
-[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.TelegramBotClientOptions")]
-
-#pragma warning disable CS9113
+[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClient.LocalBotServer")]
+[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClientOptions.LocalBotServer")]
+[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.WTelegramBotClientOptions")]
 
 #if NETSTANDARD2_0
+#pragma warning disable CS9113
 namespace System.Runtime.CompilerServices
 {
 	internal static class RuntimeHelpers

@@ -9,44 +9,23 @@ public static class TypesTLConverters
 {
 	const long ZERO_CHANNEL_ID = -1000000000000;
 
-	/// <summary>
-	/// <em>Optional</em>. For <see cref="MessageEntityTextUrl"/> only, url that will be opened after user taps on the text
-	/// </summary>
-	public static string? Url(this MessageEntity entity)
-		=> (entity as MessageEntityTextUrl)?.url;
-
-	/// <summary>
-	/// <em>Optional</em>. For <see cref="MessageEntityMentionName"/> only, the mentioned user id
-	/// </summary>
-	/// <remarks>Use <see cref="TelegramBotClient.User(long)"/> to obtain user details from this id</remarks>
-	public static long? UserId(this MessageEntity entity)
-		=> (entity as MessageEntityMentionName)?.user_id ?? (entity as InputMessageEntityMentionName)?.user_id.UserId;
-
-	/// <summary>
-	/// <em>Optional</em>. For <see cref="MessageEntityType.TextMention"/> only, the mentioned user
-	/// </summary>
-	public static User? User(this MessageEntity entity, ITelegramBotClient botClient)
-		=> entity.UserId() is long userId ? botClient.Bot.User(userId) ?? new User { Id = userId, FirstName = "" } : null;
-
-	/// <summary>
-	/// <em>Optional</em>. For <see cref="MessageEntityType.Pre"/> only, the programming language of the entity text
-	/// </summary>
-	public static string? Language(this MessageEntity entity)
-		=> (entity as MessageEntityPre)?.language;
-
-	/// <summary>
-	/// <em>Optional</em>. For <see cref="MessageEntityType.CustomEmoji"/> only, unique identifier of the custom emoji.
-	/// Use <see cref="Requests.GetCustomEmojiStickersRequest"/> to get full information about the sticker
-	/// </summary>
-	public static string? CustomEmojiId(this MessageEntity entity)
-		=> (entity as MessageEntityCustomEmoji)?.document_id.ToString();
+	/// <summary>The corresponding Client API chat structure. Real type can be TL.User, TL.Chat, TL.Channel...</summary>
+	public static TL.IObject? TLInfo(this Chat chat) => (chat as WTelegram.Types.Chat)?.TLInfo;
+	/// <summary>The corresponding Client API chat full structure. Real type can be TL.Users_UserFull, TL.Messages_ChatFull)</summary>
+	public static TL.IObject? TLInfo(this ChatFullInfo chat) => (chat as WTelegram.Types.ChatFullInfo)?.TLInfo;
+	/// <summary>The corresponding Client API user structure</summary>
+	public static TL.User? TLUser(this User user) => (user as WTelegram.Types.User)?.TLUser;
+	/// <summary>The corresponding Client API update structure</summary>
+	public static TL.Update? TLUpdate(this Update update) => (update as WTelegram.Types.Update)?.TLUpdate;
+	/// <summary>The corresponding Client API message structure</summary>
+	public static TL.MessageBase? TLMessage(this Message message) => (message as WTelegram.Types.Message)?.TLMessage;
 
 	/// <summary>Convert TL.User to Bot Types.User</summary>
 	[return: NotNullIfNotNull(nameof(user))]
-	public static User? User(this TL.User? user)
+	public static WTelegram.Types.User? User(this TL.User? user)
 	{
 		if (user == null) return null;
-		var result = new User
+		var result = new WTelegram.Types.User
 		{
 			TLUser = user,
 			Id = user.id,
@@ -71,10 +50,10 @@ public static class TypesTLConverters
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(chat))]
-	public static Chat? Chat(this ChatBase? chat)
+	public static WTelegram.Types.Chat? Chat(this ChatBase? chat)
 	{
 		var channel = chat as Channel;
-		return chat == null ? null : new Chat
+		return chat == null ? null : new()
 		{
 			TLInfo = chat,
 			Id = (channel == null ? 0 : ZERO_CHANNEL_ID) - chat.ID,
@@ -88,7 +67,7 @@ public static class TypesTLConverters
 
 	/// <summary>Convert TL.User to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(user))]
-	public static Chat? Chat(this TL.User? user) => user == null ? null : new Chat
+	public static WTelegram.Types.Chat? Chat(this TL.User? user) => user == null ? null : new()
 	{
 		TLInfo = user,
 		Id = user.id,
@@ -101,7 +80,7 @@ public static class TypesTLConverters
 
 	/// <summary>Convert Bot Types.User to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(user))]
-	public static Chat? Chat(this User? user) => user == null ? null : new Chat
+	public static WTelegram.Types.Chat? Chat(this WTelegram.Types.User? user) => user == null ? null : new()
 	{
 		TLInfo = user.TLUser,
 		Id = user.Id,

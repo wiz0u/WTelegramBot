@@ -1,14 +1,13 @@
 ﻿using System.Data.Common;
-using Telegram.Bot.Requests;
 
 namespace Telegram.Bot;
 
 /// <summary>
 /// A client to use the Telegram Bot API
 /// </summary>
-public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
+public partial class WTelegramBotClient : WTelegram.Bot, ITelegramBotClient
 {
-    readonly TelegramBotClientOptions _options;
+    readonly WTelegramBotClientOptions _options;
 
     /// <inheritdoc/>
     public WTelegram.Bot Bot => this;
@@ -25,43 +24,49 @@ public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(100);
 
     /// <summary>
-    /// Create a new <see cref="TelegramBotClient"/> instance.
+    /// Global cancellation token
     /// </summary>
-    /// <param name="options">Configuration for <see cref="TelegramBotClient" /></param>
+    public CancellationToken GlobalCancelToken { get; }
+
+    /// <summary>
+    /// Create a new <see cref="WTelegramBotClient"/> instance.
+    /// </summary>
+    /// <param name="options">Configuration for <see cref="WTelegramBotClient" /></param>
+    /// <param name="cancellationToken">Global cancellation token</param>
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="options"/> is <c>null</c>
     /// </exception>
-    public TelegramBotClient(TelegramBotClientOptions options)
+    public WTelegramBotClient(WTelegramBotClientOptions options, CancellationToken cancellationToken = default)
         : base(options.WTCConfig, options.DbConnection, options.SqlCommands, false)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        GlobalCancelToken = cancellationToken;
         if (options.WaitForLogin)
             try
             {
-                _initTask.Wait();
+                _initTask.Wait(cancellationToken);
             }
             catch (WTelegram.WTException ex) { throw MakeException(ex); }
     }
 
     /// <summary>
-    /// Create a new <see cref="TelegramBotClient"/> instance.
+    /// Create a new <see cref="WTelegramBotClient"/> instance.
     /// </summary>
     /// <param name="token">The bot token</param>
     /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
     /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
     /// <param name="dbConnection">DB connection for storage and later resume</param>
-    public TelegramBotClient(string token, int apiId, string apiHash, DbConnection dbConnection) :
-        this(new TelegramBotClientOptions(token, apiId, apiHash, dbConnection))
+    /// <param name="cancellationToken">Global cancellation token</param>
+    public WTelegramBotClient(string token, int apiId, string apiHash, DbConnection dbConnection, CancellationToken cancellationToken = default) :
+        this(new WTelegramBotClientOptions(token, apiId, apiHash, dbConnection), cancellationToken)
     { }
 
-    /// <inheritdoc />
-    public virtual Task<Update[]> MakeRequestAsync(
-        GetUpdatesRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null) { throw new ArgumentNullException(nameof(request)); }
-        return GetUpdates(request.Offset ?? 0, request.Limit ?? 100, request.Timeout ?? 0, request.AllowedUpdates, cancellationToken);
-    }
+	[Obsolete("Not supported by WTelegramBot")]
+	Exceptions.IExceptionParser ITelegramBotClient.ExceptionsParser { get; set; } = null!;
+    [Obsolete("Not supported by WTelegramBot")]
+    event AsyncEventHandler<Args.ApiRequestEventArgs>? ITelegramBotClient.OnMakingApiRequest { add { } remove { } }
+    [Obsolete("Not supported by WTelegramBot")]
+    event AsyncEventHandler<Args.ApiResponseEventArgs>? ITelegramBotClient.OnApiResponseReceived { add { } remove { } }
 
     /// <summary>
     /// Test the API token
@@ -84,11 +89,29 @@ public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
         Stream destination,
         CancellationToken cancellationToken = default)
     {
-        await DownloadFile(filePath, destination, cancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(GlobalCancelToken, cancellationToken);
+        await DownloadFile(filePath, destination, cts.Token);
     }
 
-    /// <summary>Convert WTelegram Exception into ApiRequestException</summary>
-    internal static Exceptions.ApiRequestException MakeException(WTelegram.WTException ex)
+	/// <summary>
+	/// Use this method to get basic info about a file download it. For the moment, bots can download files
+	/// of up to 20MB in size.
+	/// </summary>
+	/// <param name="fileId">File identifier to get info about</param>
+	/// <param name="destination">Destination stream to write file to</param>
+	/// <param name="cancellationToken">
+	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
+	/// </param>
+	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
+	public async Task<Types.File> GetInfoAndDownloadFileAsync(
+		string fileId,
+		Stream destination,
+		CancellationToken cancellationToken = default
+	) =>
+		await ThrowIfCancelled(cancellationToken).GetInfoAndDownloadFile(fileId, destination, cancellationToken).ThrowAsApi();
+
+	/// <summary>Convert WTelegram Exception into ApiRequestException</summary>
+	internal static Exceptions.ApiRequestException MakeException(WTelegram.WTException ex)
     {
         if (ex is not TL.RpcException rpcEx) return new Exceptions.ApiRequestException(ex.Message, 400, ex);
         var msg = ex.Message switch
@@ -120,28 +143,4 @@ public class TelegramBotClient : WTelegram.Bot, ITelegramBotClient
         };
         return new Exceptions.ApiRequestException(msg, rpcEx.Code, ex);
     }
-}
-
-public static partial class TelegramBotClientExtensions
-{
-	/// <summary>
-	/// Use this method to get basic info about a file download it. For the moment, bots can download files
-	/// of up to 20MB in size.
-	/// </summary>
-	/// <param name="botClient">An instance of <see cref="ITelegramBotClient"/></param>
-	/// <param name="fileId">File identifier to get info about</param>
-	/// <param name="destination">Destination stream to write file to</param>
-	/// <param name="cancellationToken">
-	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
-	/// </param>
-	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
-	public static async Task<Types.File> GetInfoAndDownloadFileAsync(
-		this ITelegramBotClient botClient,
-		string fileId,
-		Stream destination,
-		CancellationToken cancellationToken = default
-	) =>
-		await botClient.Bot(cancellationToken).GetInfoAndDownloadFile(fileId, destination, cancellationToken).ThrowAsApi();
-
-	internal static long LongOrDefault(this string? s) => s == null ? 0 : long.Parse(s);
 }

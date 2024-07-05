@@ -89,19 +89,19 @@ public partial class Bot
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		ApplyParse(parseMode, ref text!, ref entities);
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), disableNotification, protectContent, messageEffectId,
+				await MakeReplyMarkup(replyMarkup), tlEntities, disableNotification, protectContent, messageEffectId,
 				invert_media: linkPreviewOptions?.ShowAboveText == true, no_webpage: linkPreviewOptions?.IsDisabled == true),
 				peer, text, replyToMessage);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), entities?.ToArray(), disableNotification, protectContent, messageEffectId, linkPreviewOptions?.ShowAboveText == true),
+				await MakeReplyMarkup(replyMarkup), tlEntities, disableNotification, protectContent, messageEffectId, linkPreviewOptions?.ShowAboveText == true),
 				peer, text, replyToMessage);
 	}
 
@@ -164,16 +164,16 @@ public partial class Bot
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
 		if (msgs.Messages.FirstOrDefault() is not TL.Message msg) throw new WTException("Bad Request: message to copy not found");
-		ApplyParse(parseMode, ref caption, ref captionEntities);
+		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var text = caption ?? msg.message;
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var task = msg.media == null
 			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
+				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
 				disableNotification, protectContent, 0, showCaptionAboveMedia, no_webpage: true)
 			: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? captionEntities?.ToArray() : msg.entities,
+				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
 				disableNotification, protectContent, 0, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text);
 		return postedMsg;
@@ -263,13 +263,13 @@ public partial class Bot
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		ApplyParse(parseMode, ref caption, ref captionEntities);
+		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
 			peer, caption, replyToMessage);
 	}
 
@@ -279,7 +279,7 @@ public partial class Bot
 		bool protectContent, long messageEffectId, bool showCaptionAboveMedia, string? businessConnectionId,
 		string? defaultFilename, bool hasSpoiler, Action<InputMediaUploadedDocument>? prepareDoc)
 	{
-		ApplyParse(parseMode, ref caption, ref captionEntities);
+		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
@@ -290,7 +290,7 @@ public partial class Bot
 			await SetDocThumb(doc, thumbnail);
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
 			peer, caption, replyToMessage);
 	}
 
@@ -669,8 +669,8 @@ public partial class Bot
 		bool isClosed = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		ApplyParse(explanationParseMode, ref explanation, ref explanationEntities);
-		ApplyParse(questionParseMode, ref question!, ref questionEntities);
+		var exEntities = ApplyParse(explanationParseMode, ref explanation, explanationEntities);
+		var quEntities = ApplyParse(questionParseMode, ref question!, questionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
@@ -684,14 +684,14 @@ public partial class Bot
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
-				question = new() { text = question, entities = questionEntities?.ToArray() },
+				question = new() { text = question, entities = quEntities },
 				answers = options.Select(MakePollAnswer).ToArray(),
 				close_period = openPeriod.GetValueOrDefault(),
 				close_date = closeDate.GetValueOrDefault(),
 			},
 			correct_answers = correctOptionId == null ? null : [[(byte)correctOptionId]],
 			solution = explanation,
-			solution_entities = explanationEntities?.ToArray(),
+			solution_entities = exEntities,
 			flags = (explanation != null ? InputMediaPoll.Flags.has_solution : 0)
 				| (correctOptionId >= 0 ? InputMediaPoll.Flags.has_correct_answers : 0)
 		};
@@ -1059,7 +1059,7 @@ public partial class Bot
 			userFull.UserOrChat(_collector);
 			var full = userFull.full_user;
 			var user = userFull.users[userId];
-			var chat = new ChatFullInfo
+			var chat = new WTelegram.Types.ChatFullInfo
 			{
 				TLInfo = userFull,
 				Id = user.id,
@@ -1097,7 +1097,7 @@ public partial class Bot
 			mcf.UserOrChat(_collector);
 			var full = mcf.full_chat;
 			var tlChat = mcf.chats[inputPeer.ID];
-			var chat = new ChatFullInfo
+			var chat = new WTelegram.Types.ChatFullInfo
 			{
 				TLInfo = mcf,
 				Id = -tlChat.ID,
@@ -1434,11 +1434,11 @@ public partial class Bot
 	public async Task<Message> EditMessageText(ChatId chatId, int messageId, string text, ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? entities = default, LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
-		ApplyParse(parseMode, ref text!, ref entities);
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var peer = await InputPeerChat(chatId);
 		var media = linkPreviewOptions.InputMediaWebPage();
 		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, text, media,
-			await MakeReplyMarkup(replyMarkup), entities?.ToArray(), no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true), peer, text);
+			await MakeReplyMarkup(replyMarkup), tlEntities, no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true), peer, text);
 	}
 
 	/// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
@@ -1451,11 +1451,11 @@ public partial class Bot
 	public async Task EditMessageText(string inlineMessageId, string text, ParseMode parseMode = default, IEnumerable<MessageEntity>? entities = default,
 		LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
-		ApplyParse(parseMode, ref text!, ref entities);
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var id = inlineMessageId.ParseInlineMsgID();
 		var media = linkPreviewOptions.InputMediaWebPage();
 		await Client.Messages_EditInlineBotMessage(id, text, media,
-			await MakeReplyMarkup(replyMarkup), entities?.ToArray(), linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
+			await MakeReplyMarkup(replyMarkup), tlEntities, linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
 	}
 
 	/// <summary>Use this method to edit captions of messages.</summary>
@@ -1470,10 +1470,10 @@ public partial class Bot
 	public async Task<Message> EditMessageCaption(ChatId chatId, int messageId, string? caption, ParseMode parseMode = default,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
-		ApplyParse(parseMode, ref caption!, ref captionEntities);
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_EditMessage(peer, messageId, caption, null,
-			await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), invert_media: showCaptionAboveMedia), peer, caption);
+			await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia), peer, caption);
 	}
 
 	/// <summary>Use this method to edit captions of messages.</summary>
@@ -1486,9 +1486,9 @@ public partial class Bot
 	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
 		bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default)
 	{
-		ApplyParse(parseMode, ref caption!, ref captionEntities);
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
 		var id = inlineMessageId.ParseInlineMsgID();
-		await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), captionEntities?.ToArray(), invert_media: showCaptionAboveMedia);
+		await Client.Messages_EditInlineBotMessage(id, caption, null, await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia);
 	}
 
 	/// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>

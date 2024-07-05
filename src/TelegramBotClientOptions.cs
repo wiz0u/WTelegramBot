@@ -6,9 +6,9 @@ using WTelegram;
 namespace Telegram.Bot;
 
 /// <summary>
-/// This class is used to provide configuration for <see cref="TelegramBotClient"/>
+/// This class is used to provide configuration for <see cref="WTelegramBotClient"/>
 /// </summary>
-public class TelegramBotClientOptions
+public class WTelegramBotClientOptions
 {
     /// <summary>
     /// Bot token
@@ -50,7 +50,7 @@ public class TelegramBotClientOptions
     public string BaseServerAddress { get; }
 
     /// <summary>
-    /// Create a new <see cref="TelegramBotClientOptions"/> instance.
+    /// Create a new <see cref="WTelegramBotClientOptions"/> instance.
     /// </summary>
     /// <param name="token">API token</param>
     /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
@@ -61,7 +61,7 @@ public class TelegramBotClientOptions
     /// <exception cref="ArgumentException">
     /// Thrown if <paramref name="token"/> format is invalid
     /// </exception>
-    public TelegramBotClientOptions(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = WTelegram.SqlCommands.Detect, bool useTestEnvironment = false)
+    public WTelegramBotClientOptions(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = WTelegram.SqlCommands.Detect, bool useTestEnvironment = false)
     {
         Token = token ?? throw new ArgumentNullException(nameof(token));
         ApiId = apiId;

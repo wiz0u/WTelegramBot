@@ -36,11 +36,10 @@ See the [Example app](https://github.com/wiz0u/WTelegramBot/tree/master/Examples
 <a name="migration"></a>
 ## Difference between classes `WTelegram.Bot` and `TelegramBotClient`
 
-The library contains a compatibility layer as `Telegram.Bot.TelegramBotClient` inheriting from WTelegram.Bot.  
+The library contains a compatibility layer as `Telegram.Bot.WTelegramBotClient` inheriting from WTelegram.Bot.  
 [Click here to easily migrate](https://github.com/wiz0u/WTelegramBot/blob/master/CHANGES.md) your existing Telegram.Bot code.
 
 If you're not migrating an existing codebase, it is recommended that you use `WTelegram.Bot` class directly.
-
 Here are the main differences:
 * The method names don't have the *Async suffix (even though they should still be invoked with `await`) so they are more close to official [Bot API method names](https://core.telegram.org/bots/api#available-methods).
 * The optional parameters follow a more logical order for developers, with the more rarely used optional parameters near the end.
@@ -73,20 +72,6 @@ but make sure to look for the mention "**Bots can use this method**" (other meth
 > Note: If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 Some other `WTelegram.Bot` methods (for example, beginning with Input*) and extension methods can help you convert Bot API ids or structure to/from Client API.
-
-
-## Support for ASP.NET apps
-
-If your app is written as an ASP.NET app using webhooks, you can still use this library using background Polling:
-
-```csharp
-// instead of calling SetWebhookAsync, run the following code once your app starts:
-BotClient.StartReceiving(HandleUpdate, HandlePollingError);
-```
-
-You should make sure your hosting service won't stop/recycle your app after some HTTP inactivity timeout.
-
-(some host providers have an "always on" option, or alternatively you can ping your service with an HTTP request every 5 min to keep it alive)
 
 
 ## Help with the library

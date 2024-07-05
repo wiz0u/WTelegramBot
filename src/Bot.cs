@@ -135,6 +135,12 @@ public partial class Bot : IDisposable
 			_database.SaveTLUpdates(_state.PendingUpdates);
 	}
 
+	/// <summary>Will remove all received updates</summary>
+	public async Task DropPendingUpdates()
+	{
+		await GetUpdates(int.MaxValue, 1, 0, null);
+	}
+
 	/// <summary>Use this method to receive incoming updates using <a href="https://en.wikipedia.org/wiki/Push_technology#Long_polling">long polling</a></summary>
 	/// <param name="offset">Identifier of the first update to be returned, typically the Id of the last update you handled <u>plus one</u>. Negative values are offset from the end of the pending updates queue</param>
 	/// <param name="limit">Limits the number of updates to be retrieved (1-100)</param>

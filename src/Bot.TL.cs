@@ -144,8 +144,8 @@ public partial class Bot
 		if (replied?.MessageId > 0)
 		{
 			if (replied.ChatId is not null) replyToPeer = await InputPeerChat(replied.ChatId);
-			var quoteEntities = replied.QuoteEntities;
-			var quote = ApplyParse(replied.QuoteParseMode, replied.Quote, ref quoteEntities);
+			var quote = replied.Quote;
+			var quoteEntities = ApplyParse(replied.QuoteParseMode, ref quote, replied.QuoteEntities);
 			return new InputReplyToMessage
 			{
 				reply_to_msg_id = replied.MessageId,
@@ -188,30 +188,66 @@ public partial class Bot
 			return CachedMessages[(peer.ID, messageId)] = msg;
 	}
 
-	/// <summary>Apply ParseMode to text and entities</summary>
-	protected string? ApplyParse(ParseMode parseMode, string? text, ref MessageEntity[]? entities)
+	private MessageEntity[]? MakeEntities(TL.MessageEntity[]? entities) => entities?.Select(e => e switch
 	{
-		if (parseMode == default) return text;
-		IEnumerable<MessageEntity>? entities_ = entities;
-		ApplyParse(parseMode, ref text, ref entities_);
-		entities = (MessageEntity[]?)entities_;
-		return text;
+		TL.MessageEntityMention => new MessageEntity { Type = MessageEntityType.Mention, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityHashtag => new MessageEntity { Type = MessageEntityType.Hashtag, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityBotCommand => new MessageEntity { Type = MessageEntityType.BotCommand, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityUrl => new MessageEntity { Type = MessageEntityType.Url, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityEmail => new MessageEntity { Type = MessageEntityType.Email, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityBold => new MessageEntity { Type = MessageEntityType.Bold, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityItalic => new MessageEntity { Type = MessageEntityType.Italic, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityCode => new MessageEntity { Type = MessageEntityType.Code, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityPre mep => new MessageEntity { Type = MessageEntityType.Pre, Offset = e.Offset, Length = e.Length, Language = mep.language },
+		TL.MessageEntityTextUrl metu => new MessageEntity { Type = MessageEntityType.TextLink, Offset = e.Offset, Length = e.Length, Url = metu.url },
+		TL.MessageEntityMentionName memn => new MessageEntity { Type = MessageEntityType.TextMention, Offset = e.Offset, Length = e.Length, User = User(memn.user_id) },
+		TL.MessageEntityPhone => new MessageEntity { Type = MessageEntityType.PhoneNumber, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityCashtag => new MessageEntity { Type = MessageEntityType.Cashtag, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityUnderline => new MessageEntity { Type = MessageEntityType.Underline, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityStrike => new MessageEntity { Type = MessageEntityType.Strikethrough, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntitySpoiler => new MessageEntity { Type = MessageEntityType.Spoiler, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityCustomEmoji mece => new MessageEntity { Type = MessageEntityType.CustomEmoji, Offset = e.Offset, Length = e.Length, CustomEmojiId = mece.document_id.ToString() },
+		TL.MessageEntityBlockquote mebq => mebq.flags.HasFlag(MessageEntityBlockquote.Flags.collapsed)
+			? new MessageEntity { Type = MessageEntityType.ExpandableBlockquote, Offset = e.Offset, Length = e.Length }
+			: new MessageEntity { Type = MessageEntityType.Blockquote, Offset = e.Offset, Length = e.Length },
+		_ => null!,
+	}).Where(e => e != null).ToArray();
+
+	/// <summary>Apply ParseMode to text and entities</summary>
+	protected TL.MessageEntity[]? ApplyParse(ParseMode parseMode, ref string? text, IEnumerable<MessageEntity>? entities)
+	{
+		if (entities != null)
+			return entities.Select(e => e.Type switch
+			{
+				MessageEntityType.Bold => new TL.MessageEntityBold { offset = e.Offset, length = e.Length },
+				MessageEntityType.Italic => new TL.MessageEntityItalic { offset = e.Offset, length = e.Length },
+				MessageEntityType.Code => new TL.MessageEntityCode { offset = e.Offset, length = e.Length },
+				MessageEntityType.Pre => new TL.MessageEntityPre { offset = e.Offset, length = e.Length, language = e.Language },
+				MessageEntityType.TextLink => new TL.MessageEntityTextUrl { offset = e.Offset, length = e.Length, url = e.Url },
+				MessageEntityType.TextMention => new TL.InputMessageEntityMentionName { offset = e.Offset, length = e.Length, user_id = InputUser(e.User!.Id) },
+				MessageEntityType.Underline => new TL.MessageEntityUnderline { offset = e.Offset, length = e.Length },
+				MessageEntityType.Strikethrough => new TL.MessageEntityStrike { offset = e.Offset, length = e.Length },
+				MessageEntityType.Spoiler => new TL.MessageEntitySpoiler { offset = e.Offset, length = e.Length },
+				MessageEntityType.CustomEmoji => new TL.MessageEntityCustomEmoji { offset = e.Offset, length = e.Length, document_id = long.Parse(e.CustomEmojiId!) },
+				MessageEntityType.Blockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length },
+				MessageEntityType.ExpandableBlockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length, flags = MessageEntityBlockquote.Flags.collapsed },
+				_ => (TL.MessageEntity)null!
+			}).Where(e => e != null).ToArray();
+		else if (text == null)
+			return null;
+		return parseMode switch
+		{
+			ParseMode.Markdown or ParseMode.MarkdownV2 => Client.MarkdownToEntities(ref text, false, _collector),
+			ParseMode.Html => Client.HtmlToEntities(ref text, false, _collector),
+			_ => null,
+		};
 	}
 
 	/// <summary>Apply ParseMode to text and entities</summary>
-	protected void ApplyParse(ParseMode parseMode, ref string? text, ref IEnumerable<MessageEntity>? entities)
+	protected string? ApplyParse(ParseMode parseMode, string? text, MessageEntity[]? entities, out TL.MessageEntity[]? tlEntities)
 	{
-		if (entities != null || text == null || parseMode == default) return;
-		switch (parseMode)
-		{
-			case ParseMode.Markdown:
-			case ParseMode.MarkdownV2:
-				entities = Client.MarkdownToEntities(ref text, false, _collector);
-				break;
-			case ParseMode.Html:
-				entities = Client.HtmlToEntities(ref text, false, _collector);
-				break;
-		}
+		tlEntities = ApplyParse(parseMode, ref text, entities);
+		return text;
 	}
 
 	private async Task<TL.BotCommandScope?> BotCommandScope(BotCommandScope? scope)
@@ -296,8 +332,7 @@ public partial class Bot
 	public async Task<TL.InputSingleMedia> InputSingleMedia(InputMedia media)
 	{
 		var caption = media.Caption;
-		IEnumerable<MessageEntity>? captionEntities = media.CaptionEntities;
-		ApplyParse(media.ParseMode, ref caption, ref captionEntities);
+		var captionEntities = ApplyParse(media.ParseMode, ref caption, media.CaptionEntities);
 		var tlMedia = media is Telegram.Bot.Types.InputMediaPhoto imp
 			? await InputMediaPhoto(media.Media, imp.HasSpoiler)
 			: await InputMediaDocument(media.Media,
@@ -585,18 +620,17 @@ public partial class Bot
 	private async Task<InputBotInlineMessage> InputBotInlineMessage(InlineQueryResult iqr, InputMessageContent? message,
 		string? caption = null, ParseMode parseMode = default, MessageEntity[]? captionEntities = null, bool invert_media = false)
 	{
-		if (message != null) captionEntities = null;
 		var reply_markup = await MakeReplyMarkup(iqr.ReplyMarkup);
 		return message switch
 		{
 			InputTextMessageContent itmc when itmc.LinkPreviewOptions?.Url != null => new InputBotInlineMessageMediaWebPage
 			{
 				reply_markup = reply_markup,
-				message = ApplyParse(itmc.ParseMode, itmc.MessageText, ref captionEntities),
-				entities = itmc.Entities ?? captionEntities,
+				message = ApplyParse(itmc.ParseMode, itmc.MessageText, itmc.Entities, out var entities),
+				entities = entities,
 				url = itmc.LinkPreviewOptions.Url,
 				flags = (reply_markup != null ? InputBotInlineMessageMediaWebPage.Flags.has_reply_markup : 0) |
-						((itmc.Entities ?? captionEntities) != null ? InputBotInlineMessageMediaWebPage.Flags.has_entities : 0) |
+						(entities != null ? InputBotInlineMessageMediaWebPage.Flags.has_entities : 0) |
 						(itmc.LinkPreviewOptions.PreferLargeMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_large_media : 0) |
 						(itmc.LinkPreviewOptions.PreferSmallMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_small_media : 0) |
 						(itmc.LinkPreviewOptions.ShowAboveText == true ? InputBotInlineMessageMediaWebPage.Flags.invert_media : 0)
@@ -604,10 +638,10 @@ public partial class Bot
 			InputTextMessageContent itmc => new InputBotInlineMessageText
 			{
 				reply_markup = reply_markup,
-				message = ApplyParse(itmc.ParseMode, itmc.MessageText, ref captionEntities),
-				entities = itmc.Entities ?? captionEntities,
+				message = ApplyParse(itmc.ParseMode, itmc.MessageText, itmc.Entities, out var entities),
+				entities = entities,
 				flags = (reply_markup != null ? InputBotInlineMessageText.Flags.has_reply_markup : 0) |
-						((itmc.Entities ?? captionEntities) != null ? InputBotInlineMessageText.Flags.has_entities : 0) |
+						(entities != null ? InputBotInlineMessageText.Flags.has_entities : 0) |
 						(itmc.LinkPreviewOptions?.IsDisabled == true ? InputBotInlineMessageText.Flags.no_webpage : 0) |
 						(itmc.LinkPreviewOptions?.ShowAboveText == true ? InputBotInlineMessageText.Flags.invert_media : 0)
 			},
@@ -724,10 +758,10 @@ public partial class Bot
 				_ => new InputBotInlineMessageMediaAuto
 				{
 					reply_markup = reply_markup,
-					message = ApplyParse(parseMode, caption, ref captionEntities),
-					entities = captionEntities,
+					message = ApplyParse(parseMode, caption, captionEntities, out var entities),
+					entities = entities,
 					flags = (reply_markup != null ? InputBotInlineMessageMediaAuto.Flags.has_reply_markup : 0) |
-							(captionEntities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities : 0) |
+							(entities != null ? InputBotInlineMessageMediaAuto.Flags.has_entities : 0) |
 							(invert_media ? InputBotInlineMessageMediaAuto.Flags.invert_media : 0)
 				},
 			},
@@ -803,7 +837,7 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, MessageEntity[]? entities, bool silent, bool noforwards, long effect,
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, bool silent, bool noforwards, long effect,
 		bool invert_media = false, bool no_webpage = false)
 	{
 		var query = new TL.Methods.Messages_SendMessage
@@ -821,7 +855,7 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, MessageEntity[]? entities, bool silent, bool noforwards, long effect,
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, bool silent, bool noforwards, long effect,
 		bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_SendMedia

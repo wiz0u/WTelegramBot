@@ -442,7 +442,7 @@ public partial class Bot
 				msg.Quote = new TextQuote
 				{
 					Text = reply_to.quote_text,
-					Entities = reply_to.quote_entities,
+					Entities = MakeEntities(reply_to.quote_entities),
 					Position = reply_to.quote_offset,
 					IsManual = reply_to.flags.HasFlag(MessageReplyHeader.Flags.quote)
 				};
@@ -465,7 +465,7 @@ public partial class Bot
 		switch (msgBase)
 		{
 			case TL.Message message:
-				var msg = new Message
+				var msg = new WTelegram.Types.Message
 				{
 					TLMessage = message,
 					MessageId = message.id,
@@ -492,7 +492,7 @@ public partial class Bot
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
 				return await FillTextAndMedia(msg, message.message, message.entities, message.media, message.flags.HasFlag(TL.Message.Flags.invert_media));
 			case TL.MessageService msgSvc:
-				msg = new Message
+				msg = new WTelegram.Types.Message
 				{
 					TLMessage = msgSvc,
 					MessageId = msgSvc.id,
@@ -512,7 +512,7 @@ public partial class Bot
 			case null:
 				return null;
 			default:
-				return new Message
+				return new WTelegram.Types.Message
 				{
 					TLMessage = msgBase,
 					MessageId = msgBase.ID,
@@ -560,7 +560,7 @@ public partial class Bot
 		return origin;
 	}
 
-	private async Task<Message> FillTextAndMedia(Message msg, string? text, MessageEntity[] entities, MessageMedia media, bool invert_media = false)
+	private async Task<Message> FillTextAndMedia(Message msg, string? text, TL.MessageEntity[] entities, MessageMedia media, bool invert_media = false)
 	{
 		switch (media)
 		{
@@ -568,12 +568,12 @@ public partial class Bot
 				if (entities?.Any(e => e is MessageEntityUrl or MessageEntityTextUrl) == true)
 					msg.LinkPreviewOptions = new LinkPreviewOptions { IsDisabled = true };
 				msg.Text = text;
-				msg.Entities = entities;
+				msg.Entities = MakeEntities(entities);
 				return msg;
 			case MessageMediaWebPage mmwp:
 				msg.LinkPreviewOptions = mmwp.LinkPreviewOptions(invert_media);
 				msg.Text = text;
-				msg.Entities = entities;
+				msg.Entities = MakeEntities(entities);
 				return msg;
 			case MessageMediaDocument { document: TL.Document document } mmd:
 				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.spoiler)) msg.HasMediaSpoiler = true;
@@ -697,7 +697,7 @@ public partial class Bot
 					Description = mmg.game.description,
 					Photo = mmg.game.photo.PhotoSizes()!,
 					Text = text == "" ? null : text,
-					TextEntities = entities
+					TextEntities = MakeEntities(entities)
 				};
 				if (mmg.game.document is TL.Document doc && doc.GetAttribute<DocumentAttributeAnimated>() != null)
 				{
@@ -746,7 +746,7 @@ public partial class Bot
 				break;
 		}
 		if (text != "") msg.Caption = text;
-		msg.CaptionEntities = entities;
+		msg.CaptionEntities = MakeEntities(entities);
 		return msg;
 	}
 
@@ -840,7 +840,7 @@ public partial class Bot
 		FileUniqueId = msgDoc.FileUniqueId
 	};
 
-	private static Telegram.Bot.Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
+	private Telegram.Bot.Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
 	{
 		int? correctOption = pollResults.results == null ? null : Array.FindIndex(pollResults.results, pav => pav.flags.HasFlag(PollAnswerVoters.Flags.correct));
 		return new Telegram.Bot.Types.Poll
@@ -855,7 +855,7 @@ public partial class Bot
 			AllowsMultipleAnswers = poll.flags.HasFlag(TL.Poll.Flags.multiple_choice),
 			CorrectOptionId = correctOption < 0 ? null : correctOption,
 			Explanation = pollResults.solution,
-			ExplanationEntities = pollResults.solution_entities,
+			ExplanationEntities = MakeEntities(pollResults.solution_entities),
 			OpenPeriod = poll.close_period == default ? null : poll.close_period,
 			CloseDate = poll.close_date == default ? null : poll.close_date
 		};
@@ -863,8 +863,8 @@ public partial class Bot
 
 	private TL.PollAnswer MakePollAnswer(InputPollOption ipo, int index)
 	{
-		var entities = ipo.TextEntities;
-		var text = ApplyParse(ipo.TextParseMode, ipo.Text, ref entities);
+		var text = ipo.Text;
+		var entities = ApplyParse(ipo.TextParseMode, ref text, ipo.TextEntities);
 		return new()
 		{
 			text = new() { text = text, entities = entities },
