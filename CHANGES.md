@@ -1,26 +1,35 @@
 ﻿# Difference between Telegram.Bot library and WTelegramBot compatibility layer
 
-> ⚠️ If you're writing new code, you don't need to read this document, and you should use the `WTelegramBot` class directly.
+> ⚠️ If you're writing new code, you don't need to read this document, and you should use the `WTelegram.Bot` class directly.
 
-WTelegramBot library inherits `Telegram.Bot` namespaces and types, and we added a `WTelegramBotClient` class that offers a very good compatibility layer.
-
-The amount of effort to migrate your existing code from Telegram.Bot to WTelegramBot library should be minimal.  
-
-Basically, you just need to change the nuget package dependency from Telegram.Bot to [WTelegramBot](https://www.nuget.org/packages/WTelegramBot). Most of your code should already compile fine.
-
-After that, here are the points you should pay attention to when migrating existing code:
+WTelegramBot library inherits `Telegram.Bot` namespaces and types, and provides a `WTelegramBotClient` class that offers a very good compatibility layer.
+Migration effort for existing code should be minimal.  
 
 ### Changes needed in your code:
-- Use `WTelegramBotClient` instead of `TelegramBotClient` (and eventually `WTelegramBotClientOptions`)
-- You will need to provide an ApiID and ApiHash _(obtained from https://my.telegram.org/apps)_
-  as well as a DbConnection, typically SqliteConnection:
-    ```csharp
-    // requires Nuget package: Microsoft.Data.Sqlite
-    var dbConnection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
-    ```
-    _MySQL, PosgreSQL, SQLServer, and any custom DB are also supported_
-- `WTelegramBotClient` and `WTelegram.Bot` are `IDisposable`, so you should call `.Dispose()` when you're done using it,
-  otherwise it will stay actively connected to Telegram servers and might not save its latest state.  
+- Change the nuget package dependency from Telegram.Bot to [WTelegramBot](https://www.nuget.org/packages/WTelegramBot),
+  and eventually add a database package.
+- Use class `WTelegramBotClient` instead of `TelegramBotClient`
+- Provide an ApiId and ApiHash _([obtained here](https://my.telegram.org/apps))_
+  as well as a DbConnection, typically SqliteConnection _(MySQL, PosgreSQL, SQLServer, and others are also supported)_
+- `WTelegramBotClient` is `IDisposable`, so you should call `.Dispose()` when you're done using it.
+
+Example of changes:
+```csharp
+=== In your .csproj ===
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
+    <PackageReference Include="WTelegramBot" Version="7.6.1"/>
+
+=== In your code ===
+global using TelegramBotClient = Telegram.Bot.WTelegramBotClient;
+...
+var dbConnection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=WTelegramBot.sqlite");
+Bot = new WTelegramBotClient(BotToken, ApiId, ApiHash, dbConnection);
+...
+Bot.Dispose();
+```
+
+
+Other points to note:
 - Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
 - FileID/FileUniqueID/InlineMessageId strings are not compatible with official Bot API ones, they are to be used with this library only.
 - There is no native support for Webhooks / HTTP / HttpClient (but see [support for ASP.NET apps](#support-for-aspnet-apps))

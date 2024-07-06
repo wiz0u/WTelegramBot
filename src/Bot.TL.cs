@@ -887,6 +887,37 @@ public partial class Bot
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
+	Task<UpdatesBase> Messages_EditMessage(string? bConnId, InputPeer peer, int id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, DateTime? schedule_date = null, int? quick_reply_shortcut_id = null, bool no_webpage = false, bool invert_media = false)
+	{
+		var query = new TL.Methods.Messages_EditMessage
+		{
+			flags = (TL.Methods.Messages_EditMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x8000 : 0) | (quick_reply_shortcut_id != null ? 0x20000 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
+			peer = peer,
+			id = id,
+			message = message,
+			media = media,
+			reply_markup = reply_markup,
+			entities = entities,
+			schedule_date = schedule_date.GetValueOrDefault(),
+			quick_reply_shortcut_id = quick_reply_shortcut_id.GetValueOrDefault(),
+		};
+		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+	}
+
+	Task<bool> Messages_EditInlineBotMessage(string? bConnId, InputBotInlineMessageIDBase id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, bool no_webpage = false, bool invert_media = false)
+	{
+		var query = new TL.Methods.Messages_EditInlineBotMessage
+		{
+			flags = (TL.Methods.Messages_EditInlineBotMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
+			id = id,
+			message = message,
+			media = media,
+			reply_markup = reply_markup,
+			entities = entities,
+		};
+		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+	}
+
 	internal async Task<Telegram.Bot.Types.BusinessIntro?> MakeBusinessIntro(TL.BusinessIntro? intro) => intro == null ? null : new()
 	{
 		Title = intro.title,
@@ -903,4 +934,38 @@ public partial class Bot
 		CanReply = bbc.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
 		IsEnabled = !bbc.flags.HasFlag(BotBusinessConnection.Flags.disabled)
 	};
+
+	internal StarTransaction MakeStarTransaction(TL.StarsTransaction transaction)
+	{
+		TransactionPartner partner = transaction.peer switch
+		{
+			StarsTransactionPeerFragment => new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
+			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),
+			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } => new TransactionPartnerUser
+			{
+				User = User(user_id)!,
+				InvoicePayload = transaction.bot_payload == null ? null : Encoding.UTF8.GetString(transaction.bot_payload)
+			},
+			_ => new TransactionPartnerOther(),
+		};
+		return new StarTransaction
+		{
+			Id = transaction.id,
+			Amount = checked((int)Math.Abs(transaction.stars)),
+			Date = transaction.date,
+			Source = transaction.stars > 0 ? partner : null,
+			Receiver = transaction.stars <= 0 ? partner : null,
+		};
+
+		RevenueWithdrawalState? WithdrawalState()
+		{
+			if (transaction.transaction_date != default)
+				return new RevenueWithdrawalStateSucceeded { Date = transaction.transaction_date, Url = transaction.transaction_url };
+			if (transaction.flags.HasFlag(StarsTransaction.Flags.pending))
+				return new RevenueWithdrawalStatePending();
+			if (transaction.flags.HasFlag(StarsTransaction.Flags.failed))
+				return new RevenueWithdrawalStateFailed();
+			return null;
+		}
+	}
 }

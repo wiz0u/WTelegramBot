@@ -187,7 +187,7 @@ public partial class WTelegramBotClient
         return msgs.Select(m => (MessageId)m).ToArray();
     }
 
-    /// <summary>Use this method to copy messages of any kind. Service messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessage">ForwardMessage</see>, but the copied message doesn't have a link to the original message.</summary>
+    /// <summary>Use this method to copy messages of any kind. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessage">ForwardMessage</see>, but the copied message doesn't have a link to the original message.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
@@ -219,7 +219,7 @@ public partial class WTelegramBotClient
     ) =>
         await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent).ThrowAsApi();
 
-    /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
+    /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
     /// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to copy. The identifiers must be specified in a strictly increasing order.</param>
@@ -516,6 +516,36 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) =>
         await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+
+    /// <summary>Use this method to send paid media to channel chats.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media</param>
+    /// <param name="media">A array describing the media to be sent; up to 10 items</param>
+    /// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
+    /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
+    /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The sent <see cref="Message"/> is returned.</returns>
+    public async Task<Message> SendPaidMedia(
+        ChatId chatId,
+        int starCount,
+        IEnumerable<InputPaidMedia> media,
+        string? caption = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
+        bool disableNotification = default,
+        bool protectContent = default,
+        ReplyParameters? replyParameters = default,
+        IReplyMarkup? replyMarkup = default,
+        CancellationToken cancellationToken = default
+    ) =>
+        await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, starCount, media, caption, parseMode, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, replyParameters, replyMarkup).ThrowAsApi();
 
     /// <summary>Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1495,6 +1525,7 @@ public partial class WTelegramBotClient
     /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> EditMessageTextAsync(
@@ -1505,9 +1536,10 @@ public partial class WTelegramBotClient
         IEnumerable<MessageEntity>? entities = default,
         LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1516,6 +1548,7 @@ public partial class WTelegramBotClient
     /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageTextAsync(
         string inlineMessageId,
@@ -1524,9 +1557,10 @@ public partial class WTelegramBotClient
         IEnumerable<MessageEntity>? entities = default,
         LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit captions of messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1536,6 +1570,7 @@ public partial class WTelegramBotClient
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> EditMessageCaptionAsync(
@@ -1546,9 +1581,10 @@ public partial class WTelegramBotClient
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit captions of messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1557,6 +1593,7 @@ public partial class WTelegramBotClient
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageCaptionAsync(
         string inlineMessageId,
@@ -1565,15 +1602,17 @@ public partial class WTelegramBotClient
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message to edit</param>
     /// <param name="media">An object for a new media content of the message</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> EditMessageMediaAsync(
@@ -1581,22 +1620,25 @@ public partial class WTelegramBotClient
         int messageId,
         InputMedia media,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageMedia(chatId, messageId, media, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageMedia(chatId, messageId, media, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
     /// <param name="media">An object for a new media content of the message</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageMediaAsync(
         string inlineMessageId,
         InputMedia media,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageMedia(inlineMessageId, media, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageMedia(inlineMessageId, media, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1608,6 +1650,7 @@ public partial class WTelegramBotClient
     /// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
     /// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> EditMessageLiveLocationAsync(
@@ -1620,9 +1663,10 @@ public partial class WTelegramBotClient
         int? heading = default,
         int? proximityAlertRadius = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1633,6 +1677,7 @@ public partial class WTelegramBotClient
     /// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
     /// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageLiveLocationAsync(
         string inlineMessageId,
@@ -1643,73 +1688,84 @@ public partial class WTelegramBotClient
         int? heading = default,
         int? proximityAlertRadius = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message with live location to stop</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> StopMessageLiveLocationAsync(
         ChatId chatId,
         int messageId,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(chatId, messageId, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
     /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task StopMessageLiveLocationAsync(
         string inlineMessageId,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(inlineMessageId, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message to edit</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
     public async Task<Message> EditMessageReplyMarkupAsync(
         ChatId chatId,
         int messageId,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(chatId, messageId, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageReplyMarkupAsync(
         string inlineMessageId,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(inlineMessageId, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to stop a poll which was sent by the bot.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the original message with the poll</param>
     /// <param name="replyMarkup">An object for a new message <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The stopped <see cref="Poll"/> is returned.</returns>
     public async Task<Poll> StopPollAsync(
         ChatId chatId,
         int messageId,
         InlineKeyboardMarkup? replyMarkup = default,
+        string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) =>
-        await ThrowIfCancelled(cancellationToken).StopPoll(chatId, messageId, replyMarkup).ThrowAsApi();
+        await ThrowIfCancelled(cancellationToken).StopPoll(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
 
     /// <summary>Use this method to delete a message, including service messages, with the following limitations:<br/>- A message can only be deleted if it was sent less than 48 hours ago.<br/>- Service messages about a supergroup, channel, or forum topic creation can't be deleted.<br/>- A dice message in a private chat can only be deleted if it was sent more than 24 hours ago.<br/>- Bots can delete outgoing messages in private chats, groups, and supergroups.<br/>- Bots can delete incoming messages in private chats.<br/>- Bots granted <em>CanPostMessages</em> permissions can delete outgoing messages in channels.<br/>- If the bot is an administrator of a group, it can delete any message there.<br/>- If the bot has <em>CanDeleteMessages</em> permission in a supergroup or a channel, it can delete any message there.<br/>Returns <em>True</em> on success.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -2140,6 +2196,18 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) =>
         await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi();
+
+    /// <summary>Returns the bot's Telegram Star transactions in chronological order.</summary>
+    /// <param name="offset">Number of transactions to skip in the response</param>
+    /// <param name="limit">The maximum number of transactions to be retrieved. Values between 1-100 are accepted. Defaults to 100.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="StarTransactions"/> object.</returns>
+    public async Task<StarTransactions> GetStarTransactions(
+        int? offset = default,
+        int? limit = default,
+        CancellationToken cancellationToken = default
+    ) =>
+        await ThrowIfCancelled(cancellationToken).GetStarTransactions(offset ?? 0, limit ?? 100).ThrowAsApi();
 
     /// <summary>Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</summary>
     /// <param name="userId">Identifier of the user whose payment will be refunded</param>

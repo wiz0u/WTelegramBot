@@ -6,9 +6,10 @@ namespace Telegram.Bot;
 
 #pragma warning disable CS8604
 
-public partial class WTelegramBotClient
+public partial class WTelegramBotClient : ITelegramBotClient
 {
-	async Task<TResponse> ITelegramBotClient.MakeRequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
+	///<inheritdoc />
+	public virtual async Task<TResponse> MakeRequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
 	{
 		return (TResponse)(object)(request switch
 		{
@@ -31,6 +32,7 @@ public partial class WTelegramBotClient
 			SendAnimationRequest r => await SendAnimationAsync(r.ChatId, r.Animation, r.MessageThreadId, r.Duration, r.Width, r.Height, r.Thumbnail, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.HasSpoiler, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
 			SendVoiceRequest r => await SendVoiceAsync(r.ChatId, r.Voice, r.MessageThreadId, r.Caption, r.ParseMode, r.CaptionEntities, r.Duration, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
 			SendVideoNoteRequest r => await SendVideoNoteAsync(r.ChatId, r.VideoNote, r.MessageThreadId, r.Duration, r.Length, r.Thumbnail, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			SendPaidMediaRequest r => await SendPaidMedia(r.ChatId, r.StarCount, r.Media, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.DisableNotification, r.ProtectContent, r.ReplyParameters, r.ReplyMarkup, cancellationToken),
 			SendMediaGroupRequest r => await SendMediaGroupAsync(r.ChatId, r.Media, r.MessageThreadId, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.BusinessConnectionId, cancellationToken),
 			SendLocationRequest r => await SendLocationAsync(r.ChatId, r.Latitude, r.Longitude, r.MessageThreadId, r.HorizontalAccuracy, r.LivePeriod, r.Heading, r.ProximityAlertRadius, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
 			SendVenueRequest r => await SendVenueAsync(r.ChatId, r.Latitude, r.Longitude, r.Title, r.Address, r.MessageThreadId, r.FoursquareId, r.FoursquareType, r.GooglePlaceId, r.GooglePlaceType, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
@@ -98,19 +100,19 @@ public partial class WTelegramBotClient
 			GetChatMenuButtonRequest r => await GetChatMenuButtonAsync(r.ChatId, cancellationToken),
 			SetMyDefaultAdministratorRightsRequest r => await SetMyDefaultAdministratorRightsAsync(r.Rights, r.ForChannels, cancellationToken).ReturnTrue(),
 			GetMyDefaultAdministratorRightsRequest r => await GetMyDefaultAdministratorRightsAsync(r.ForChannels, cancellationToken),
-			EditMessageTextRequest r => await EditMessageTextAsync(r.ChatId, r.MessageId, r.Text, r.ParseMode, r.Entities, r.LinkPreviewOptions, r.ReplyMarkup, cancellationToken),
-			EditInlineMessageTextRequest r => await EditMessageTextAsync(r.InlineMessageId, r.Text, r.ParseMode, r.Entities, r.LinkPreviewOptions, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			EditMessageCaptionRequest r => await EditMessageCaptionAsync(r.ChatId, r.MessageId, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.ReplyMarkup, cancellationToken),
-			EditInlineMessageCaptionRequest r => await EditMessageCaptionAsync(r.InlineMessageId, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			EditMessageMediaRequest r => await EditMessageMediaAsync(r.ChatId, r.MessageId, r.Media, r.ReplyMarkup, cancellationToken),
-			EditInlineMessageMediaRequest r => await EditMessageMediaAsync(r.InlineMessageId, r.Media, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			EditMessageLiveLocationRequest r => await EditMessageLiveLocationAsync(r.ChatId, r.MessageId, r.Latitude, r.Longitude, r.LivePeriod, r.HorizontalAccuracy, r.Heading, r.ProximityAlertRadius, r.ReplyMarkup, cancellationToken),
-			EditInlineMessageLiveLocationRequest r => await EditMessageLiveLocationAsync(r.InlineMessageId, r.Latitude, r.Longitude, r.LivePeriod, r.HorizontalAccuracy, r.Heading, r.ProximityAlertRadius, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			StopMessageLiveLocationRequest r => await StopMessageLiveLocationAsync(r.ChatId, r.MessageId, r.ReplyMarkup, cancellationToken),
-			StopInlineMessageLiveLocationRequest r => await StopMessageLiveLocationAsync(r.InlineMessageId, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			EditMessageReplyMarkupRequest r => await EditMessageReplyMarkupAsync(r.ChatId, r.MessageId, r.ReplyMarkup, cancellationToken),
-			EditInlineMessageReplyMarkupRequest r => await EditMessageReplyMarkupAsync(r.InlineMessageId, r.ReplyMarkup, cancellationToken).ReturnTrue(),
-			StopPollRequest r => await StopPollAsync(r.ChatId, r.MessageId, r.ReplyMarkup, cancellationToken),
+			EditMessageTextRequest r => await EditMessageTextAsync(r.ChatId, r.MessageId, r.Text, r.ParseMode, r.Entities, r.LinkPreviewOptions, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			EditInlineMessageTextRequest r => await EditMessageTextAsync(r.InlineMessageId, r.Text, r.ParseMode, r.Entities, r.LinkPreviewOptions, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			EditMessageCaptionRequest r => await EditMessageCaptionAsync(r.ChatId, r.MessageId, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			EditInlineMessageCaptionRequest r => await EditMessageCaptionAsync(r.InlineMessageId, r.Caption, r.ParseMode, r.CaptionEntities, r.ShowCaptionAboveMedia, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			EditMessageMediaRequest r => await EditMessageMediaAsync(r.ChatId, r.MessageId, r.Media, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			EditInlineMessageMediaRequest r => await EditMessageMediaAsync(r.InlineMessageId, r.Media, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			EditMessageLiveLocationRequest r => await EditMessageLiveLocationAsync(r.ChatId, r.MessageId, r.Latitude, r.Longitude, r.LivePeriod, r.HorizontalAccuracy, r.Heading, r.ProximityAlertRadius, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			EditInlineMessageLiveLocationRequest r => await EditMessageLiveLocationAsync(r.InlineMessageId, r.Latitude, r.Longitude, r.LivePeriod, r.HorizontalAccuracy, r.Heading, r.ProximityAlertRadius, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			StopMessageLiveLocationRequest r => await StopMessageLiveLocationAsync(r.ChatId, r.MessageId, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			StopInlineMessageLiveLocationRequest r => await StopMessageLiveLocationAsync(r.InlineMessageId, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			EditMessageReplyMarkupRequest r => await EditMessageReplyMarkupAsync(r.ChatId, r.MessageId, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
+			EditInlineMessageReplyMarkupRequest r => await EditMessageReplyMarkupAsync(r.InlineMessageId, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
+			StopPollRequest r => await StopPollAsync(r.ChatId, r.MessageId, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
 			DeleteMessageRequest r => await DeleteMessageAsync(r.ChatId, r.MessageId, cancellationToken).ReturnTrue(),
 			DeleteMessagesRequest r => await DeleteMessagesAsync(r.ChatId, r.MessageIds, cancellationToken).ReturnTrue(),
 			SendStickerRequest r => await SendStickerAsync(r.ChatId, r.Sticker, r.MessageThreadId, r.Emoji, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),
@@ -137,6 +139,7 @@ public partial class WTelegramBotClient
 			                                     : await AnswerShippingQueryAsync(r.ShippingQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
 			AnswerPreCheckoutQueryRequest r => r.Ok ? await AnswerPreCheckoutQueryAsync(r.PreCheckoutQueryId, cancellationToken).ReturnTrue()
 			                                        : await AnswerPreCheckoutQueryAsync(r.PreCheckoutQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
+			GetStarTransactionsRequest r => await GetStarTransactions(r.Offset, r.Limit, cancellationToken),
 			RefundStarPaymentRequest r => await RefundStarPayment(r.UserId, r.TelegramPaymentChargeId, cancellationToken).ReturnTrue(),
 			SetPassportDataErrorsRequest r => await SetPassportDataErrors(r.UserId, r.Errors, cancellationToken).ReturnTrue(),
 			SendGameRequest r => await SendGameAsync(r.ChatId, r.GameShortName, r.MessageThreadId, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.ReplyParameters, r.ReplyMarkup, r.BusinessConnectionId, cancellationToken),

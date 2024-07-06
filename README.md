@@ -46,6 +46,7 @@ Here are the main differences:
 * There is no CancellationToken parameter because it doesn't make sense to abort an immediate TCP request to Client API.  
 _(Even with HTTP Bot API, it didn't make much sense: You can use cancellationToken.ThrowIfCancellationRequested() at various points of your own code if you want it to be cancellable)_
 * In case of an error, WTelegram.Bot will throw `WTelegram.WTException` like `TL.RpcException` showing the raw Telegram error, instead of an ApiRequestException
+* `WTelegram.Bot` and `WTelegramBotClient` are `IDisposable`, so remember to call `.Dispose()`
 
 ## How to access the advanced features?
 
