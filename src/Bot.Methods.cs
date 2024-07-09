@@ -524,7 +524,7 @@ public partial class Bot
 				tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 			multimedia.Add(tlMedia);
 		}
-		var impm = new InputMediaPaidMedia { stars_amount = starCount, extended_media = multimedia.ToArray() };
+		var impm = new InputMediaPaidMedia { stars_amount = starCount, extended_media = [.. multimedia] };
 		return await PostedMsg(Messages_SendMedia(null, peer, impm, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, 0, showCaptionAboveMedia),
 			peer, caption, replyToMessage);

@@ -5,10 +5,13 @@
 
 # Powerful Telegram Bot API library for .NET
 
-WTelegramBot is a full rewrite in pure C# of Telegram Bot API server, presenting the same methods as the Telegram.Bot library for easy [migration](#migration).
+WTelegramBot is a full rewrite in pure C# of Telegram Bot API server, presenting the same methods as the Telegram.Bot library for easy [migration](https://github.com/wiz0u/WTelegramBot/blob/master/CHANGES.md).
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
 
+> [!IMPORTANT]  
+> Library now depends on [Telegram.Bot](https://telegrambots.github.io/book/index.html#telegram-bots-book) v21.* which is not available on Nuget at the moment.  
+> You will need to [configure Nuget options or setup a nuget.config file](https://telegrambots.github.io/book/#-installation) before installing WTelegramBot
 
 ## Advantages of WTelegram.Bot
 
@@ -70,7 +73,8 @@ For more information about calling Client API methods, you can read that [librar
 or search through the [official Client API documentation](https://corefork.telegram.org/methods),
 but make sure to look for the mention "**Bots can use this method**" (other methods can't be called).  
 
-> Note: If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
+> [!NOTE]  
+> If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 Some other `WTelegram.Bot` methods (for example, beginning with Input*) and extension methods can help you convert Bot API ids or structure to/from Client API.
 

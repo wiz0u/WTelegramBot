@@ -1,6 +1,7 @@
-﻿# Difference between Telegram.Bot library and WTelegramBot compatibility layer
+﻿# Migration from Telegram.Bot to WTelegramBot
 
-> ⚠️ If you're writing new code, you don't need to read this document, and you should use the `WTelegram.Bot` class directly.
+> [!NOTE]  
+> If you're writing new code, you don't need to read this document, and you should use the `WTelegram.Bot` class directly.
 
 WTelegramBot library inherits `Telegram.Bot` namespaces and types, and provides a `WTelegramBotClient` class that offers a very good compatibility layer.
 Migration effort for existing code should be minimal.  
@@ -50,7 +51,8 @@ services.AddSingleton<ITelegramBotClient>(sp =>
     return new WTelegramBotClient(config.BotToken, config.ApiId, config.ApiHash, dbConnection);
 });
 ```
->_For better performance, you can remove the `<ITelegramBotClient>` so the singleton is typed `WTelegramBotClient`, but make sure your dependency-injection code use `WTelegramBotClient` everywhere_
+> [!TIP]  
+> _For better performance, you can remove the `<ITelegramBotClient>` so the singleton is typed `WTelegramBotClient`, but make sure your dependency-injection code use `WTelegramBotClient` everywhere_
 
 Webhooks are not natively supported, but you can use a background service for polling instead:
 - Add this line to your Web App services configuration:  
