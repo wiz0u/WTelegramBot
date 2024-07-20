@@ -40,8 +40,6 @@ public partial class Bot : IDisposable
 	/// <summary>Cache used by <see cref="GetMessage"/></summary>
 	protected Dictionary<(long peerId, int msgId), Message?> CachedMessages = [];
 
-	/// <summary>Special value meaning "all UpdateTypes" accepted</summary>
-	public static readonly IEnumerable<UpdateType> AllUpdateTypes = [(UpdateType)(-1)];
 	private const int DefaultAllowedUpdates = 0b111_1110_0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13, MessageReaction=15, MessageReactionCount=16
 	private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
 	private readonly State _state = new();

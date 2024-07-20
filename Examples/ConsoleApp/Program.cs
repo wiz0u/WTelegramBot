@@ -3,7 +3,6 @@
 // ----------------------------------------------------------------------------------------------
 using System.Text;
 using Telegram.Bot;
-using Telegram.Bot.Serialization;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TL;
@@ -75,16 +74,7 @@ foreach (var m in messages)
 // show some message info not accessible in Bot API
 var msg = messages[0];
 var tlMsg = msg.TLMessage() as TL.Message;
-Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}");
-
-//---------------------------------------------------------------------------------------
-// convert message text to HTML
-var html = bot.Client.EntitiesToHtml(msg.Text, tlMsg.entities, true);
-Console.WriteLine("Text in HTML: " + html);
-
-//---------------------------------------------------------------------------------------
-// convert message caption to Markdown
-var markdown = bot.Client.EntitiesToMarkdown(msg.Text, tlMsg.entities, true);
+Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}  Pinned = {tlMsg.flags.HasFlag(TL.Message.Flags.pinned)}");
 
 Console.WriteLine("___________________________________________________\n");
 Console.WriteLine("I'm listening now. Send me a command in private or in a group where I am... Or press Escape to exit");
@@ -92,7 +82,7 @@ await bot.DropPendingUpdates();
 bot.WantUnknownTLUpdates = true;
 for (int offset = 0; ;)
 {
-	var updates = await bot.GetUpdates(offset, 100, 1, WTelegram.Bot.AllUpdateTypes);
+	var updates = await bot.GetUpdates(offset, 100, 1, Telegram.Bot.Types.Update.AllTypes);
 	if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
 	foreach (var update in updates)
 	{
@@ -132,7 +122,7 @@ for (int offset = 0; ;)
 				{
 					var chat = await bot.GetChat(message.Chat);
 					//---> Demonstrate how to serialize structure to Json, and post it in <pre> code
-					var dump = System.Text.Json.JsonSerializer.Serialize(chat, JsonSerializerOptionsProvider.Options);
+					var dump = System.Text.Json.JsonSerializer.Serialize(chat, JsonBotAPI.Options);
 					dump = $"<pre>{TL.HtmlText.Escape(dump)}</pre>";
 					await bot.SendTextMessage(message.Chat, dump, parseMode: ParseMode.Html);
 				}

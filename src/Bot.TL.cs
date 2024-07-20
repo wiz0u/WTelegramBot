@@ -65,8 +65,8 @@ public partial class Bot
 		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll
 		{
 			text = btn.Text,
-			quiz = btn.RequestPoll.Type is "quiz",
-			flags = btn.RequestPoll.Type is "quiz" or "regular" ? KeyboardButtonRequestPoll.Flags.has_quiz : 0
+			quiz = btn.RequestPoll.Type == PollType.Quiz,
+			flags = btn.RequestPoll.Type.HasValue ? KeyboardButtonRequestPoll.Flags.has_quiz : 0
 		};
 		if (btn.WebApp != null) return new KeyboardButtonSimpleWebView { text = btn.Text, url = btn.WebApp.Url };
 		return new TL.KeyboardButton { text = btn.Text };

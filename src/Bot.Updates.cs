@@ -817,6 +817,11 @@ public partial class Bot
 				GiveawayMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
 			},
 			MessageActionSetChatWallPaper mascwp => msg.ChatBackgroundSet = new ChatBackground { Type = mascwp.wallpaper.BackgroundType() },
+			MessageActionPaymentRefunded mapr => msg.RefundedPayment = new RefundedPayment { 
+				Currency = mapr.currency, TotalAmount = (int)mapr.total_amount,
+				InvoicePayload = mapr.payload == null ? "" : Encoding.UTF8.GetString(mapr.payload),
+				TelegramPaymentChargeId = mapr.charge.id, ProviderPaymentChargeId = mapr.charge.provider_charge_id
+			},
 			_ => null,
 		};
 	}

@@ -1,4 +1,4 @@
-﻿[![Bot API Version](https://img.shields.io/badge/Bot_API-7.6-blueviolet)](https://core.telegram.org/bots/api)
+﻿[![Bot API Version](https://img.shields.io/badge/Bot_API-7.7-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)

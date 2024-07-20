@@ -18,7 +18,7 @@ Example of changes:
 ```csharp
 === In your .csproj ===
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
-    <PackageReference Include="WTelegramBot" Version="7.6.1"/>
+    <PackageReference Include="WTelegramBot" Version="7.7.1"/>
 
 === In your code ===
 global using TelegramBotClient = Telegram.Bot.WTelegramBotClient;

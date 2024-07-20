@@ -1739,10 +1739,6 @@ public partial class Bot
 			Title = mss.set.title,
 			StickerType = mss.set.flags.HasFlag(TL.StickerSet.Flags.emojis) ? StickerType.CustomEmoji :
 							mss.set.flags.HasFlag(TL.StickerSet.Flags.masks) ? StickerType.Mask : StickerType.Regular,
-#pragma warning disable CS0618 // Type or member is obsolete
-			IsAnimated = stickers[0].IsAnimated, // mss.set.flags.HasFlag(TL.StickerSet.Flags.animated), was removed
-			IsVideo = stickers[0].IsVideo, // mss.set.flags.HasFlag(TL.StickerSet.Flags.videos),
-#pragma warning restore CS0618 // Type or member is obsolete
 			Stickers = stickers,
 			Thumbnail = thumb
 		};
