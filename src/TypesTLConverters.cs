@@ -253,6 +253,22 @@ public static class TypesTLConverters
 			_ => new InlineKeyboardButton(btn.Text),
 		})));
 
+	internal static Video Video(this TL.Document document, PhotoSizeBase? thumb = null)
+	{
+		thumb ??= document.LargestThumbSize;
+		var video = document.GetAttribute<DocumentAttributeVideo>();
+		return new Video
+		{
+			FileSize = document.size,
+			Width = video?.w ?? 0,
+			Height = video?.h ?? 0,
+			Duration = (int)(video?.duration + 0.5 ?? 0.0),
+			Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
+			FileName = document.Filename,
+			MimeType = document.mime_type
+		}.SetFileIds(document.ToFileLocation(), document.dc_id);
+	}
+
 	/// <summary>Convert TL.Photo into Bot Types.PhotoSize[]</summary>
 	public static PhotoSize[]? PhotoSizes(this PhotoBase photoBase)
 		=> (photoBase is not Photo photo) ? null : photo.sizes.Select(ps => ps.PhotoSize(photo.ToFileLocation(ps), photo.dc_id)).ToArray();
@@ -663,4 +679,17 @@ public static class TypesTLConverters
 			BottomColor = settings.second_background_color,
 			RotationAngle = settings.rotation
 		};
+
+	internal static PaidMedia PaidMedia(MessageExtendedMediaBase memb) => memb switch
+	{
+		MessageExtendedMediaPreview memp => new PaidMediaPreview { Width = memp.w, Height = memp.h, Duration = memp.video_duration },
+		MessageExtendedMedia mem => mem.media switch
+		{
+			MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
+			MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>
+				new PaidMediaVideo { Video = document.Video() },
+			_ => throw new WTException("Unrecognized Paid MessageMedia")
+		},
+		_ => throw new WTException("Unrecognized MessageExtendedMediaBase")
+	};
 }

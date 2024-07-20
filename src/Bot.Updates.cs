@@ -434,7 +434,7 @@ public partial class Bot
 						Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
 						Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
 						Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
-						Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice
+						Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia
 					};
 				}
 			}
@@ -601,19 +601,7 @@ public partial class Bot
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
 				}
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
-				{
-					var video = document.GetAttribute<DocumentAttributeVideo>();
-					msg.Video = new Telegram.Bot.Types.Video
-					{
-						FileSize = document.size,
-						Width = video?.w ?? 0,
-						Height = video?.h ?? 0,
-						Duration = (int)(video?.duration + 0.5 ?? 0.0),
-						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
-						FileName = document.Filename,
-						MimeType = document.mime_type
-					}.SetFileIds(document.ToFileLocation(), document.dc_id);
-				}
+					msg.Video = document.Video(thumb);
 				else if (document.GetAttribute<DocumentAttributeAudio>() is { } audio)
 				{
 					msg.Audio = new Telegram.Bot.Types.Audio
@@ -741,8 +729,14 @@ public partial class Bot
 					PrizeDescription = mmgr.prize_description,
 				};
 				break;
+			case MessageMediaPaidMedia mmpm:
+				msg.PaidMedia = new PaidMediaInfo
+				{
+					StarCount = (int)mmpm.stars_amount,
+					PaidMedia = mmpm.extended_media.Select(TypesTLConverters.PaidMedia).ToArray()
+				};
+				break;
 			default:
-				System.Diagnostics.Debugger.Break();
 				break;
 		}
 		if (text != "") msg.Caption = text;
