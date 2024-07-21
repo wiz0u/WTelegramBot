@@ -1,6 +1,5 @@
 ﻿using System.Data.Common;
 using System.Reflection;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 using TL;
 
@@ -18,6 +17,13 @@ public partial class Bot : IDisposable
 
     /// <inheritdoc/>
     public long BotId { get; }
+
+	/// <summary>Handler to be called when there is an incoming update</summary>
+	public event Func<Update, Task>? OnUpdate;
+	/// <summary>Handler to be called when there is an incoming message or edited message</summary>
+	public event Func<Message, UpdateType, Task>? OnMessage;
+	/// <summary>Handler to be called when there was a polling error or an exception in your handlers</summary>
+	public event Func<Exception, Telegram.Bot.Polling.HandleErrorSource, Task>? OnError;
 
 	/// <summary>
 	/// Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.TLUpdate"/>)
@@ -77,7 +83,7 @@ public partial class Bot : IDisposable
 	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
 	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true)
 	{
-		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException("bot_token");
+		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException(nameof(configProvider), "bot_token is unset");
 		BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
 		sqlCommands ??= Database.DefaultSqlCommands[(int)Database.DetectType(dbConnection)];
 		_collector = new(this);
@@ -86,7 +92,7 @@ public partial class Bot : IDisposable
 		_database = new Database(dbConnection, sqlCommands, _state);
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
-		Manager = Client.WithUpdateManager(OnUpdate, _database.LoadMBoxStates(), _collector);
+		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
 		_initTask = Task.Run(() => InitLogin(botToken));
 		if (waitForLogin) _initTask.Wait();
 	}
@@ -189,7 +195,7 @@ public partial class Bot : IDisposable
 		return [];
 	}
 
-	private async Task OnUpdate(TL.Update update)
+	private async Task OnTLUpdate(TL.Update update)
 	{
 		try { await _initTask; } catch { }
 		var botUpdate = await MakeUpdate(update);
@@ -198,6 +204,30 @@ public partial class Bot : IDisposable
 		if (botUpdate != null)
 		{
 			botUpdate.Id = ++_state.LastUpdateId;
+			if (OnUpdate != null || OnMessage != null)
+			{
+				try
+				{
+					var task = OnMessage == null ? OnUpdate?.Invoke(botUpdate) : botUpdate switch
+					{
+						{ Message: { } m } => OnMessage?.Invoke((Message)m, UpdateType.Message),
+						{ EditedMessage: { } em } => OnMessage?.Invoke((Message)em, UpdateType.EditedMessage),
+						{ ChannelPost: { } cp } => OnMessage?.Invoke((Message)cp, UpdateType.ChannelPost),
+						{ EditedChannelPost: { } ecp } => OnMessage?.Invoke((Message)ecp, UpdateType.EditedChannelPost),
+						{ BusinessMessage: { } bm } => OnMessage?.Invoke((Message)bm, UpdateType.BusinessMessage),
+						{ EditedBusinessMessage: { } ebm } => OnMessage?.Invoke((Message)ebm, UpdateType.EditedBusinessMessage),
+						_ => OnUpdate?.Invoke(botUpdate) // if OnMessage is set, we call OnUpdate only for non-message updates
+					};
+					if (task != null) await task.ConfigureAwait(true);
+				}
+				catch (Exception ex)
+				{
+					var task = OnError?.Invoke(ex, Telegram.Bot.Polling.HandleErrorSource.HandleUpdateError);
+					if (task != null) await task.ConfigureAwait(true);
+					else System.Diagnostics.Debug.WriteLine(ex); // fallback logging if OnError is unset
+				}
+				return;
+			}
 			bool wasEmpty;
 			lock (_state.PendingUpdates)
 			{

@@ -4,8 +4,6 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 global using System.Diagnostics.CodeAnalysis;
-global using System.Text.Json;
-global using System.Text.Json.Serialization;
 global using Telegram.Bot.Types;
 global using Telegram.Bot.Types.Enums;
 global using Telegram.Bot.Types.InlineQueryResults;
@@ -19,12 +17,12 @@ global using ChatFullInfo = WTelegram.Types.ChatFullInfo;
 global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
-global using Message = Telegram.Bot.Types.Message;
 global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
+global using Message = WTelegram.Types.Message;
+global using MessageEntity = Telegram.Bot.Types.MessageEntity;
 global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
 global using Update = WTelegram.Types.Update;
 global using User = WTelegram.Types.User;
-global using MessageEntity = Telegram.Bot.Types.MessageEntity;
 using System.ComponentModel;
 
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]
