@@ -15,8 +15,8 @@ public partial class Bot : IDisposable
 	/// <summary>The underlying UpdateManager (can be useful as Peer resolver for Client API calls)</summary>
 	public readonly UpdateManager Manager;
 
-    /// <inheritdoc/>
-    public long BotId { get; }
+	/// <inheritdoc/>
+	public long BotId { get; }
 
 	/// <summary>Handler to be called when there is an incoming update</summary>
 	public event Func<Update, Task>? OnUpdate;
@@ -62,9 +62,10 @@ public partial class Bot : IDisposable
 	/// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
 	/// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
-    /// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
-	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect) : this(
-		what => what switch
+	/// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
+	/// <param name="dropUpdates">True to drop past updates and don't try to resync</param>
+	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect, bool dropUpdates = false)
+		: this(what => what switch
 		{
 			"api_id" => apiId.ToString(),
 			"api_hash" => apiHash,
@@ -73,7 +74,8 @@ public partial class Bot : IDisposable
 			_ => null
 		},
 		dbConnection,
-		sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands])
+		sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands],
+		dropUpdates: dropUpdates)
 	{ }
 
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
@@ -81,7 +83,8 @@ public partial class Bot : IDisposable
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
 	/// <param name="sqlCommands">SQL queries for your specific DB engine (null for auto-detect)</param>
 	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
-	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true)
+	/// <param name="dropUpdates">True to drop past updates and don't try to resync</param>
+	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true, bool dropUpdates = false)
 	{
 		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException(nameof(configProvider), "bot_token is unset");
 		BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
@@ -92,7 +95,7 @@ public partial class Bot : IDisposable
 		_database = new Database(dbConnection, sqlCommands, _state);
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
-		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
+		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(dropUpdates), _collector);
 		_initTask = Task.Run(() => InitLogin(botToken));
 		if (waitForLogin) _initTask.Wait();
 	}

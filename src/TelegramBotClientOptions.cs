@@ -25,6 +25,8 @@ public class WTelegramBotClientOptions
     public string[] SqlCommands { get; set; }
     /// <summary>Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMeAsync()</c> to wait for login asynchronously instead</summary>
     public bool WaitForLogin { get; set; } = true;
+    /// <summary>True to drop past updates and don't try to resync</summary>
+    public bool DropUpdates { get; set; } = false;
 
     /// <summary>
     /// Indicates that test environment will be used
