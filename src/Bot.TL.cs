@@ -143,19 +143,27 @@ public partial class Bot
 	{
 		if (replied?.MessageId > 0)
 		{
-			if (replied.ChatId is not null) replyToPeer = await InputPeerChat(replied.ChatId);
+			if (replied.ChatId is null)
+				replyToPeer = null;
+			else
+			{
+				var targetPeerId = replyToPeer?.ID;
+				replyToPeer = await InputPeerChat(replied.ChatId);
+				if (replyToPeer.ID == targetPeerId) replyToPeer = null;
+			}
+
 			var quote = replied.Quote;
 			var quoteEntities = ApplyParse(replied.QuoteParseMode, ref quote, replied.QuoteEntities);
 			return new InputReplyToMessage
 			{
 				reply_to_msg_id = replied.MessageId,
 				top_msg_id = messageThreadId,
-				reply_to_peer_id = messageThreadId != 0 ? replyToPeer : null,
+				reply_to_peer_id = replyToPeer,
 				quote_text = quote,
 				quote_entities = quoteEntities,
 				quote_offset = replied.QuotePosition ?? 0,
 				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
-					| (replied.ChatId is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
+					| (replyToPeer is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (quote != null ? InputReplyToMessage.Flags.has_quote_text : 0)
 					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
 					| (replied.QuotePosition.HasValue ? InputReplyToMessage.Flags.has_quote_offset : 0)
