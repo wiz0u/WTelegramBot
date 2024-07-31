@@ -124,12 +124,12 @@ internal partial class Database : IDisposable
 		}
 	}
 
-	internal Dictionary<long, UpdateManager.MBoxState> LoadMBoxStates(bool noResync)
+	internal Dictionary<long, UpdateManager.MBoxState> LoadMBoxStates()
 	{
 		using var reader = _cmd[LoadMBox].ExecuteReader();
 		var result = new Dictionary<long, UpdateManager.MBoxState>();
 		while (reader.Read())
-			result[reader.GetInt64(0)] = new() { pts = noResync ? 0 : reader.GetInt32(1), access_hash = reader.GetInt64(2) };
+			result[reader.GetInt64(0)] = new() { pts = reader.GetInt32(1), access_hash = reader.GetInt64(2) };
 		return result;
 	}
 

@@ -9,8 +9,7 @@ WTelegramBot is a full rewrite in pure C# of Telegram Bot API server, presenting
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
 
-> [!IMPORTANT]  
-> Library now depends on [Telegram.Bot](https://telegrambots.github.io/book/index.html#telegram-bots-book) v21.* which is not available on Nuget at the moment.  
+> ⚠️ Library now depends on [Telegram.Bot](https://telegrambots.github.io/book/index.html#telegram-bots-book) v21.* which is not available on Nuget at the moment.  
 > You will need to [configure Nuget options or setup a nuget.config file](https://telegrambots.github.io/book/#-installation) before installing WTelegramBot
 
 ## Advantages of WTelegram.Bot

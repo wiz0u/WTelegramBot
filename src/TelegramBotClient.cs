@@ -37,7 +37,7 @@ public partial class WTelegramBotClient : WTelegram.Bot, ITelegramBotClient
     /// Thrown if <paramref name="options"/> is <c>null</c>
     /// </exception>
     public WTelegramBotClient(WTelegramBotClientOptions options, CancellationToken cancellationToken = default)
-        : base(options.WTCConfig, options.DbConnection, options.SqlCommands, waitForLogin: false, dropUpdates: options.DropUpdates)
+        : base(options.WTCConfig, options.DbConnection, options.SqlCommands, waitForLogin: false)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         GlobalCancelToken = cancellationToken;

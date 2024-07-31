@@ -63,8 +63,7 @@ public partial class Bot : IDisposable
 	/// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
 	/// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
-	/// <param name="dropUpdates">True to drop past updates and don't try to resync</param>
-	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect, bool dropUpdates = false)
+	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect)
 		: this(what => what switch
 		{
 			"api_id" => apiId.ToString(),
@@ -74,8 +73,7 @@ public partial class Bot : IDisposable
 			_ => null
 		},
 		dbConnection,
-		sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands],
-		dropUpdates: dropUpdates)
+		sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands])
 	{ }
 
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
@@ -83,8 +81,7 @@ public partial class Bot : IDisposable
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
 	/// <param name="sqlCommands">SQL queries for your specific DB engine (null for auto-detect)</param>
 	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
-	/// <param name="dropUpdates">True to drop past updates and don't try to resync</param>
-	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true, bool dropUpdates = false)
+	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, bool waitForLogin = true)
 	{
 		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException(nameof(configProvider), "bot_token is unset");
 		BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
@@ -95,7 +92,7 @@ public partial class Bot : IDisposable
 		_database = new Database(dbConnection, sqlCommands, _state);
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
-		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(dropUpdates), _collector);
+		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
 		_initTask = Task.Run(() => InitLogin(botToken));
 		if (waitForLogin) _initTask.Wait();
 	}
@@ -159,6 +156,8 @@ public partial class Bot : IDisposable
 	/// <returns>An Array of <see cref="Update"/> objects is returned.</returns>
 	public async Task<Update[]> GetUpdates(int offset = 0, int limit = 100, int timeout = 0, IEnumerable<UpdateType>? allowedUpdates = null, CancellationToken cancellationToken = default)
 	{
+		if (offset is -1 or int.MaxValue) // drop updates => stop eventual resync process
+			await Manager.StopResync();
 		if (allowedUpdates != null)
 		{
 			var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
@@ -227,7 +226,7 @@ public partial class Bot : IDisposable
 				{
 					var task = OnError?.Invoke(ex, Telegram.Bot.Polling.HandleErrorSource.HandleUpdateError);
 					if (task != null) await task.ConfigureAwait(true);
-					else System.Diagnostics.Debug.WriteLine(ex); // fallback logging if OnError is unset
+					else System.Diagnostics.Trace.WriteLine(ex); // fallback logging if OnError is unset
 				}
 				return;
 			}
