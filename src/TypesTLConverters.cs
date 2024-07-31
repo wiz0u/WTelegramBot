@@ -36,6 +36,7 @@ public static class TypesTLConverters
 			LanguageCode = user.lang_code,
 			IsPremium = user.flags.HasFlag(TL.User.Flags.premium),
 			AddedToAttachmentMenu = user.flags.HasFlag(TL.User.Flags.attach_menu_enabled),
+			HasMainWebApp = user.flags2.HasFlag(TL.User.Flags2.bot_has_main_app),
 			AccessHash = user.access_hash
 		};
 		if (user.IsBot)

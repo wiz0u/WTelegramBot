@@ -781,7 +781,7 @@ public partial class Bot
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
 				new TL.Methods.Messages_SetTyping
 				{
-					flags = (TL.Methods.Messages_SetTyping.Flags)(messageThreadId != 0 ? 0x1 : 0),
+					flags = messageThreadId != 0 ? TL.Methods.Messages_SetTyping.Flags.has_top_msg_id : 0,
 					peer = peer,
 					top_msg_id = messageThreadId,
 					action = action.ChatAction(),
@@ -1059,8 +1059,9 @@ public partial class Bot
 	/// <param name="messageId">Identifier of a message to pin/unpin. To unpin the most recent pinned message (by sending date), pass 0.</param>
 	/// <param name="pin">whether to pin (true) or unpin (false)</param>
 	/// <param name="disableNotification">Pass <c><see langword="true"/></c>, if it is not necessary to send a notification to all chat members about the new pinned message. Notifications are always disabled in channels and private chats</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be unpinned</param>
 	public async Task PinUnpinChatMessage(ChatId chatId, int messageId, bool pin = true,
-		bool disableNotification = default)
+		bool disableNotification = default, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		if (!pin && messageId == 0)
@@ -1068,7 +1069,17 @@ public partial class Bot
 				messageId = (await Client.Users_GetFullUser(user)).full_user.pinned_msg_id;
 			else
 				messageId = (await Client.GetFullChat(peer)).full_chat.PinnedMsg;
-		await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification, unpin: !pin);
+		if (businessConnectionId is null)
+			await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification, unpin: !pin);
+		else
+			await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new TL.Methods.Messages_UpdatePinnedMessage
+			{
+				peer = peer, 
+				id = messageId,
+				flags = (disableNotification ? TL.Methods.Messages_UpdatePinnedMessage.Flags.silent : 0)
+					| (pin ? 0 : TL.Methods.Messages_UpdatePinnedMessage.Flags.unpin)
+			});
 	}
 
 	/// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the '<see cref="ChatMemberAdministrator.CanPinMessages"/>' admin right in a supergroup or '<see cref="ChatMemberAdministrator.CanEditMessages"/>' administrator right in a channel</summary>
@@ -1858,7 +1869,7 @@ public partial class Bot
 	/// <param name="name">Sticker set name</param>
 	/// <param name="userId">User identifier of the sticker set owner</param>
 	/// <param name="format">Format of the thumbnail, must be one of <see cref="StickerFormat.Static">Static</see> for a <b>.WEBP</b> or <b>.PNG</b> image, <see cref="StickerFormat.Animated">Animated</see> for a <b>.TGS</b> animation, or <see cref="StickerFormat.Video">Video</see> for a <b>WEBM</b> video</param>
-	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animated-sticker-requirements">https://core.telegram.org/stickers#animated-sticker-requirements</a> for animated sticker technical requirements), or a <b>WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-sticker-requirements">https://core.telegram.org/stickers#video-sticker-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
+	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animation-requirements">https://core.telegram.org/stickers#animation-requirements</a> for animated sticker technical requirements), or a <b>WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-requirements">https://core.telegram.org/stickers#video-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
 	public async Task SetStickerSetThumbnail(string name, long userId, StickerFormat format, InputFile? thumbnail = default)
 	{
 		if (thumbnail == null)
