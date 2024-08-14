@@ -44,6 +44,7 @@ public partial class Bot
 	/// <param name="chatId">The chat id or username</param>
 	/// <param name="messageIds">The message IDs to fetch. You can use <c>Enumerable.Range(startMsgId, count)</c> to get a range of messages</param>
 	/// <returns>List of messages that could be fetched</returns>
+	/// <remarks>Note: Fetching other bots messages with this method will result in empty messages</remarks>
 	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
 	{
 		var peer = await InputPeerChat(chatId);

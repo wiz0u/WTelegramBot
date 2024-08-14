@@ -23,6 +23,7 @@ Some examples:
 - Resolve user/chat usernames
 - Get full details of users/chats
 - Send/receive big files
+- Connect using a MTProxy
 
 You also get access to raw Updates information from Client API, in addition to the usual Bot API updates.
 They contain more information than the limited set of Bot API updates!
@@ -72,8 +73,7 @@ For more information about calling Client API methods, you can read that [librar
 or search through the [official Client API documentation](https://corefork.telegram.org/methods),
 but make sure to look for the mention "**Bots can use this method**" (other methods can't be called).  
 
-> [!NOTE]  
-> If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
+> Note: If you want to experiment with these, you'll need to add a `using TL;` on top of your code, and these calls might throw `TL.RpcException` instead of `ApiRequestException`
 
 Some other `WTelegram.Bot` methods (for example, beginning with Input*) and extension methods can help you convert Bot API ids or structure to/from Client API.
 

@@ -77,7 +77,7 @@ public partial class Bot : IDisposable
 	{ }
 
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
-	/// <param name="configProvider">Configuration callback</param>
+	/// <param name="configProvider">Configuration callback ("MTProxy" can be used for connection)</param>
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
 	/// <param name="sqlCommands">SQL queries for your specific DB engine (null for auto-detect)</param>
 	/// <param name="waitForLogin">Should the constructor wait synchronously for login to complete <i>(necessary before further API calls)</i>.<br/>Set to <see langword="false"/> and use <c>await botClient.GetMe()</c> to wait for login asynchronously instead</param>
@@ -92,6 +92,7 @@ public partial class Bot : IDisposable
 		_database = new Database(dbConnection, sqlCommands, _state);
 		_database.GetTables(out _users, out _chats);
 		Client = new Client(configProvider, _database.LoadSessionState());
+		Client.MTProxyUrl = configProvider("MTProxy");
 		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
 		_initTask = Task.Run(() => InitLogin(botToken));
 		if (waitForLogin) _initTask.Wait();
