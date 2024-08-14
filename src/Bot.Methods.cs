@@ -41,10 +41,10 @@ public partial class Bot
 	}
 
 	/// <summary>Get chat messages based on their messageIds</summary>
+	/// <remarks>Note: Fetching other bots messages with this method will result in empty messages</remarks>
 	/// <param name="chatId">The chat id or username</param>
 	/// <param name="messageIds">The message IDs to fetch. You can use <c>Enumerable.Range(startMsgId, count)</c> to get a range of messages</param>
 	/// <returns>List of messages that could be fetched</returns>
-	/// <remarks>Note: Fetching other bots messages with this method will result in empty messages</remarks>
 	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
 	{
 		var peer = await InputPeerChat(chatId);
@@ -489,8 +489,8 @@ public partial class Bot
 			});
 	}
 
-	/// <summary>Use this method to send paid media to channel chats.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <summary>Use this method to send paid media.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
 	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media</param>
 	/// <param name="media">A array describing the media to be sent; up to 10 items</param>
 	/// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
@@ -501,11 +501,12 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
 		ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
 		bool disableNotification = default, bool protectContent = default,
-		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default)
+		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? businessConnectionId = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -526,7 +527,7 @@ public partial class Bot
 			multimedia.Add(tlMedia);
 		}
 		var impm = new InputMediaPaidMedia { stars_amount = starCount, extended_media = [.. multimedia] };
-		return await PostedMsg(Messages_SendMedia(null, peer, impm, caption, Helpers.RandomLong(), reply_to,
+		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, 0, showCaptionAboveMedia),
 			peer, caption, replyToMessage);
 	}
@@ -789,10 +790,10 @@ public partial class Bot
 				});
 	}
 
-	/// <summary>Use this method to change the chosen reactions on a message. Service messages can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel.</summary>
+	/// <summary>Use this method to change the chosen reactions on a message. Service messages can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel. Bots can't use paid reactions.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="messageId">Identifier of the target message. If the message belongs to a media group, the reaction is set to the first non-deleted message in the group instead.</param>
-	/// <param name="reaction">A list of reaction types to set on the message. Currently, as non-premium users, bots can set up to one reaction per message. A custom emoji reaction can be used if it is either already present on the message or explicitly allowed by chat administrators.</param>
+	/// <param name="reaction">A list of reaction types to set on the message. Currently, as non-premium users, bots can set up to one reaction per message. A custom emoji reaction can be used if it is either already present on the message or explicitly allowed by chat administrators. Paid reactions can't be used by bots.</param>
 	/// <param name="isBig">Pass <see langword="true"/> to set the reaction with a big animation</param>
 	public async Task SetMessageReaction(ChatId chatId, int messageId, IEnumerable<ReactionType>? reaction, bool isBig = default)
 	{
@@ -997,6 +998,32 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, expireDate, memberLimit, title: name, request_needed: createsJoinRequest);
+		return (await MakeChatInviteLink(result.Invite))!;
+	}
+
+	/// <summary>Use this method to create a <a href="https://telegram.org/blog/superchannels-star-reactions-subscriptions#star-subscriptions">subscription invite link</a> for a channel chat. The bot must have the <em>CanInviteUsers</em> administrator rights. The link can be edited using the method <see cref="WTelegram.Bot.EditChatSubscriptionInviteLink">EditChatSubscriptionInviteLink</see> or revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
+	/// <param name="chatId">Unique identifier for the target channel chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. Currently, it must always be 2592000 (30 days).</param>
+	/// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-2500</param>
+	/// <param name="name">Invite link name; 0-32 characters</param>
+	/// <returns>The new invite link as a <see cref="ChatInviteLink"/> object.</returns>
+	public async Task<ChatInviteLink> CreateChatSubscriptionInviteLink(ChatId chatId, int subscriptionPeriod, int subscriptionPrice,
+		string? name = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		ExportedChatInvite exported = await Client.Messages_ExportChatInvite(peer, null, null, name, new() { amount = subscriptionPrice, period = subscriptionPeriod });
+		return (await MakeChatInviteLink(exported))!;
+	}
+
+	/// <summary>Use this method to edit a subscription invite link created by the bot. The bot must have the <em>CanInviteUsers</em> administrator rights.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="inviteLink">The invite link to edit</param>
+	/// <param name="name">Invite link name; 0-32 characters</param>
+	/// <returns>The edited invite link as a <see cref="ChatInviteLink"/> object.</returns>
+	public async Task<ChatInviteLink> EditChatSubscriptionInviteLink(ChatId chatId, string inviteLink, string? name = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var result = await Client.Messages_EditExportedChatInvite(peer, inviteLink, title: name);
 		return (await MakeChatInviteLink(result.Invite))!;
 	}
 
@@ -1310,7 +1337,7 @@ public partial class Bot
 		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId };
 	}
 
-	/// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
+	/// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
 	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
