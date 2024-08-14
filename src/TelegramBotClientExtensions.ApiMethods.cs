@@ -25,8 +25,7 @@ public partial class WTelegramBotClient
         int? timeout = default,
         IEnumerable<UpdateType>? allowedUpdates = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetUpdates(offset ?? 0, limit ?? 100, timeout ?? 0, allowedUpdates, cancellationToken).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetUpdates(offset ?? 0, limit ?? 100, timeout ?? 0, allowedUpdates, cancellationToken).ThrowAsApi(this);
 
     /// <summary>Use this method to specify a URL and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified URL, containing a JSON-serialized <see cref="Update"/>. In case of an unsuccessful request, we will give up after a reasonable amount of attempts.<br/>If you'd like to make sure that the webhook was set by you, you can specify secret data in the parameter <paramref name="secretToken"/>. If specified, the request will contain a header “X-Telegram-Bot-Api-Secret-Token” with the secret token as content.</summary>
     /// <remarks><p><b>Notes</b><br/><b>1.</b> You will not be able to receive updates using <see cref="WTelegram.Bot.GetUpdates">GetUpdates</see> for as long as an outgoing webhook is set up.<br/><b>2.</b> To use a self-signed certificate, you need to upload your <a href="https://core.telegram.org/bots/self-signed">public key certificate</a> using <paramref name="certificate"/> parameter. Please upload as InputFile, sending a String will not work.<br/><b>3.</b> Ports currently supported <em>for webhooks</em>: <b>443, 80, 88, 8443</b>.</p><p>If you're having any trouble setting up webhooks, please check out this <a href="https://core.telegram.org/bots/webhooks">amazing guide to webhooks</a>.</p></remarks>
@@ -79,8 +78,7 @@ public partial class WTelegramBotClient
     /// <returns>A <see cref="WebhookInfo"/> object. If the bot is using <see cref="WTelegram.Bot.GetUpdates">GetUpdates</see>, will return an object with the <em>url</em> field empty.</returns>
     public Task<WebhookInfo> GetWebhookInfoAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        throw new NotSupportedException("WTelegramBot doesn't support getting Webhooks status");
+    ) => throw new NotSupportedException("WTelegramBot doesn't support getting Webhooks status");
 
     #endregion Getting updates
 
@@ -91,8 +89,7 @@ public partial class WTelegramBotClient
     /// <returns>Basic information about the bot in form of a <see cref="User"/> object.</returns>
     public async Task<User> GetMeAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetMe().ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetMe().ThrowAsApi(this);
 
     /// <summary>Use this method to log out from the cloud Bot API server before launching the bot locally. You <b>must</b> log out the bot before running it locally, otherwise there is no guarantee that the bot will receive updates. After a successful call, you can immediately log in on a local server, but will not be able to log in back to the cloud Bot API server for 10 minutes.</summary>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -109,8 +106,7 @@ public partial class WTelegramBotClient
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task CloseAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).Close().ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).Close().ThrowAsApi(this);
 
     /// <summary>Use this method to send text messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -141,8 +137,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendTextMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendTextMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -161,8 +156,7 @@ public partial class WTelegramBotClient
         bool disableNotification = default,
         bool protectContent = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi(this);
 
     /// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -183,7 +177,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     )
     {
-        var msgs = await ThrowIfCancelled(cancellationToken).ForwardMessages(chatId, fromChatId, messageIds, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
+        var msgs = await ThrowIfCancelled(cancellationToken).ForwardMessages(chatId, fromChatId, messageIds, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi(this);
         return msgs.Select(m => (MessageId)m).ToArray();
     }
 
@@ -216,8 +210,7 @@ public partial class WTelegramBotClient
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent).ThrowAsApi(this);
 
     /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -240,7 +233,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     )
     {
-        var msgs = await ThrowIfCancelled(cancellationToken).CopyMessages(chatId, fromChatId, messageIds.ToArray(), removeCaption, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi();
+        var msgs = await ThrowIfCancelled(cancellationToken).CopyMessages(chatId, fromChatId, messageIds.ToArray(), removeCaption, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi(this);
         return msgs.Select(m => (MessageId)m).ToArray();
     }
 
@@ -277,8 +270,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format.</summary>
     /// <remarks>Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future.<br/>For sending voice messages, use the <see cref="WTelegram.Bot.SendVoice">SendVoice</see> method instead.</remarks>
@@ -318,8 +310,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send general files.</summary>
     /// <remarks>Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -355,8 +346,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send video files, Telegram clients support MPEG4 videos (other formats may be sent as <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -402,8 +392,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound).</summary>
     /// <remarks>Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -447,8 +436,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .OGG file encoded with OPUS, or in .MP3 format, or in .M4A format (other formats may be sent as <see cref="Audio"/> or <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -482,8 +470,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients support rounded square MPEG4 videos of up to 1 minute long. Use this method to send video messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -514,8 +501,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send paid media to channel chats.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -544,8 +530,7 @@ public partial class WTelegramBotClient
         ReplyParameters? replyParameters = default,
         IReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, starCount, media, caption, parseMode, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, replyParameters, replyMarkup).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, starCount, media, caption, parseMode, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, replyParameters, replyMarkup).ThrowAsApi(this);
 
     /// <summary>Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -568,8 +553,7 @@ public partial class WTelegramBotClient
         ReplyParameters? replyParameters = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send point on the map.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -604,8 +588,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send information about a venue.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -644,8 +627,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send phone contacts.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -676,8 +658,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send a native poll.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -728,8 +709,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to send an animated emoji that will display a random value.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -754,8 +734,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? Emoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? Emoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
     /// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
@@ -770,8 +749,7 @@ public partial class WTelegramBotClient
         int? messageThreadId = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendChatAction(chatId, action, messageThreadId ?? 0, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendChatAction(chatId, action, messageThreadId ?? 0, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to change the chosen reactions on a message. Service messages can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -785,8 +763,7 @@ public partial class WTelegramBotClient
         IEnumerable<ReactionType>? reaction,
         bool isBig = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMessageReaction(chatId, messageId, reaction, isBig).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMessageReaction(chatId, messageId, reaction, isBig).ThrowAsApi(this);
 
     /// <summary>Use this method to get a list of profile pictures for a user.</summary>
     /// <param name="userId">Unique identifier of the target user</param>
@@ -799,8 +776,7 @@ public partial class WTelegramBotClient
         int? offset = default,
         int? limit = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetUserProfilePhotos(userId, offset ?? 0, limit ?? 100).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetUserProfilePhotos(userId, offset ?? 0, limit ?? 100).ThrowAsApi(this);
 
     /// <summary>Use this method to get basic information about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size.</summary>
     /// <param name="fileId">File identifier to get information about</param>
@@ -809,8 +785,7 @@ public partial class WTelegramBotClient
     public async Task<File> GetFileAsync(
         string fileId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetFile(fileId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetFile(fileId).ThrowAsApi(this);
 
     /// <summary>Use this method to ban a user in a group, a supergroup or a channel. In the case of supergroups and channels, the user will not be able to return to the chat on their own using invite links, etc., unless <see cref="WTelegram.Bot.UnbanChatMember">unbanned</see> first. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -824,8 +799,7 @@ public partial class WTelegramBotClient
         DateTime? untilDate = default,
         bool revokeMessages = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).BanChatMember(chatId, userId, untilDate ?? default, revokeMessages).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).BanChatMember(chatId, userId, untilDate ?? default, revokeMessages).ThrowAsApi(this);
 
     /// <summary>Use this method to unban a previously banned user in a supergroup or channel. The user will <b>not</b> return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. By default, this method guarantees that after the call the user is not a member of the chat, but will be able to join it. So if the user is a member of the chat they will also be <b>removed</b> from the chat. If you don't want this, use the parameter <paramref name="onlyIfBanned"/>.</summary>
     /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -837,8 +811,7 @@ public partial class WTelegramBotClient
         long userId,
         bool onlyIfBanned = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).UnbanChatMember(chatId, userId, onlyIfBanned).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).UnbanChatMember(chatId, userId, onlyIfBanned).ThrowAsApi(this);
 
     /// <summary>Use this method to restrict a user in a supergroup. The bot must be an administrator in the supergroup for this to work and must have the appropriate administrator rights. Pass <em>True</em> for all permissions to lift restrictions from a user.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -854,8 +827,7 @@ public partial class WTelegramBotClient
         bool useIndependentChatPermissions = default,
         DateTime? untilDate = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).RestrictChatMember(chatId, userId, permissions.LegacyMode(useIndependentChatPermissions), untilDate).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).RestrictChatMember(chatId, userId, permissions.LegacyMode(useIndependentChatPermissions), untilDate).ThrowAsApi(this);
 
     /// <summary>Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Pass <em>False</em> for all boolean parameters to demote a user.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -895,8 +867,7 @@ public partial class WTelegramBotClient
         bool canPinMessages = default,
         bool canManageTopics = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).PromoteChatMember(chatId, userId,
+    ) => await ThrowIfCancelled(cancellationToken).PromoteChatMember(chatId, userId,
             new ChatAdministratorRights
             {
                 IsAnonymous = isAnonymous,
@@ -914,7 +885,7 @@ public partial class WTelegramBotClient
                 CanPostStories = canPostStories,
                 CanEditStories = canEditStories,
                 CanDeleteStories = canDeleteStories,
-            }).ThrowAsApi();
+            }).ThrowAsApi(this);
 
     /// <summary>Use this method to set a custom title for an administrator in a supergroup promoted by the bot.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -926,8 +897,7 @@ public partial class WTelegramBotClient
         long userId,
         string customTitle,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatAdministratorCustomTitle(chatId, userId, customTitle).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatAdministratorCustomTitle(chatId, userId, customTitle).ThrowAsApi(this);
 
     /// <summary>Use this method to ban a channel chat in a supergroup or a channel. Until the chat is <see cref="WTelegram.Bot.UnbanChatSenderChat">unbanned</see>, the owner of the banned chat won't be able to send messages on behalf of <b>any of their channels</b>. The bot must be an administrator in the supergroup or channel for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -937,8 +907,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long senderChatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, true).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to unban a previously banned channel chat in a supergroup or channel. The bot must be an administrator for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -948,8 +917,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long senderChatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, false).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to set default chat permissions for all members. The bot must be an administrator in the group or a supergroup for this to work and must have the <em>CanRestrictMembers</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -961,8 +929,7 @@ public partial class WTelegramBotClient
         ChatPermissions permissions,
         bool useIndependentChatPermissions = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatPermissions(chatId, permissions.LegacyMode(useIndependentChatPermissions)).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatPermissions(chatId, permissions.LegacyMode(useIndependentChatPermissions)).ThrowAsApi(this);
 
     /// <summary>Use this method to generate a new primary invite link for a chat; any previously generated primary link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <remarks>Note: Each administrator in a chat generates their own invite links. Bots can't use invite links generated by other administrators. If you want your bot to work with invite links, it will need to generate its own link using <see cref="WTelegram.Bot.ExportChatInviteLink">ExportChatInviteLink</see> or by calling the <see cref="WTelegram.Bot.GetChat">GetChat</see> method. If your bot needs to generate a new primary invite link replacing its previous one, use <see cref="WTelegram.Bot.ExportChatInviteLink">ExportChatInviteLink</see> again.</remarks>
@@ -972,8 +939,7 @@ public partial class WTelegramBotClient
     public async Task<string> ExportChatInviteLinkAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).ExportChatInviteLink(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).ExportChatInviteLink(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to create an additional invite link for a chat. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. The link can be revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -990,8 +956,7 @@ public partial class WTelegramBotClient
         int? memberLimit = default,
         bool createsJoinRequest = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CreateChatInviteLink(chatId, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CreateChatInviteLink(chatId, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi(this);
 
     /// <summary>Use this method to edit a non-primary invite link created by the bot. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1010,8 +975,7 @@ public partial class WTelegramBotClient
         int? memberLimit = default,
         bool createsJoinRequest = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditChatInviteLink(chatId, inviteLink, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditChatInviteLink(chatId, inviteLink, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi(this);
 
     /// <summary>Use this method to revoke an invite link created by the bot. If the primary link is revoked, a new link is automatically generated. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier of the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1022,8 +986,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string inviteLink,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).RevokeChatInviteLink(chatId, inviteLink).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).RevokeChatInviteLink(chatId, inviteLink).ThrowAsApi(this);
 
     /// <summary>Use this method to approve a chat join request. The bot must be an administrator in the chat for this to work and must have the <em>CanInviteUsers</em> administrator right.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1033,8 +996,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, true).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to decline a chat join request. The bot must be an administrator in the chat for this to work and must have the <em>CanInviteUsers</em> administrator right.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1044,8 +1006,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, false).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1055,8 +1016,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         InputFileStream photo,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, photo).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, photo).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1064,8 +1024,7 @@ public partial class WTelegramBotClient
     public async Task DeleteChatPhotoAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, null).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, null).ThrowAsApi(this);
 
     /// <summary>Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1075,8 +1034,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string title,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatTitle(chatId, title).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatTitle(chatId, title).ThrowAsApi(this);
 
     /// <summary>Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1086,8 +1044,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string? description = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatDescription(chatId, description).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatDescription(chatId, description).ThrowAsApi(this);
 
     /// <summary>Use this method to add a message to the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1101,8 +1058,7 @@ public partial class WTelegramBotClient
         bool disableNotification = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId, true, disableNotification, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId, true, disableNotification, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to remove a message from the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1114,8 +1070,7 @@ public partial class WTelegramBotClient
         int? messageId = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, false, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, false, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1123,8 +1078,7 @@ public partial class WTelegramBotClient
     public async Task UnpinAllChatMessages(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method for your bot to leave a group, supergroup or channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1132,8 +1086,7 @@ public partial class WTelegramBotClient
     public async Task LeaveChatAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).LeaveChat(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).LeaveChat(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get up-to-date information about the chat.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1142,8 +1095,7 @@ public partial class WTelegramBotClient
     public async Task<ChatFullInfo> GetChatAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetChat(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetChat(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get a list of administrators in a chat, which aren't bots.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1152,8 +1104,7 @@ public partial class WTelegramBotClient
     public async Task<ChatMember[]> GetChatAdministratorsAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetChatAdministrators(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetChatAdministrators(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get the number of members in a chat.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1162,8 +1113,7 @@ public partial class WTelegramBotClient
     public async Task<int> GetChatMemberCountAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetChatMemberCount(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetChatMemberCount(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get information about a member of a chat. The method is only guaranteed to work for other users if the bot is an administrator in the chat.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -1174,8 +1124,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetChatMember(chatId, userId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetChatMember(chatId, userId).ThrowAsApi(this);
 
     /// <summary>Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Use the field <em>CanSetStickerSet</em> optionally returned in <see cref="WTelegram.Bot.GetChat">GetChat</see> requests to check if the bot can use this method.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1185,8 +1134,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string stickerSetName,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatStickerSet(chatId, stickerSetName).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatStickerSet(chatId, stickerSetName).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Use the field <em>CanSetStickerSet</em> optionally returned in <see cref="WTelegram.Bot.GetChat">GetChat</see> requests to check if the bot can use this method.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1194,16 +1142,14 @@ public partial class WTelegramBotClient
     public async Task DeleteChatStickerSetAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatStickerSet(chatId, null).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatStickerSet(chatId, null).ThrowAsApi(this);
 
     /// <summary>Use this method to get custom emoji stickers, which can be used as a forum topic icon by any user.</summary>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An Array of <see cref="Sticker"/> objects.</returns>
     public async Task<Sticker[]> GetForumTopicIconStickersAsync(
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetForumTopicIconStickers().ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetForumTopicIconStickers().ThrowAsApi(this);
 
     /// <summary>Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1218,8 +1164,7 @@ public partial class WTelegramBotClient
         int? iconColor = default,
         string? iconCustomEmojiId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CreateForumTopic(chatId, name, iconColor, iconCustomEmojiId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CreateForumTopic(chatId, name, iconColor, iconCustomEmojiId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1233,8 +1178,7 @@ public partial class WTelegramBotClient
         string? name = default,
         string? iconCustomEmojiId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, messageThreadId, name, iconCustomEmojiId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, messageThreadId, name, iconCustomEmojiId).ThrowAsApi(this);
 
     /// <summary>Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1244,8 +1188,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, true).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1255,8 +1198,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, false).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanDeleteMessages</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1266,8 +1208,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteForumTopic(chatId, messageThreadId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteForumTopic(chatId, messageThreadId).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a forum topic. The bot must be an administrator in the chat for this to work and must have the <em>CanPinMessages</em> administrator right in the supergroup.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1277,8 +1218,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         int messageThreadId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId, messageThreadId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId, messageThreadId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have <em>CanManageTopics</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1288,8 +1228,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string name,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, 1, name).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, 1, name).ThrowAsApi(this);
 
     /// <summary>Use this method to close an open 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1297,8 +1236,7 @@ public partial class WTelegramBotClient
     public async Task CloseGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, true).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, true).ThrowAsApi(this);
 
     /// <summary>Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights. The topic will be automatically unhidden if it was hidden.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1306,8 +1244,7 @@ public partial class WTelegramBotClient
     public async Task ReopenGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, false).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, false).ThrowAsApi(this);
 
     /// <summary>Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights. The topic will be automatically closed if it was open.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1315,8 +1252,7 @@ public partial class WTelegramBotClient
     public async Task HideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to unhide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1324,8 +1260,7 @@ public partial class WTelegramBotClient
     public async Task UnhideGeneralForumTopicAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId, false).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a General forum topic. The bot must be an administrator in the chat for this to work and must have the <em>CanPinMessages</em> administrator right in the supergroup.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
@@ -1333,8 +1268,7 @@ public partial class WTelegramBotClient
     public async Task UnpinAllGeneralForumTopicMessagesAsync(
         ChatId chatId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId, 1).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId, 1).ThrowAsApi(this);
 
     /// <summary>Use this method to send answers to callback queries sent from <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboards</a>. The answer will be displayed to the user as a notification at the top of the chat screen or as an alert</summary>
     /// <remarks>Alternatively, the user can be redirected to the specified Game URL. For this option to work, you must first create a game for your bot via <a href="https://t.me/botfather">@BotFather</a> and accept the terms. Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter.</remarks>
@@ -1351,8 +1285,7 @@ public partial class WTelegramBotClient
         string? url = default,
         int? cacheTime = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerCallbackQuery(callbackQueryId, text, showAlert, url, cacheTime ?? 0).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerCallbackQuery(callbackQueryId, text, showAlert, url, cacheTime ?? 0).ThrowAsApi(this);
 
     /// <summary>Use this method to get the list of boosts added to a chat by a user. Requires administrator rights in the chat.</summary>
     /// <param name="chatId">Unique identifier for the chat or username of the channel (in the format <c>@channelusername</c>)</param>
@@ -1363,8 +1296,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         long userId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetUserChatBoosts(chatId, userId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetUserChatBoosts(chatId, userId).ThrowAsApi(this);
 
     /// <summary>Use this method to get information about the connection of the bot with a business account.</summary>
     /// <param name="businessConnectionId">Unique identifier of the business connection</param>
@@ -1373,8 +1305,7 @@ public partial class WTelegramBotClient
     public async Task<BusinessConnection> GetBusinessConnectionAsync(
         string businessConnectionId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetBusinessConnection(businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetBusinessConnection(businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to change the list of the bot's commands. See <a href="https://core.telegram.org/bots/features#commands">this manual</a> for more details about bot commands.</summary>
     /// <param name="commands">A list of bot commands to be set as the list of the bot's commands. At most 100 commands can be specified.</param>
@@ -1386,8 +1317,7 @@ public partial class WTelegramBotClient
         BotCommandScope? scope = default,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMyCommands(commands, scope, languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMyCommands(commands, scope, languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to delete the list of the bot's commands for the given scope and user language. After deletion, <a href="https://core.telegram.org/bots/api#determining-list-of-commands">higher level commands</a> will be shown to affected users.</summary>
     /// <param name="scope">An object, describing scope of users for which the commands are relevant. Defaults to <see cref="BotCommandScopeDefault"/>.</param>
@@ -1397,8 +1327,7 @@ public partial class WTelegramBotClient
         BotCommandScope? scope = default,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteMyCommands(scope, languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteMyCommands(scope, languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current list of the bot's commands for the given scope and user language.</summary>
     /// <param name="scope">An object, describing scope of users. Defaults to <see cref="BotCommandScopeDefault"/>.</param>
@@ -1409,8 +1338,7 @@ public partial class WTelegramBotClient
         BotCommandScope? scope = default,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetMyCommands(scope, languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetMyCommands(scope, languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to change the bot's name.</summary>
     /// <param name="name">New bot name; 0-64 characters. Pass an empty string to remove the dedicated name for the given language.</param>
@@ -1420,8 +1348,7 @@ public partial class WTelegramBotClient
         string? name,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMyInfo(name: name ?? "", languageCode: languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMyInfo(name: name ?? "", languageCode: languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current bot name for the given user language.</summary>
     /// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
@@ -1430,8 +1357,7 @@ public partial class WTelegramBotClient
     public async Task<BotName> GetMyNameAsync(
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).name;
+    ) => (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi(this)).name;
 
     /// <summary>Use this method to change the bot's description, which is shown in the chat with the bot if the chat is empty.</summary>
     /// <param name="description">New bot description; 0-512 characters. Pass an empty string to remove the dedicated description for the given language.</param>
@@ -1441,8 +1367,7 @@ public partial class WTelegramBotClient
         string? description,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMyInfo(description: description ?? "", languageCode: languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMyInfo(description: description ?? "", languageCode: languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current bot description for the given user language.</summary>
     /// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
@@ -1451,8 +1376,7 @@ public partial class WTelegramBotClient
     public async Task<BotDescription> GetMyDescriptionAsync(
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).description;
+    ) => (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi(this)).description;
 
     /// <summary>Use this method to change the bot's short description, which is shown on the bot's profile page and is sent together with the link when users share the bot.</summary>
     /// <param name="shortDescription">New short description for the bot; 0-120 characters. Pass an empty string to remove the dedicated short description for the given language.</param>
@@ -1462,8 +1386,7 @@ public partial class WTelegramBotClient
         string? shortDescription,
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMyInfo(shortDescription: shortDescription ?? "", languageCode: languageCode).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMyInfo(shortDescription: shortDescription ?? "", languageCode: languageCode).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current bot short description for the given user language.</summary>
     /// <param name="languageCode">A two-letter ISO 639-1 language code or an empty string</param>
@@ -1472,8 +1395,7 @@ public partial class WTelegramBotClient
     public async Task<BotShortDescription> GetMyShortDescriptionAsync(
         string? languageCode = default,
         CancellationToken cancellationToken = default
-    ) =>
-        (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi()).shortDescription;
+    ) => (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi(this)).shortDescription;
 
     /// <summary>Use this method to change the bot's menu button in a private chat, or the default menu button.</summary>
     /// <param name="chatId">Unique identifier for the target private chat. If not specified, default bot's menu button will be changed</param>
@@ -1483,8 +1405,7 @@ public partial class WTelegramBotClient
         long? chatId = default,
         MenuButton? menuButton = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetChatMenuButton(chatId, menuButton).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetChatMenuButton(chatId, menuButton).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current value of the bot's menu button in a private chat, or the default menu button.</summary>
     /// <param name="chatId">Unique identifier for the target private chat. If not specified, default bot's menu button will be returned</param>
@@ -1493,8 +1414,7 @@ public partial class WTelegramBotClient
     public async Task<MenuButton> GetChatMenuButtonAsync(
         long? chatId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetChatMenuButton(chatId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetChatMenuButton(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to change the default administrator rights requested by the bot when it's added as an administrator to groups or channels. These rights will be suggested to users, but they are free to modify the list before adding the bot.</summary>
     /// <param name="rights">An object describing new default administrator rights. If not specified, the default administrator rights will be cleared.</param>
@@ -1504,8 +1424,7 @@ public partial class WTelegramBotClient
         ChatAdministratorRights? rights = default,
         bool forChannels = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetMyDefaultAdministratorRights(rights, forChannels).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetMyDefaultAdministratorRights(rights, forChannels).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current default administrator rights of the bot.</summary>
     /// <param name="forChannels">Pass <see langword="true"/> to get default administrator rights of the bot in channels. Otherwise, default administrator rights of the bot for groups and supergroups will be returned.</param>
@@ -1514,8 +1433,7 @@ public partial class WTelegramBotClient
     public async Task<ChatAdministratorRights> GetMyDefaultAdministratorRightsAsync(
         bool forChannels = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetMyDefaultAdministratorRights(forChannels).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetMyDefaultAdministratorRights(forChannels).ThrowAsApi(this);
 
     #endregion Available methods
 
@@ -1542,8 +1460,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1563,8 +1480,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit captions of messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1587,8 +1503,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit captions of messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1608,8 +1523,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1626,8 +1540,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageMedia(chatId, messageId, media, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageMedia(chatId, messageId, media, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1641,8 +1554,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageMedia(inlineMessageId, media, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageMedia(inlineMessageId, media, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1669,8 +1581,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1694,8 +1605,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1710,8 +1620,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1723,8 +1632,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1739,8 +1647,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
     /// <param name="inlineMessageId">Identifier of the inline message</param>
@@ -1752,8 +1659,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop a poll which was sent by the bot.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1768,8 +1674,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).StopPoll(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).StopPoll(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a message, including service messages, with the following limitations:<br/>- A message can only be deleted if it was sent less than 48 hours ago.<br/>- Service messages about a supergroup, channel, or forum topic creation can't be deleted.<br/>- A dice message in a private chat can only be deleted if it was sent more than 24 hours ago.<br/>- Bots can delete outgoing messages in private chats, groups, and supergroups.<br/>- Bots can delete incoming messages in private chats.<br/>- Bots granted <em>CanPostMessages</em> permissions can delete outgoing messages in channels.<br/>- If the bot is an administrator of a group, it can delete any message there.<br/>- If the bot has <em>CanDeleteMessages</em> permission in a supergroup or a channel, it can delete any message there.<br/>Returns <em>True</em> on success.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1779,8 +1684,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         int messageId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageId).ThrowAsApi(this);
 
     /// <summary>Use this method to delete multiple messages simultaneously. If some of the specified messages can't be found, they are skipped.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -1790,8 +1694,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         IEnumerable<int> messageIds,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi(this);
 
     #endregion Updating messages
 
@@ -1822,8 +1725,7 @@ public partial class WTelegramBotClient
         IReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to get a sticker set.</summary>
     /// <param name="name">Name of the sticker set</param>
@@ -1832,8 +1734,7 @@ public partial class WTelegramBotClient
     public async Task<StickerSet> GetStickerSetAsync(
         string name,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetStickerSet(name).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetStickerSet(name).ThrowAsApi(this);
 
     /// <summary>Use this method to get information about custom emoji stickers by their identifiers.</summary>
     /// <param name="customEmojiIds">A list of custom emoji identifiers. At most 200 custom emoji identifiers can be specified.</param>
@@ -1842,8 +1743,7 @@ public partial class WTelegramBotClient
     public async Task<Sticker[]> GetCustomEmojiStickersAsync(
         IEnumerable<string> customEmojiIds,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetCustomEmojiStickers(customEmojiIds).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetCustomEmojiStickers(customEmojiIds).ThrowAsApi(this);
 
     /// <summary>Use this method to upload a file with a sticker for later use in the <see cref="WTelegram.Bot.CreateNewStickerSet">CreateNewStickerSet</see>, <see cref="WTelegram.Bot.AddStickerToSet">AddStickerToSet</see>, or <see cref="WTelegram.Bot.ReplaceStickerInSet">ReplaceStickerInSet</see> methods (the file can be used multiple times).</summary>
     /// <param name="userId">User identifier of sticker file owner</param>
@@ -1856,8 +1756,7 @@ public partial class WTelegramBotClient
         InputFileStream sticker,
         StickerFormat stickerFormat,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).UploadStickerFile(userId, sticker, stickerFormat).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).UploadStickerFile(userId, sticker, stickerFormat).ThrowAsApi(this);
 
     /// <summary>Use this method to create a new sticker set owned by a user. The bot will be able to edit the sticker set thus created.</summary>
     /// <param name="userId">User identifier of created sticker set owner</param>
@@ -1875,8 +1774,7 @@ public partial class WTelegramBotClient
         StickerType? stickerType = default,
         bool needsRepainting = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CreateNewStickerSet(userId, name, title, stickers, stickerType, needsRepainting).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CreateNewStickerSet(userId, name, title, stickers, stickerType, needsRepainting).ThrowAsApi(this);
 
     /// <summary>Use this method to add a new sticker to a set created by the bot. Emoji sticker sets can have up to 200 stickers. Other sticker sets can have up to 120 stickers.</summary>
     /// <param name="userId">User identifier of sticker set owner</param>
@@ -1888,8 +1786,7 @@ public partial class WTelegramBotClient
         string name,
         InputSticker sticker,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AddStickerToSet(userId, name, sticker).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AddStickerToSet(userId, name, sticker).ThrowAsApi(this);
 
     /// <summary>Use this method to move a sticker in a set created by the bot to a specific position.</summary>
     /// <param name="sticker">File identifier of the sticker</param>
@@ -1899,8 +1796,7 @@ public partial class WTelegramBotClient
         InputFileId sticker,
         int position,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerPositionInSet(sticker, position).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerPositionInSet(sticker, position).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a sticker from a set created by the bot.</summary>
     /// <param name="sticker">File identifier of the sticker</param>
@@ -1908,8 +1804,7 @@ public partial class WTelegramBotClient
     public async Task DeleteStickerFromSetAsync(
         InputFileId sticker,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteStickerFromSet(sticker).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteStickerFromSet(sticker).ThrowAsApi(this);
 
     /// <summary>Use this method to replace an existing sticker in a sticker set with a new one. The method is equivalent to calling <see cref="WTelegram.Bot.DeleteStickerFromSet">DeleteStickerFromSet</see>, then <see cref="WTelegram.Bot.AddStickerToSet">AddStickerToSet</see>, then <see cref="WTelegram.Bot.SetStickerPositionInSet">SetStickerPositionInSet</see>.</summary>
     /// <param name="userId">User identifier of the sticker set owner</param>
@@ -1923,8 +1818,7 @@ public partial class WTelegramBotClient
         string oldSticker,
         InputSticker sticker,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).ReplaceStickerInSet(userId, name, oldSticker, sticker).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).ReplaceStickerInSet(userId, name, oldSticker, sticker).ThrowAsApi(this);
 
     /// <summary>Use this method to change the list of emoji assigned to a regular or custom emoji sticker. The sticker must belong to a sticker set created by the bot.</summary>
     /// <param name="sticker">File identifier of the sticker</param>
@@ -1934,8 +1828,7 @@ public partial class WTelegramBotClient
         InputFileId sticker,
         IEnumerable<string> emojiList,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, emojiList: string.Concat(emojiList)).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, emojiList: string.Concat(emojiList)).ThrowAsApi(this);
 
     /// <summary>Use this method to change search keywords assigned to a regular or custom emoji sticker. The sticker must belong to a sticker set created by the bot.</summary>
     /// <param name="sticker">File identifier of the sticker</param>
@@ -1945,8 +1838,7 @@ public partial class WTelegramBotClient
         InputFileId sticker,
         IEnumerable<string>? keywords = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, keywords: keywords == null ? "" : string.Join(",", keywords)).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, keywords: keywords == null ? "" : string.Join(",", keywords)).ThrowAsApi(this);
 
     /// <summary>Use this method to change the <see cref="MaskPosition">mask position</see> of a mask sticker. The sticker must belong to a sticker set that was created by the bot.</summary>
     /// <param name="sticker">File identifier of the sticker</param>
@@ -1956,8 +1848,7 @@ public partial class WTelegramBotClient
         InputFileId sticker,
         MaskPosition? maskPosition = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, maskPosition: maskPosition).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerInfo(sticker, maskPosition: maskPosition).ThrowAsApi(this);
 
     /// <summary>Use this method to set the title of a created sticker set.</summary>
     /// <param name="name">Sticker set name</param>
@@ -1967,8 +1858,7 @@ public partial class WTelegramBotClient
         string name,
         string title,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerSetTitle(name, title).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerSetTitle(name, title).ThrowAsApi(this);
 
     /// <summary>Use this method to set the thumbnail of a regular or mask sticker set. The format of the thumbnail file must match the format of the stickers in the set.</summary>
     /// <param name="name">Sticker set name</param>
@@ -1982,8 +1872,7 @@ public partial class WTelegramBotClient
         StickerFormat format,
         InputFile? thumbnail = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetStickerSetThumbnail(name, userId, format, thumbnail).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetStickerSetThumbnail(name, userId, format, thumbnail).ThrowAsApi(this);
 
     /// <summary>Use this method to set the thumbnail of a custom emoji sticker set.</summary>
     /// <param name="name">Sticker set name</param>
@@ -1993,8 +1882,7 @@ public partial class WTelegramBotClient
         string name,
         string? customEmojiId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetCustomEmojiStickerSetThumbnail(name, customEmojiId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetCustomEmojiStickerSetThumbnail(name, customEmojiId).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a sticker set that was created by the bot.</summary>
     /// <param name="name">Sticker set name</param>
@@ -2002,8 +1890,7 @@ public partial class WTelegramBotClient
     public async Task DeleteStickerSetAsync(
         string name,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).DeleteStickerSet(name).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).DeleteStickerSet(name).ThrowAsApi(this);
 
     #endregion
 
@@ -2025,8 +1912,7 @@ public partial class WTelegramBotClient
         string? nextOffset = default,
         InlineQueryResultsButton? button = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerInlineQuery(inlineQueryId, results, cacheTime ?? 300, isPersonal, nextOffset, button).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerInlineQuery(inlineQueryId, results, cacheTime ?? 300, isPersonal, nextOffset, button).ThrowAsApi(this);
 
     /// <summary>Use this method to set the result of an interaction with a <a href="https://core.telegram.org/bots/webapps">Web App</a> and send a corresponding message on behalf of the user to the chat from which the query originated.</summary>
     /// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
@@ -2039,7 +1925,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     )
     {
-        var sent = await ThrowIfCancelled(cancellationToken).AnswerWebAppQuery(webAppQueryId, result).ThrowAsApi();
+        var sent = await ThrowIfCancelled(cancellationToken).AnswerWebAppQuery(webAppQueryId, result).ThrowAsApi(this);
         return new SentWebAppMessage { InlineMessageId = sent };
     }
 
@@ -2108,8 +1994,7 @@ public partial class WTelegramBotClient
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendInvoice(chatId, title, description, payload, currency, prices, providerToken, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault()).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendInvoice(chatId, title, description, payload, currency, prices, providerToken, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault()).ThrowAsApi(this);
 
     /// <summary>Use this method to create a link for an invoice.</summary>
     /// <param name="title">Product name, 1-32 characters</param>
@@ -2156,8 +2041,7 @@ public partial class WTelegramBotClient
         bool sendEmailToProvider = default,
         bool isFlexible = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).CreateInvoiceLink(title, description, payload, providerToken, currency, prices, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).CreateInvoiceLink(title, description, payload, providerToken, currency, prices, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible).ThrowAsApi(this);
 
     /// <summary>If you sent an invoice requesting a shipping address and the parameter <em>IsFlexible</em> was specified, the Bot API will send an <see cref="Update"/> with a <em>ShippingQuery</em> field to the bot. Use this method to reply to shipping queries</summary>
     /// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
@@ -2167,8 +2051,7 @@ public partial class WTelegramBotClient
         string shippingQueryId,
         IEnumerable<ShippingOption> shippingOptions,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, null, shippingOptions).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, null, shippingOptions).ThrowAsApi(this);
 
     /// <summary>If you sent an invoice requesting a shipping address and the parameter <em>IsFlexible</em> was specified, the Bot API will send an <see cref="Update"/> with a <em>ShippingQuery</em> field to the bot. Use this method to reply to shipping queries</summary>
     /// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
@@ -2178,8 +2061,7 @@ public partial class WTelegramBotClient
         string shippingQueryId,
         string errorMessage,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, errorMessage).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, errorMessage).ThrowAsApi(this);
 
     /// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation in the form of an <see cref="Update"/> with the field <em>PreCheckoutQuery</em>. Use this method to respond to such pre-checkout queries <b>Note:</b> The Bot API must receive an answer within 10 seconds after the pre-checkout query was sent.</summary>
     /// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
@@ -2187,8 +2069,7 @@ public partial class WTelegramBotClient
     public async Task AnswerPreCheckoutQueryAsync(
         string preCheckoutQueryId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId).ThrowAsApi(this);
 
     /// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation in the form of an <see cref="Update"/> with the field <em>PreCheckoutQuery</em>. Use this method to respond to such pre-checkout queries <b>Note:</b> The Bot API must receive an answer within 10 seconds after the pre-checkout query was sent.</summary>
     /// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
@@ -2198,8 +2079,7 @@ public partial class WTelegramBotClient
         string preCheckoutQueryId,
         string errorMessage,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi(this);
 
     /// <summary>Returns the bot's Telegram Star transactions in chronological order.</summary>
     /// <param name="offset">Number of transactions to skip in the response</param>
@@ -2210,8 +2090,7 @@ public partial class WTelegramBotClient
         int? offset = default,
         int? limit = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetStarTransactions(offset ?? 0, limit ?? 100).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetStarTransactions(offset ?? 0, limit ?? 100).ThrowAsApi(this);
 
     /// <summary>Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</summary>
     /// <param name="userId">Identifier of the user whose payment will be refunded</param>
@@ -2221,8 +2100,7 @@ public partial class WTelegramBotClient
         long userId,
         string telegramPaymentChargeId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).RefundStarPayment(userId, telegramPaymentChargeId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).RefundStarPayment(userId, telegramPaymentChargeId).ThrowAsApi(this);
 
     #endregion Payments
 
@@ -2236,7 +2114,7 @@ public partial class WTelegramBotClient
         long userId,
         IEnumerable<PassportElementError> errors,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetPassportDataErrors(userId, errors).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetPassportDataErrors(userId, errors).ThrowAsApi(this);
 
     #endregion Telegram Passport
 
@@ -2265,8 +2143,7 @@ public partial class WTelegramBotClient
         InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SendGame(chatId, gameShortName, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to set the score of the specified user in a game message.</summary>
     /// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
@@ -2286,8 +2163,7 @@ public partial class WTelegramBotClient
         bool force = default,
         bool disableEditMessage = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetGameScore(userId, score, chatId, messageId, force, disableEditMessage).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetGameScore(userId, score, chatId, messageId, force, disableEditMessage).ThrowAsApi(this);
 
     /// <summary>Use this method to set the score of the specified user in a game message.</summary>
     /// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
@@ -2304,8 +2180,7 @@ public partial class WTelegramBotClient
         bool force = default,
         bool disableEditMessage = default,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).SetGameScore(userId, score, inlineMessageId, force, disableEditMessage).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).SetGameScore(userId, score, inlineMessageId, force, disableEditMessage).ThrowAsApi(this);
 
     /// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>
     /// <remarks>This method will currently return scores for the target user, plus two of their closest neighbors on each side. Will also return the top three users if the user and their neighbors are not among them. Please note that this behavior is subject to change.</remarks>
@@ -2319,8 +2194,7 @@ public partial class WTelegramBotClient
         long chatId,
         int messageId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetGameHighScores(userId, chatId, messageId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetGameHighScores(userId, chatId, messageId).ThrowAsApi(this);
 
     /// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>
     /// <remarks>This method will currently return scores for the target user, plus two of their closest neighbors on each side. Will also return the top three users if the user and their neighbors are not among them. Please note that this behavior is subject to change.</remarks>
@@ -2332,8 +2206,7 @@ public partial class WTelegramBotClient
         long userId,
         string inlineMessageId,
         CancellationToken cancellationToken = default
-    ) =>
-        await ThrowIfCancelled(cancellationToken).GetGameHighScores(userId, inlineMessageId).ThrowAsApi();
+    ) => await ThrowIfCancelled(cancellationToken).GetGameHighScores(userId, inlineMessageId).ThrowAsApi(this);
 
     #endregion Games
 
@@ -2348,7 +2221,7 @@ public partial class WTelegramBotClient
 
 static class TelegramBotClientExtensions
 {
-    internal static async Task<T> ThrowAsApi<T>(this Task<T> task)
+    internal static async Task<T> ThrowAsApi<T>(this Task<T> task, WTelegramBotClient bot)
     {
         try
         {
@@ -2356,10 +2229,10 @@ static class TelegramBotClientExtensions
         }
         catch (WTelegram.WTException ex)
         {
-            throw WTelegramBotClient.MakeException(ex);
+            throw bot.MakeException(ex);
         }
     }
-    internal static async Task ThrowAsApi(this Task task)
+    internal static async Task ThrowAsApi(this Task task, WTelegramBotClient bot)
     {
         try
         {
@@ -2367,7 +2240,7 @@ static class TelegramBotClientExtensions
         }
         catch (WTelegram.WTException ex)
         {
-            throw WTelegramBotClient.MakeException(ex);
+            throw bot.MakeException(ex);
         }
     }
     internal static long LongOrDefault(this string? s) => s == null ? 0 : long.Parse(s);
