@@ -1100,7 +1100,7 @@ public partial class WTelegramBotClient
         int? messageId = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, false, businessConnectionId).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, default, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -2081,7 +2081,7 @@ public partial class WTelegramBotClient
         string shippingQueryId,
         IEnumerable<ShippingOption> shippingOptions,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, null, shippingOptions).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, default, shippingOptions).ThrowAsApi(this);
 
     /// <summary>If you sent an invoice requesting a shipping address and the parameter <em>IsFlexible</em> was specified, the Bot API will send an <see cref="Update"/> with a <em>ShippingQuery</em> field to the bot. Use this method to reply to shipping queries</summary>
     /// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
@@ -2095,19 +2095,11 @@ public partial class WTelegramBotClient
 
     /// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation in the form of an <see cref="Update"/> with the field <em>PreCheckoutQuery</em>. Use this method to respond to such pre-checkout queries <b>Note:</b> The Bot API must receive an answer within 10 seconds after the pre-checkout query was sent.</summary>
     /// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="errorMessage">Error message in human readable form that explains the reason for failure to proceed with the checkout (e.g. "Sorry, somebody just bought the last of our amazing black T-shirts while you were busy filling out your payment details. Please choose a different color or garment!"). Telegram will display this message to the user.<para/>Leave <see langword="null"/> if everything is alright (goods are available, etc.) and the bot is ready to proceed with the order</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task AnswerPreCheckoutQueryAsync(
         string preCheckoutQueryId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId).ThrowAsApi(this);
-
-    /// <summary>Once the user has confirmed their payment and shipping details, the Bot API sends the final confirmation in the form of an <see cref="Update"/> with the field <em>PreCheckoutQuery</em>. Use this method to respond to such pre-checkout queries <b>Note:</b> The Bot API must receive an answer within 10 seconds after the pre-checkout query was sent.</summary>
-    /// <param name="preCheckoutQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="errorMessage">Error message in human readable form that explains the reason for failure to proceed with the checkout (e.g. "Sorry, somebody just bought the last of our amazing black T-shirts while you were busy filling out your payment details. Please choose a different color or garment!"). Telegram will display this message to the user.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task AnswerPreCheckoutQueryAsync(
-        string preCheckoutQueryId,
-        string errorMessage,
+        string? errorMessage = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi(this);
 

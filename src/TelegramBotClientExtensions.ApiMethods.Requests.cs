@@ -139,8 +139,7 @@ public partial class WTelegramBotClient : ITelegramBotClient
 			CreateInvoiceLinkRequest r => await CreateInvoiceLinkAsync(r.Title, r.Description, r.Payload, r.ProviderToken, r.Currency, r.Prices, r.MaxTipAmount, r.SuggestedTipAmounts, r.ProviderData, r.PhotoUrl, r.PhotoSize, r.PhotoWidth, r.PhotoHeight, r.NeedName, r.NeedPhoneNumber, r.NeedEmail, r.NeedShippingAddress, r.SendPhoneNumberToProvider, r.SendEmailToProvider, r.IsFlexible, cancellationToken),
 			AnswerShippingQueryRequest r => r.Ok ? await AnswerShippingQueryAsync(r.ShippingQueryId, r.ShippingOptions, cancellationToken).ReturnTrue()
 			                                     : await AnswerShippingQueryAsync(r.ShippingQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
-			AnswerPreCheckoutQueryRequest r => r.Ok ? await AnswerPreCheckoutQueryAsync(r.PreCheckoutQueryId, cancellationToken).ReturnTrue()
-			                                        : await AnswerPreCheckoutQueryAsync(r.PreCheckoutQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
+			AnswerPreCheckoutQueryRequest r => await AnswerPreCheckoutQueryAsync(r.PreCheckoutQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
 			GetStarTransactionsRequest r => await GetStarTransactions(r.Offset, r.Limit, cancellationToken),
 			RefundStarPaymentRequest r => await RefundStarPayment(r.UserId, r.TelegramPaymentChargeId, cancellationToken).ReturnTrue(),
 			SetPassportDataErrorsRequest r => await SetPassportDataErrors(r.UserId, r.Errors, cancellationToken).ReturnTrue(),
