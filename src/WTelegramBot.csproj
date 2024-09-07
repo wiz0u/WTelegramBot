@@ -39,6 +39,29 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <None Include="..\logo.png" Link="Data\logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net6.0' or '$(TargetFramework)'=='net8.0'">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Args\**\*" Link="Telegram.Bot/Args/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Exceptions\**\*" Link="Telegram.Bot/Exceptions/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extensions\**\*" Link="Telegram.Bot/Extensions/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Polling\**\*" Link="Telegram.Bot/Polling/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Requests\**\*" Link="Telegram.Bot/Requests/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Serialization\**\*" Link="Telegram.Bot/Serialization/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Types\**\*" Link="Telegram.Bot/Types/%(RecursiveDir)/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extend.Types.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\ITelegramBotClient.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClientExtensions.ApiMethods.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClientExtensions.Polling.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+  </ItemGroup>
+  
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Nullable" Version="1.3.1" PrivateAssets="all" />
@@ -51,7 +74,6 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   <ItemGroup>
 
     <PackageReference Include="WTelegramClient" Version="4.1.8" />
-    <PackageReference Include="Telegram.Bot" Version="21.10.0" />
 
   </ItemGroup>
 </Project>

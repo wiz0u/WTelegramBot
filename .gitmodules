@@ -1,3 +1,5 @@
 [submodule "Telegram.Bot"]
 	path = Telegram.Bot
 	url = https://github.com/TelegramBots/Telegram.Bot.git
+	branch = develop
+

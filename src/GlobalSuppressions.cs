@@ -4,6 +4,11 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 global using System.Diagnostics.CodeAnalysis;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using Telegram.Bot.Extensions;
+global using Telegram.Bot.Requests.Abstractions;
+global using Telegram.Bot.Serialization;
 global using Telegram.Bot.Types;
 global using Telegram.Bot.Types.Enums;
 global using Telegram.Bot.Types.InlineQueryResults;
@@ -54,3 +59,11 @@ namespace System.Runtime.CompilerServices
 	internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute { }
 }
 #endif
+
+// These stubs are just to make the compiler happy with existing Telegram.Bot code
+
+namespace JetBrains.Annotations
+{
+	[AttributeUsage(AttributeTargets.Class|AttributeTargets.Interface)]
+	class PublicAPIAttribute : Attribute;
+}
