@@ -1,6 +1,4 @@
-﻿using File = Telegram.Bot.Types.File;
-
-#pragma warning disable IDE0060, CS1580
+﻿#pragma warning disable IDE0060, CS1580
 
 namespace Telegram.Bot;
 
@@ -728,7 +726,7 @@ public partial class WTelegramBotClient
     public async Task<Message> SendDiceAsync(
         ChatId chatId,
         int? messageThreadId = default,
-        Emoji? emoji = default,
+        string? emoji = default,
         bool disableNotification = default,
         bool protectContent = default,
         string? messageEffectId = default,
@@ -2241,7 +2239,7 @@ public partial class WTelegramBotClient
     }
 }
 
-static class TelegramBotClientExtensions
+static partial class TelegramBotClientExtensions
 {
     internal static async Task<T> ThrowAsApi<T>(this Task<T> task, WTelegramBotClient bot)
     {

@@ -31,9 +31,6 @@ public static class BotHelpers
 		[".pdf"] = "application/pdf",
 	};
 
-	internal static string GetDisplayName<T>(this T enumValue) where T : Enum
-		=> typeof(T).GetMember(enumValue.ToString())[0].GetCustomAttribute<DisplayAttribute>()!.Name!;
-
 	// Task.WhenAll may lead to unnecessary multiple parallel resolve of the same users/stickerset
 	internal async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
 	{

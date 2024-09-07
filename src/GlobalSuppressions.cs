@@ -14,6 +14,7 @@ global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
 global using Chat = WTelegram.Types.Chat;
 global using ChatFullInfo = WTelegram.Types.ChatFullInfo;
+global using File = Telegram.Bot.Types.File;
 global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;

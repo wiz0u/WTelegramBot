@@ -1,5 +1,4 @@
 ﻿using TL;
-using File = Telegram.Bot.Types.File;
 
 namespace WTelegram;
 
@@ -755,14 +754,14 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendDice(ChatId chatId, Emoji emoji = Emoji.Dice,
+	public async Task<Message> SendDice(ChatId chatId, string emoji = Emoji.Dice,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
-		var media = new InputMediaDice { emoticon = emoji.GetDisplayName() };
+		var media = new InputMediaDice { emoticon = emoji };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
 			peer, null, replyToMessage);
