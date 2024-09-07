@@ -17,18 +17,12 @@ global using Telegram.Bot.Types.Payments;
 global using Telegram.Bot.Types.ReplyMarkups;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
-global using Chat = WTelegram.Types.Chat;
-global using ChatFullInfo = WTelegram.Types.ChatFullInfo;
 global using File = Telegram.Bot.Types.File;
 global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
-global using Message = WTelegram.Types.Message;
-global using MessageEntity = Telegram.Bot.Types.MessageEntity;
 global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
-global using Update = WTelegram.Types.Update;
-global using User = WTelegram.Types.User;
 using System.ComponentModel;
 
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]

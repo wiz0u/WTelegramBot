@@ -1,7 +1,10 @@
 ﻿using System.Data.Common;
 using System.Reflection;
-using Telegram.Bot.Types.Enums;
 using TL;
+using Chat = WTelegram.Types.Chat;
+using Message = WTelegram.Types.Message;
+using Update = WTelegram.Types.Update;
+using User = WTelegram.Types.User;
 
 namespace WTelegram;
 

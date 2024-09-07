@@ -58,8 +58,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Types\**\*" Link="Telegram.Bot/Types/%(RecursiveDir)/%(FileName)%(Extension)" />
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extend.Types.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\ITelegramBotClient.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClientExtensions.ApiMethods.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClientExtensions.Polling.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClient*.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

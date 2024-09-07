@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using TL;
 using KeyboardButton = Telegram.Bot.Types.ReplyMarkups.KeyboardButton;
+using Message = WTelegram.Types.Message;
+using MessageEntity = Telegram.Bot.Types.MessageEntity;
 using ReplyKeyboardMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyKeyboardMarkup;
 
 namespace WTelegram;

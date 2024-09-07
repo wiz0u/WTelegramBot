@@ -1,5 +1,6 @@
 ﻿using TL;
 using System.Collections;
+using User = WTelegram.Types.User;
 
 namespace WTelegram;
 

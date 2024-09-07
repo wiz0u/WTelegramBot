@@ -1,4 +1,9 @@
 ﻿using TL;
+using ChatFullInfo = WTelegram.Types.ChatFullInfo;
+using Message = WTelegram.Types.Message;
+using MessageEntity = Telegram.Bot.Types.MessageEntity;
+using Update = WTelegram.Types.Update;
+using User = WTelegram.Types.User;
 
 namespace WTelegram;
 
@@ -273,7 +278,7 @@ public partial class Bot
 			peer, caption, replyToMessage);
 	}
 
-	private async Task<Message> SendDocument(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
+	private async Task<Message> SendDoc(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
 		ReplyParameters? replyParameters, IReplyMarkup? replyMarkup, InputFile? thumbnail,
 		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, bool disableNotification,
 		bool protectContent, long messageEffectId, bool showCaptionAboveMedia, string? businessConnectionId,
@@ -319,7 +324,7 @@ public partial class Bot
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+		return await SendDoc(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 				duration = duration, performer = performer, title = title,
@@ -348,7 +353,7 @@ public partial class Bot
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+		return await SendDoc(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, "document", default, doc =>
 			{ if (disableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file; });
 	}
@@ -382,7 +387,7 @@ public partial class Bot
 		bool supportsStreaming = default, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
 		string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+		return await SendDoc(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, default, hasSpoiler, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 				duration = duration, h = height, w = width,
@@ -416,7 +421,7 @@ public partial class Bot
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
+		return await SendDoc(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, "animation", hasSpoiler, doc =>
 			{
 				doc.attributes ??= [];
@@ -451,7 +456,7 @@ public partial class Bot
 		int duration = 0, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
+		return await SendDoc(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			{
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
@@ -479,7 +484,7 @@ public partial class Bot
 		int duration = 0, int? length = default, InputFile? thumbnail = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
 	{
-		return await SendDocument(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
+		return await SendDoc(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			default, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
 			{
 				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;

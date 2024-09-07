@@ -1,6 +1,8 @@
 ﻿using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
 using TL;
+using Chat = WTelegram.Types.Chat;
+using Update = WTelegram.Types.Update;
+using User = WTelegram.Types.User;
 
 namespace WTelegram;
 
