@@ -837,6 +837,7 @@ public partial class Bot
 			{
 				GiveawayMessageId = boost.giveaway_msg_id,
 				User = boost.user_id == 0 ? null : await UserOrResolve(boost.user_id),
+				PrizeStarCount = ((int)boost.stars).NullIfZero(),
 				IsUnclaimed = boost.flags.HasFlag(Boost.Flags.unclaimed)
 			};
 		else if (boost.flags.HasFlag(Boost.Flags.gift))
@@ -951,11 +952,19 @@ public partial class Bot
 		{
 			StarsTransactionPeerFragment => new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
 			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),
-			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } => new TransactionPartnerUser
-			{
-				User = User(user_id)!,
-				InvoicePayload = transaction.bot_payload == null ? null : Encoding.UTF8.GetString(transaction.bot_payload)
-			},
+			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } =>
+				transaction is { title: null, description: null, photo: null } || transaction.extended_media?.Length > 0
+				? new TransactionPartnerUser
+				{
+					User = User(user_id)!,
+					PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
+					PaidMediaPayload = transaction.bot_payload.NullOrUtf8(),
+				}
+				: new TransactionPartnerUser
+				{
+					User = User(user_id)!,
+					InvoicePayload = transaction.bot_payload.NullOrUtf8(),
+				},
 			_ => new TransactionPartnerOther(),
 		};
 		return new StarTransaction

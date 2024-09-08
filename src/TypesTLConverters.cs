@@ -121,7 +121,8 @@ public static class TypesTLConverters
 	internal static ChatMember ChatMember(this ChannelParticipantBase? participant, User user)
 		=> participant switch
 		{
-			ChannelParticipantSelf or ChannelParticipant => new ChatMemberMember { User = user },
+			ChannelParticipantSelf cps => new ChatMemberMember { User = user, UntilDate = cps.subscription_until_date.NullIfDefault() },
+			ChannelParticipant cp => new ChatMemberMember { User = user, UntilDate = cp.subscription_until_date.NullIfDefault() },
 			ChannelParticipantCreator cpc => new ChatMemberOwner { User = user, CustomTitle = cpc.rank, IsAnonymous = cpc.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.anonymous) },
 			ChannelParticipantAdmin cpa => new ChatMemberAdministrator
 			{
@@ -588,12 +589,14 @@ public static class TypesTLConverters
 	{
 		ReactionTypeEmoji rte => new ReactionEmoji { emoticon = rte.Emoji },
 		ReactionTypeCustomEmoji rtce => new ReactionCustomEmoji { document_id = long.Parse(rtce.CustomEmojiId) },
+		ReactionTypePaid => new ReactionPaid { },
 		_ => throw new WTException("Unrecognized ReactionType")
 	};
 	internal static ReactionType ReactionType(this Reaction reaction) => reaction switch
 	{
 		ReactionEmoji rte => new ReactionTypeEmoji { Emoji = rte.emoticon },
 		ReactionCustomEmoji rce => new ReactionTypeCustomEmoji { CustomEmojiId = rce.document_id.ToString() },
+		ReactionPaid => new ReactionTypePaid { },
 		_ => throw new WTException("Unrecognized Reaction")
 	};
 
@@ -684,13 +687,15 @@ public static class TypesTLConverters
 	internal static PaidMedia PaidMedia(MessageExtendedMediaBase memb) => memb switch
 	{
 		MessageExtendedMediaPreview memp => new PaidMediaPreview { Width = memp.w, Height = memp.h, Duration = memp.video_duration },
-		MessageExtendedMedia mem => mem.media switch
-		{
-			MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
-			MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>
-				new PaidMediaVideo { Video = document.Video() },
-			_ => throw new WTException("Unrecognized Paid MessageMedia")
-		},
+		MessageExtendedMedia mem => PaidMedia(mem.media),
 		_ => throw new WTException("Unrecognized MessageExtendedMediaBase")
+	};
+
+	internal static PaidMedia PaidMedia(MessageMedia media) => media switch
+	{
+		MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
+		MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>
+			new PaidMediaVideo { Video = document.Video() },
+		_ => throw new WTException("Unrecognized Paid MessageMedia")
 	};
 }

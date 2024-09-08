@@ -495,8 +495,9 @@ public partial class Bot
 
 	/// <summary>Use this method to send paid media.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
-	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media</param>
+	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-2500</param>
 	/// <param name="media">A array describing the media to be sent; up to 10 items</param>
+	/// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
 	/// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
@@ -507,9 +508,9 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
-		ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
-		bool disableNotification = default, bool protectContent = default,
+	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? payload = default,
+		string? caption = default, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
+		bool showCaptionAboveMedia = default, bool disableNotification = default, bool protectContent = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? businessConnectionId = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
@@ -530,7 +531,8 @@ public partial class Bot
 				tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 			multimedia.Add(tlMedia);
 		}
-		var impm = new InputMediaPaidMedia { stars_amount = starCount, extended_media = [.. multimedia] };
+		var impm = new InputMediaPaidMedia { flags = payload != null ? InputMediaPaidMedia.Flags.has_payload : 0,
+			stars_amount = starCount, extended_media = [.. multimedia], payload = payload };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, 0, showCaptionAboveMedia),
 			peer, caption, replyToMessage);
@@ -1166,7 +1168,7 @@ public partial class Bot
 				Bio = full.about,
 				HasPrivateForwards = full.private_forward_name != null,
 				HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden),
-				MessageAutoDeleteTime = full.ttl_period == 0 ? null : full.ttl_period
+				MessageAutoDeleteTime = full.ttl_period.NullIfZero(),
 			};
 			if (user.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = user.color.background_emoji_id.ToString();
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
@@ -1198,7 +1200,7 @@ public partial class Bot
 				MaxReactionCount = full.AvailableReactions == null ? 0 : Reactions_uniq_max,
 				Description = full.About,
 				InviteLink = (full.ExportedInvite as ChatInviteExported)?.link,
-				MessageAutoDeleteTime = full.TtlPeriod == 0 ? null : full.TtlPeriod,
+				MessageAutoDeleteTime = full.TtlPeriod.NullIfZero(),
 				AccentColorId = (int)(tlChat.ID % 7)
 			};
 			if (full.PinnedMsg > 0)
@@ -1223,8 +1225,8 @@ public partial class Bot
 				chat.JoinByRequest = channel.flags.HasFlag(Channel.Flags.join_request);
 				chat.Permissions = (channel.banned_rights ?? channel.default_banned_rights).ChatPermissions();
 				chat.CanSendPaidMedia = channelFull.flags2.HasFlag(ChannelFull.Flags2.paid_media_allowed);
-				chat.SlowModeDelay = channelFull.slowmode_seconds == 0 ? null : channelFull.slowmode_seconds;
-				chat.UnrestrictBoostCount = channelFull.boosts_unrestrict == 0 ? null : channelFull.boosts_unrestrict;
+				chat.SlowModeDelay = channelFull.slowmode_seconds.NullIfZero();
+				chat.UnrestrictBoostCount = channelFull.boosts_unrestrict.NullIfZero();
 				chat.HasAggressiveAntiSpamEnabled = channelFull.flags2.HasFlag(ChannelFull.Flags2.antispam);
 				chat.HasHiddenMembers = channelFull.flags2.HasFlag(ChannelFull.Flags2.participants_hidden);
 				chat.HasVisibleHistory = !channelFull.flags.HasFlag(ChannelFull.Flags.hidden_prehistory);
@@ -1968,7 +1970,7 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="title">Product name, 1-32 characters</param>
 	/// <param name="description">Product description, 1-255 characters</param>
-	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
+	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
 	/// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
@@ -2017,7 +2019,7 @@ public partial class Bot
 	/// <summary>Use this method to create a link for an invoice.</summary>
 	/// <param name="title">Product name, 1-32 characters</param>
 	/// <param name="description">Product description, 1-255 characters</param>
-	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.</param>
+	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
 	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>

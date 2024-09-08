@@ -1,4 +1,4 @@
-﻿[![Bot API Version](https://img.shields.io/badge/Bot_API-7.9-blueviolet)](https://core.telegram.org/bots/api)
+﻿[![Bot API Version](https://img.shields.io/badge/Bot_API-7.10-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)
@@ -8,9 +8,6 @@
 WTelegramBot is a full rewrite in pure C# of Telegram Bot API server, presenting the same methods as the Telegram.Bot library for easy [migration](https://github.com/wiz0u/WTelegramBot/blob/master/CHANGES.md).
 
 The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegramClient) to connect directly to Telegram Client API and gives you additional control over your bot, updates and call methods normally impossible to use with Bot API.
-
-> ⚠️ Library now depends on [Telegram.Bot](https://telegrambots.github.io/book/index.html#telegram-bots-book) v21.* which is not available on Nuget at the moment.  
-> You will need to [configure Nuget options or setup a nuget.config file](https://telegrambots.github.io/book/#-installation) before installing WTelegramBot
 
 ## Advantages of WTelegram.Bot
 

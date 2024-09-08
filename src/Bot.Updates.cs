@@ -75,7 +75,7 @@ public partial class Bot
 						From = await UserOrResolve(ubcq.user_id),
 						Message = await GetMIMessage(await ChatFromPeer(ubcq.peer, true), ubcq.msg_id, replyToo: true),
 						ChatInstance = ubcq.chat_instance.ToString(),
-						Data = ubcq.data == null ? null : Encoding.UTF8.GetString(ubcq.data),
+						Data = ubcq.data.NullOrUtf8(),
 						GameShortName = ubcq.game_short_name
 					},
 					TLUpdate = update
@@ -90,7 +90,7 @@ public partial class Bot
 						From = await UserOrResolve(ubicq.user_id),
 						InlineMessageId = ubicq.msg_id.InlineMessageId(),
 						ChatInstance = ubicq.chat_instance.ToString(),
-						Data = ubicq.data == null ? null : Encoding.UTF8.GetString(ubicq.data),
+						Data = ubicq.data.NullOrUtf8(),
 						GameShortName = ubicq.game_short_name
 					},
 					TLUpdate = update
@@ -268,6 +268,17 @@ public partial class Bot
 					},
 					TLUpdate = update
 				};
+			case TL.UpdateBotPurchasedPaidMedia ubppm:
+				if (NotAllowed(UpdateType.PurchasedPaidMedia)) return null;
+				return new Update
+				{
+					PurchasedPaidMedia = new PaidMediaPurchased
+					{
+						From = await UserOrResolve(ubppm.user_id),
+						PaidMediaPayload = ubppm.payload,
+					},
+					TLUpdate = update
+				};
 			//TL.UpdateDraftMessage seems used to update ourself user info
 			default:
 				return null;
@@ -292,9 +303,11 @@ public partial class Bot
 				IsPrimary = cie.flags.HasFlag(ChatInviteExported.Flags.permanent),
 				IsRevoked = cie.flags.HasFlag(ChatInviteExported.Flags.revoked),
 				Name = cie.title,
-				ExpireDate = cie.expire_date == default ? null : cie.expire_date,
-				MemberLimit = cie.usage_limit == 0 ? null : cie.usage_limit,
+				ExpireDate = cie.expire_date.NullIfDefault(),
+				MemberLimit = cie.usage_limit.NullIfZero(),
 				PendingJoinRequestCount = cie.flags.HasFlag(ChatInviteExported.Flags.has_requested) ? cie.requested : null,
+				SubscriptionPeriod = cie.subscription_pricing?.period,
+				SubscriptionPrice = cie.subscription_pricing is { amount: var amount } ? (int)amount : null,
 			},
 			_ => throw new WTException("Unexpected ExportedChatInvite: " + invite)
 		};
@@ -688,7 +701,7 @@ public partial class Bot
 					Title = mmg.game.title,
 					Description = mmg.game.description,
 					Photo = mmg.game.photo.PhotoSizes()!,
-					Text = text == "" ? null : text,
+					Text = text.NullIfEmpty(),
 					TextEntities = MakeEntities(entities)
 				};
 				if (mmg.game.document is TL.Document doc && doc.GetAttribute<DocumentAttributeAnimated>() != null)
@@ -714,7 +727,8 @@ public partial class Bot
 					HasPublicWinners = mmg.flags.HasFlag(MessageMediaGiveaway.Flags.winners_are_visible),
 					PrizeDescription = mmg.prize_description,
 					CountryCodes = mmg.countries_iso2,
-					PremiumSubscriptionMonthCount = mmg.months
+					PremiumSubscriptionMonthCount = mmg.months.NullIfZero(),
+					PrizeStarCount = ((int)mmg.stars).NullIfZero(),
 				};
 				break;
 			case MessageMediaGiveawayResults mmgr:
@@ -731,6 +745,7 @@ public partial class Bot
 					OnlyNewMembers = mmgr.flags.HasFlag(MessageMediaGiveawayResults.Flags.only_new_subscribers),
 					WasRefunded = mmgr.flags.HasFlag(MessageMediaGiveawayResults.Flags.refunded),
 					PrizeDescription = mmgr.prize_description,
+					PrizeStarCount = ((int)mmgr.stars).NullIfZero(),
 				};
 				break;
 			case MessageMediaPaidMedia mmpm:
@@ -815,15 +830,18 @@ public partial class Bot
 					: msg.ForumTopicEdited = new ForumTopicEdited { Name = mate.title, IconCustomEmojiId = mate.icon_emoji_id != 0
 						? mate.icon_emoji_id.ToString() : mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_icon_emoji_id) ? "" : null },
 			MessageActionBoostApply maba => msg.BoostAdded = new ChatBoostAdded { BoostCount = maba.boosts },
-			MessageActionGiveawayLaunch magl => msg.GiveawayCreated = new GiveawayCreated(),
+			MessageActionGiveawayLaunch magl => msg.GiveawayCreated = new GiveawayCreated {
+				PrizeStarCount = ((int)magl.stars).NullIfZero()
+			},
 			MessageActionGiveawayResults magr => msg.GiveawayCompleted = new GiveawayCompleted {
 				WinnerCount = magr.winners_count, UnclaimedPrizeCount = magr.unclaimed_count,
 				GiveawayMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				IsStarGiveaway = magr.flags.HasFlag(MessageActionGiveawayResults.Flags.stars)
 			},
 			MessageActionSetChatWallPaper mascwp => msg.ChatBackgroundSet = new ChatBackground { Type = mascwp.wallpaper.BackgroundType() },
 			MessageActionPaymentRefunded mapr => msg.RefundedPayment = new RefundedPayment { 
 				Currency = mapr.currency, TotalAmount = (int)mapr.total_amount,
-				InvoicePayload = mapr.payload == null ? "" : Encoding.UTF8.GetString(mapr.payload),
+				InvoicePayload = mapr.payload.NullOrUtf8() ?? "",
 				TelegramPaymentChargeId = mapr.charge.id, ProviderPaymentChargeId = mapr.charge.provider_charge_id
 			},
 			_ => null,
@@ -859,8 +877,8 @@ public partial class Bot
 			CorrectOptionId = correctOption < 0 ? null : correctOption,
 			Explanation = pollResults.solution,
 			ExplanationEntities = MakeEntities(pollResults.solution_entities),
-			OpenPeriod = poll.close_period == default ? null : poll.close_period,
-			CloseDate = poll.close_date == default ? null : poll.close_date
+			OpenPeriod = poll.close_period.NullIfZero(),
+			CloseDate = poll.close_date.NullIfDefault()
 		};
 	}
 

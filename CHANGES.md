@@ -3,7 +3,7 @@
 > [!NOTE]  
 > If you're writing new code, you don't need to read this document, and you should use the `WTelegram.Bot` class directly.
 
-WTelegramBot library inherits `Telegram.Bot` namespaces and types, and provides a `WTelegramBotClient` class that offers a very good compatibility layer.
+WTelegramBot library incorporates `Telegram.Bot` namespaces and types, and provides both classic `TelegramBotClient` and the new `WTelegramBotClient`, offering the same services, with the latter being more advanced and based on WTelegram.Bot.  
 Migration effort for existing code should be minimal.  
 
 ### Changes needed in your code:

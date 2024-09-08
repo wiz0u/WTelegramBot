@@ -41,6 +41,9 @@ public static class BotHelpers
 	}
 
 	internal static string? NullIfEmpty(this string? s) => s == "" ? null : s;
+	internal static int? NullIfZero(this int i) => i == 0 ? null : i;
+	internal static DateTime? NullIfDefault(this DateTime d) => d == default ? null : d;
+	internal static string? NullOrUtf8(this byte[] b) => b == null ? null : Encoding.UTF8.GetString(b);
 
 	internal static void ExecuteSave(this DbCommand cmd)
 	{
