@@ -75,6 +75,14 @@ public partial class Bot
 		await Client.Auth_LogOut();
 	}
 
+	/// <summary>Deprecated: SendTextMessage() was renamed SendMessage() to match official Bot API method name</summary>
+	[Obsolete("SendTextMessage() was renamed SendMessage() to match the Bot API method name")]
+	public Task<Message> SendTextMessage(ChatId chatId, string text, ParseMode parseMode = default,
+		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
+		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		=> SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId, entities, disableNotification, protectContent, messageEffectId, businessConnectionId);
+
 	/// <summary>Use this method to send text messages.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
@@ -89,7 +97,7 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendTextMessage(ChatId chatId, string text, ParseMode parseMode = default,
+	public async Task<Message> SendMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)

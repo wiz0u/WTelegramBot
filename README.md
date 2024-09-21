@@ -54,7 +54,7 @@ The [Example app](https://github.com/wiz0u/WTelegramBot/tree/master/Examples/Con
 
 On each Update/Message/User/Chat you receive, there is an extra field named "`TL...`" that contains the corresponding raw Client API structure, which may contain extra information not transcribed into the Bot API
 
-You can also enable `TelegramBotClient.WantUnknownTLUpdates` to receive updates that usually would have been silently ignored by Bot API
+You can also enable property `WantUnknownTLUpdates` to receive updates that usually would have been silently ignored by Bot API
 (they will be posted as Update of type Unknown with the TLUpdate field filled)
 
 Some extended API calls can be made via `WTelegram.Bot` special methods:
