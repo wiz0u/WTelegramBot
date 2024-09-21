@@ -847,6 +847,8 @@ public partial class Bot
 		return cb;
 	}
 
+	//TODO: InvokeWithBusinessConnection might need to be done on a specific DcId !? see BotBusinessConnection.dc_id
+
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
 		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, bool silent, bool noforwards, long effect,
 		bool invert_media = false, bool no_webpage = false)

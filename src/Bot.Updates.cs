@@ -378,7 +378,7 @@ public partial class Bot
 	};
 
 	/// <summary>Handle UpdatesBase returned by various Client API and build the returned Bot Message</summary>
-	protected async Task<Message> PostedMsg(Task<UpdatesBase> updatesTask, InputPeer peer, string? text = null, Message? replyToMessage = null)
+	protected async Task<Message> PostedMsg(Task<UpdatesBase> updatesTask, InputPeer peer, string? text = null, Message? replyToMessage = null, string? bConnId = null)
 	{
 		var updates = await updatesTask;
 		updates.UserOrChat(_collector);
@@ -398,13 +398,13 @@ public partial class Bot
 				case UpdateNewMessage { message: { } message }: return (await MakeMessageAndReply(message, replyToMessage))!;
 				case UpdateNewScheduledMessage { message: { } schedMsg }: return (await MakeMessageAndReply(schedMsg, replyToMessage))!;
 				case UpdateEditMessage { message: { } editMsg }: return (await MakeMessageAndReply(editMsg, replyToMessage))!;
-				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: return (await MakeMessageAndReply(bizMsg, replyToMessage, biz.connection_id))!;
+				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: return (await MakeMessageAndReply(bizMsg, replyToMessage, bConnId))!;
 			}
 		}
 		throw new WTException("Failed to retrieve sent message");
 	}
 
-	private async Task<Message[]> PostedMsgs(Task<UpdatesBase> updatesTask, int nbMsg, long startRandomId, Message? replyToMessage)
+	private async Task<Message[]> PostedMsgs(Task<UpdatesBase> updatesTask, int nbMsg, long startRandomId, Message? replyToMessage, string? bConnId = null)
 	{
 		var updates = await updatesTask;
 		updates.UserOrChat(_collector);
@@ -416,7 +416,7 @@ public partial class Bot
 			{
 				case UpdateNewMessage { message: TL.Message message }: msg = await MakeMessageAndReply(message, replyToMessage); break;
 				case UpdateNewScheduledMessage { message: TL.Message schedMsg }: msg = await MakeMessageAndReply(schedMsg, replyToMessage); break;
-				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: msg = await MakeMessageAndReply(bizMsg, replyToMessage, biz.connection_id); break;
+				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: msg = await MakeMessageAndReply(bizMsg, replyToMessage, bConnId); break;
 			}
 			if (msg != null) result.Add(msg);
 		}
