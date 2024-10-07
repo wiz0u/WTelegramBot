@@ -434,26 +434,28 @@ public partial class Bot
 		{
 			if (replyToMessage != null)
 				msg.ReplyToMessage = replyToMessage;
-			else if (reply_to.reply_to_msg_id > 0)
+			else if (reply_to.reply_to_msg_id > 0 && reply_to.reply_from == null)
 			{
-				if (reply_to.reply_to_peer_id == null)
-					msg.ReplyToMessage = await GetMessage(await ChatFromPeer(msgBase.Peer, true), reply_to.reply_to_msg_id);
-				else
+				var replyToPeer = reply_to.reply_to_peer_id ?? msgBase.Peer;
+				msg.ReplyToMessage = await GetMessage(await ChatFromPeer(replyToPeer, true), reply_to.reply_to_msg_id);
+			}
+			else if (reply_to.reply_to_top_id > 0)
+				msg.ReplyToMessage = await GetMessage(await ChatFromPeer(msgBase.Peer, true), reply_to.reply_to_top_id);
+			if (reply_to.reply_from?.date > default(DateTime))
+			{
+				var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
+				msg.ExternalReply = new ExternalReplyInfo
 				{
-					var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
-					msg.ExternalReply = new ExternalReplyInfo
-					{
-						MessageId = reply_to.reply_to_msg_id,
-						Chat = await ChatFromPeer(reply_to.reply_to_peer_id),
-						HasMediaSpoiler = ext.HasMediaSpoiler,
-						LinkPreviewOptions = ext.LinkPreviewOptions,
-						Origin = (await MakeOrigin(reply_to.reply_from))!,
-						Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
-						Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
-						Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
-						Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia
-					};
-				}
+					MessageId = reply_to.reply_to_msg_id,
+					Chat = await ChatFromPeer(reply_to.reply_to_peer_id),
+					HasMediaSpoiler = ext.HasMediaSpoiler,
+					LinkPreviewOptions = ext.LinkPreviewOptions,
+					Origin = (await MakeOrigin(reply_to.reply_from))!,
+					Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
+					Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
+					Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
+					Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia
+				};
 			}
 			if (reply_to.quote_text != null)
 				msg.Quote = new TextQuote
