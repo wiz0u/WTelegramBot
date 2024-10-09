@@ -285,7 +285,7 @@ public partial class Bot
 		}
 	}
 
-	private Update? MakeUpdate(ChatMemberUpdated chatMember, TL.Update update) => chatMember.From?.Id == BotId
+	private Update? MakeUpdate(ChatMemberUpdated chatMember, TL.Update update) => chatMember.NewChatMember?.User.Id == BotId
 		? new Update { MyChatMember = chatMember, TLUpdate = update }
 		: new Update { ChatMember = chatMember, TLUpdate = update };
 
