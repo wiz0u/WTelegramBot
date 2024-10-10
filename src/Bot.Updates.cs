@@ -96,7 +96,7 @@ public partial class Bot
 					TLUpdate = update
 				};
 			case UpdateChannelParticipant uchp:
-				if (NotAllowed(uchp.actor_id == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
+				if (NotAllowed((uchp.new_participant ?? uchp.prev_participant)?.UserId == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
 				return MakeUpdate(new ChatMemberUpdated
 				{
 					Chat = await ChannelOrResolve(uchp.channel_id),
@@ -109,7 +109,7 @@ public partial class Bot
 					ViaChatFolderInviteLink = uchp.flags.HasFlag(UpdateChannelParticipant.Flags.via_chatlist)
 				}, update);
 			case UpdateChatParticipant ucp:
-				if (NotAllowed(ucp.actor_id == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
+				if (NotAllowed(ucp.new_participant.UserId == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
 				return MakeUpdate(new ChatMemberUpdated
 				{
 					Chat = await ChatOrResolve(ucp.chat_id),
