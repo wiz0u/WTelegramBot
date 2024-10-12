@@ -57,7 +57,7 @@ public partial class Bot : IDisposable
 		public List<Update> PendingUpdates = [];
 		public byte[]? SessionData;
 		public int LastUpdateId;
-		public int AllowedUpdates = DefaultAllowedUpdates;
+		public int AllowedUpdates = -1; // if GetUpdates is never called, OnMessage/OnUpdate should receive all updates
 	}
 
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
