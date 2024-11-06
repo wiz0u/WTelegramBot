@@ -114,6 +114,7 @@ public partial class Bot
 		if (btn.SwitchInlineQuery != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery };
 		if (btn.SwitchInlineQueryCurrentChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryCurrentChat, flags = KeyboardButtonSwitchInline.Flags.same_peer };
 		if (btn.SwitchInlineQueryChosenChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryChosenChat.Query, peer_types = btn.SwitchInlineQueryChosenChat.InlineQueryPeerTypes(), flags = KeyboardButtonSwitchInline.Flags.has_peer_types };
+		if (btn.CopyText != null) return new KeyboardButtonCopy { text = btn.Text, copy_text = btn.CopyText.Text };
 		if (btn.LoginUrl != null) return new InputKeyboardButtonUrlAuth
 		{
 			text = btn.Text,
@@ -180,7 +181,7 @@ public partial class Bot
 	{
 		var msg = await GetMessage(peer, messageId, replyToo);
 		if (msg != null && msg.Date != default) return msg;
-		return new Message { Chat = await ChatFromPeer(peer), MessageId = messageId };
+		return new Message { Chat = await ChatFromPeer(peer), Id = messageId };
 	}
 
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
@@ -850,12 +851,12 @@ public partial class Bot
 	//TODO: InvokeWithBusinessConnection might need to be done on a specific DcId !? see BotBusinessConnection.dc_id
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, bool silent, bool noforwards, long effect,
-		bool invert_media = false, bool no_webpage = false)
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
+		bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		var query = new TL.Methods.Messages_SendMessage
 		{
-			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
+			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			message = message,
@@ -868,12 +869,12 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, bool silent, bool noforwards, long effect,
-		bool invert_media = false)
+		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
+		bool allow_paid_floodskip, bool invert_media)
 	{
 		var query = new TL.Methods.Messages_SendMedia
 		{
-			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
+			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			media = media,
@@ -886,12 +887,12 @@ public partial class Bot
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	Task<UpdatesBase> Messages_SendMultiMedia(string? bConnId, InputPeer peer, InputSingleMedia[] multi_media, 
-		InputReplyTo? reply_to, bool silent, bool noforwards, long effect, bool invert_media = false)
+	Task<UpdatesBase> Messages_SendMultiMedia(string? bConnId, InputPeer peer, InputSingleMedia[] multi_media,
+		InputReplyTo? reply_to, long effect, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media)
 	{
 		var query = new TL.Methods.Messages_SendMultiMedia
 		{
-			flags = (TL.Methods.Messages_SendMultiMedia.Flags)((reply_to != null ? 0x1 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)),
+			flags = (TL.Methods.Messages_SendMultiMedia.Flags)((reply_to != null ? 0x1 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			multi_media = multi_media,
@@ -954,6 +955,7 @@ public partial class Bot
 		{
 			StarsTransactionPeerFragment => new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
 			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),
+			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi { RequestCount = 0/*transaction.floodskip_number*/ },
 			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } =>
 				transaction is { title: null, description: null, photo: null } || transaction.extended_media?.Length > 0
 				? new TransactionPartnerUser

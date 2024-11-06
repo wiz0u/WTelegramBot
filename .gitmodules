@@ -2,4 +2,4 @@
 	path = Telegram.Bot
 	url = https://github.com/TelegramBots/Telegram.Bot.git
 	branch = develop
-
+	update = merge

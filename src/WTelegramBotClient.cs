@@ -68,11 +68,18 @@ public partial class WTelegramBotClient : WTelegram.Bot, ITelegramBotClient
         this(new WTelegramBotClientOptions(token, apiId, apiHash, dbConnection), cancellationToken)
     { }
 
+    ///<inheritdoc/>
+    public virtual Task<TResponse> MakeRequest<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
+        => SendRequest(request, cancellationToken);
+    ///<inheritdoc/>
+    public virtual Task<TResponse> MakeRequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
+        => SendRequest(request, cancellationToken);
+
     /// <summary>
     /// Test the API token
     /// </summary>
     /// <returns><see langword="true"/> if token is valid</returns>
-    public async Task<bool> TestApiAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> TestApi(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -84,13 +91,13 @@ public partial class WTelegramBotClient : WTelegram.Bot, ITelegramBotClient
     }
 
     /// <inheritdoc />
-    public async Task DownloadFileAsync(
+    public new async Task DownloadFile(
         string filePath,
         Stream destination,
         CancellationToken cancellationToken = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(GlobalCancelToken, cancellationToken);
-        await DownloadFile(filePath, destination, cts.Token);
+        await base.DownloadFile(filePath, destination, cts.Token);
     }
 
 	/// <summary>
@@ -103,7 +110,7 @@ public partial class WTelegramBotClient : WTelegram.Bot, ITelegramBotClient
 	/// A cancellation token that can be used by other objects or threads to receive notice of cancellation
 	/// </param>
 	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
-	public async Task<Types.File> GetInfoAndDownloadFileAsync(
+	public new async Task<Types.File> GetInfoAndDownloadFile(
 		string fileId,
 		Stream destination,
 		CancellationToken cancellationToken = default

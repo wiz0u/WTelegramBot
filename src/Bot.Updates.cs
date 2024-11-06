@@ -385,7 +385,7 @@ public partial class Bot
 		if (updates is UpdateShortSentMessage sent)
 			return await FillTextAndMedia(new Message
 			{
-				MessageId = sent.id,
+				Id = sent.id,
 				From = await UserOrResolve(BotId),
 				Date = sent.date,
 				Chat = await ChatFromPeer(peer)!,
@@ -487,7 +487,7 @@ public partial class Bot
 				var msg = new WTelegram.Types.Message
 				{
 					TLMessage = message,
-					MessageId = message.id,
+					Id = message.flags.HasFlag(TL.Message.Flags.from_scheduled) ? 0 : message.id,
 					From = await UserFromPeer(message.from_id),
 					SenderChat = await ChatFromPeer(message.from_id),
 					Date = message.date,
@@ -514,7 +514,7 @@ public partial class Bot
 				msg = new WTelegram.Types.Message
 				{
 					TLMessage = msgSvc,
-					MessageId = msgSvc.id,
+					Id = msgSvc.id,
 					From = await UserFromPeer(msgSvc.from_id),
 					SenderChat = await ChatFromPeer(msgSvc.from_id),
 					Date = msgSvc.date,
@@ -534,7 +534,7 @@ public partial class Bot
 				return new WTelegram.Types.Message
 				{
 					TLMessage = msgBase,
-					MessageId = msgBase.ID,
+					Id = msgBase.ID,
 					Chat = await ChatFromPeer(msgBase.Peer, allowUser: true)!,
 				};
 		}

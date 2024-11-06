@@ -75,14 +75,6 @@ public partial class Bot
 		await Client.Auth_LogOut();
 	}
 
-	/// <summary>Deprecated: SendTextMessage() was renamed SendMessage() to match official Bot API method name</summary>
-	[Obsolete("SendTextMessage() was renamed SendMessage() to match the Bot API method name")]
-	public Task<Message> SendTextMessage(ChatId chatId, string text, ParseMode parseMode = default,
-		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
-		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
-		=> SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId, entities, disableNotification, protectContent, messageEffectId, businessConnectionId);
-
 	/// <summary>Use this method to send text messages.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
@@ -96,11 +88,13 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var peer = await InputPeerChat(chatId);
@@ -109,12 +103,13 @@ public partial class Bot
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, disableNotification, protectContent, messageEffectId,
-				invert_media: linkPreviewOptions?.ShowAboveText == true, no_webpage: linkPreviewOptions?.IsDisabled == true),
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, 
+				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true, linkPreviewOptions?.IsDisabled == true),
 				peer, text, replyToMessage, businessConnectionId);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, disableNotification, protectContent, messageEffectId, linkPreviewOptions?.ShowAboveText == true),
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, 
+				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true),
 				peer, text, replyToMessage, businessConnectionId);
 	}
 
@@ -168,11 +163,12 @@ public partial class Bot
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> CopyMessage(ChatId chatId, ChatId fromChatId, int messageId, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
-		bool disableNotification = default, bool protectContent = default)
+		bool disableNotification = default, bool protectContent = default, bool allowPaidBroadcast = default)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
@@ -184,10 +180,10 @@ public partial class Bot
 		var task = msg.media == null
 			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				disableNotification, protectContent, 0, showCaptionAboveMedia, no_webpage: true)
+				0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
 			: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				disableNotification, protectContent, 0, showCaptionAboveMedia);
+				0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text);
 		return postedMsg;
 	}
@@ -234,10 +230,10 @@ public partial class Bot
 			if (multiMedia != null) await FlushMediaGroup();
 			cur_grouped_id = 0;
 			var task = msg.media == null
-				? Messages_SendMessage(null, peer, msg.message, random_id++, reply_to, 
-					null, msg.entities, disableNotification, protectContent, 0, no_webpage: true)
+				? Messages_SendMessage(null, peer, msg.message, random_id++, reply_to,
+					null, msg.entities, 0, disableNotification, protectContent, false, false, true)
 				: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to,
-					null, msg.entities, disableNotification, protectContent, 0, msg.flags.HasFlag(TL.Message.Flags.invert_media));
+					null, msg.entities, 0, disableNotification, protectContent, false, msg.flags.HasFlag(TL.Message.Flags.invert_media));
 			var postedMsg = await PostedMsg(task, peer);
 			sentMsgs.Add(postedMsg);
 		}
@@ -270,11 +266,13 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPhoto(ChatId chatId, InputFile photo, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -282,15 +280,15 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
 	private async Task<Message> SendDoc(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
 		ReplyParameters? replyParameters, IReplyMarkup? replyMarkup, InputFile? thumbnail,
 		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, bool disableNotification,
-		bool protectContent, long messageEffectId, bool showCaptionAboveMedia, string? businessConnectionId,
-		string? defaultFilename, bool hasSpoiler, Action<InputMediaUploadedDocument>? prepareDoc)
+		bool protectContent, long messageEffectId, bool showCaptionAboveMedia, bool allowPaidBroadcast,
+		string? businessConnectionId, string? defaultFilename, bool hasSpoiler, Action<InputMediaUploadedDocument>? prepareDoc)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -303,7 +301,7 @@ public partial class Bot
 			await SetDocThumb(doc, thumbnail);
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
@@ -318,22 +316,24 @@ public partial class Bot
 	/// <param name="duration">Duration of the audio in seconds</param>
 	/// <param name="performer">Performer</param>
 	/// <param name="title">Track name</param>
-	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAudio(ChatId chatId, InputFile audio, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, string? performer = default, string? title = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, false, allowPaidBroadcast, businessConnectionId, default, default, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 				duration = duration, performer = performer, title = title,
 				flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }]);
@@ -347,7 +347,7 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the document caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
-	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableContentTypeDetection">Disables automatic server-side content type detection for files uploaded using <see cref="InputFileStream"/></param>
@@ -355,14 +355,16 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDocument(ChatId chatId, InputFile document, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, "document", default, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, false, allowPaidBroadcast, businessConnectionId, "document", default, doc =>
 			{ if (disableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file; });
 	}
 
@@ -377,7 +379,7 @@ public partial class Bot
 	/// <param name="duration">Duration of sent video in seconds</param>
 	/// <param name="width">Video width</param>
 	/// <param name="height">Video height</param>
-	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
@@ -387,16 +389,17 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideo(ChatId chatId, InputFile video, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool supportsStreaming = default, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, default, hasSpoiler, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, allowPaidBroadcast, businessConnectionId, default, hasSpoiler, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 				duration = duration, h = height, w = width,
 				flags = supportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }]);
@@ -413,7 +416,7 @@ public partial class Bot
 	/// <param name="duration">Duration of sent animation in seconds</param>
 	/// <param name="width">Animation width</param>
 	/// <param name="height">Animation height</param>
-	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
@@ -422,15 +425,17 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAnimation(ChatId chatId, InputFile animation, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, businessConnectionId, "animation", hasSpoiler, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, showCaptionAboveMedia, allowPaidBroadcast, businessConnectionId, "animation", hasSpoiler, doc =>
 			{
 				doc.attributes ??= [];
 				if (doc.mime_type == "video/mp4")
@@ -458,14 +463,16 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVoice(ChatId chatId, InputFile voice, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, false, allowPaidBroadcast, businessConnectionId, default, default, doc =>
 			{
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 					duration = duration, flags = DocumentAttributeAudio.Flags.voice }];
@@ -480,20 +487,22 @@ public partial class Bot
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="duration">Duration of sent video in seconds</param>
 	/// <param name="length">Video width and height, i.e. diameter of the video message</param>
-	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can pass “attach://&lt;FileAttachName&gt;” if the thumbnail was uploaded using <see cref="InputFileStream"/> under &lt;FileAttachName&gt;. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideoNote(ChatId chatId, InputFile videoNote,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int duration = 0, int? length = default, InputFile? thumbnail = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		return await SendDoc(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			default, disableNotification, protectContent, messageEffectId, false, businessConnectionId, default, default, doc =>
+			default, disableNotification, protectContent, messageEffectId, false, allowPaidBroadcast, businessConnectionId, default, default, doc =>
 			{
 				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
@@ -505,21 +514,23 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
 	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-2500</param>
 	/// <param name="media">A array describing the media to be sent; up to 10 items</param>
-	/// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
 	/// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="replyParameters">Description of the message to reply to</param>
+	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+	/// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
-	/// <param name="replyParameters">Description of the message to reply to</param>
-	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? payload = default,
-		string? caption = default, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
-		bool showCaptionAboveMedia = default, bool disableNotification = default, bool protectContent = default,
-		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? businessConnectionId = default)
+	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
+		ParseMode parseMode = default, ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
+		string? payload = default, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
+		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
@@ -542,7 +553,7 @@ public partial class Bot
 		var impm = new InputMediaPaidMedia { flags = payload != null ? InputMediaPaidMedia.Flags.has_payload : 0,
 			stars_amount = starCount, extended_media = [.. multimedia], payload = payload };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, disableNotification, protectContent, 0, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, 0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
@@ -555,10 +566,12 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>An array of <see cref="Message">Messages</see> that were sent is returned.</returns>
 	public async Task<Message[]> SendMediaGroup(ChatId chatId, IEnumerable<IAlbumInputMedia> media,
 		ReplyParameters? replyParameters = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -577,7 +590,7 @@ public partial class Bot
 			multimedia.Add(ism);
 		}
 		return await PostedMsgs(Messages_SendMultiMedia(businessConnectionId, peer, [.. multimedia], reply_to,
-			silent: disableNotification, noforwards: protectContent, invert_media: invert_media, effect: messageEffectId),
+			messageEffectId, disableNotification, protectContent, allowPaidBroadcast, invert_media),
 			multimedia.Count, random_id, replyToMessage, businessConnectionId);
 	}
 
@@ -596,11 +609,13 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLocation(ChatId chatId, double latitude, double longitude,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int horizontalAccuracy = 0,
 		int livePeriod = 0, int heading = 0, int proximityAlertRadius = 0, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -608,7 +623,7 @@ public partial class Bot
 		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod)
 			: new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -629,11 +644,13 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVenue(ChatId chatId, double latitude, double longitude, string title, string address,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? foursquareId = default,
 		string? foursquareType = default, string? googlePlaceId = default, string? googlePlaceType = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -657,7 +674,7 @@ public partial class Bot
 			media.venue_type = foursquareType;
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -674,11 +691,12 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default,
 		string? vcard = default, ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -691,7 +709,7 @@ public partial class Bot
 			vcard = vcard
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -718,6 +736,7 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPoll(ChatId chatId, string question, IEnumerable<InputPollOption> options, bool isAnonymous = true,
 		PollType type = PollType.Regular, bool allowsMultipleAnswers = default, int? correctOptionId = default,
@@ -725,7 +744,8 @@ public partial class Bot
 		ParseMode explanationParseMode = default, IEnumerable<MessageEntity>? explanationEntities = default, ParseMode questionParseMode = default,
 		IEnumerable<MessageEntity>? questionEntities = default, int? openPeriod = default, DateTime? closeDate = default,
 		bool isClosed = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var exEntities = ApplyParse(explanationParseMode, ref explanation, explanationEntities);
 		var quEntities = ApplyParse(questionParseMode, ref question!, questionEntities);
@@ -754,7 +774,7 @@ public partial class Bot
 				| (correctOptionId >= 0 ? InputMediaPoll.Flags.has_correct_answers : 0)
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -768,24 +788,26 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDice(ChatId chatId, string emoji = Emoji.Dice,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = new InputMediaDice { emoticon = emoji };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
 	/// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
 	/// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <a href="https://core.telegram.org/bots/api#sendmessage">text messages</a>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
+	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <see cref="WTelegram.Bot.SendMessage">text messages</see>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread; for supergroups only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	public async Task SendChatAction(ChatId chatId, ChatAction action, int messageThreadId = 0, string? businessConnectionId = default)
@@ -834,7 +856,7 @@ public partial class Bot
 
 	/// <summary>Use this method to get basic information about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size.</summary>
 	/// <param name="fileId">File identifier to get information about</param>
-	/// <returns>A <see cref="File"/> object is returned. The file can then be downloaded via <see cref="WTelegram.Bot.DownloadFile"/>, where <c>&lt;FilePath&gt;</c> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling <see cref="WTelegram.Bot.GetFile">GetFile</see> again.<br/><b>Note:</b> This function may not preserve the original file name and MIME type. You should save the file's MIME type and name (if available) when the File object is received.</returns>
+	/// <returns>A <see cref="File"/> object is returned. The file can then be downloaded via <see cref="WTelegram.Bot.DownloadFile">DownloadFile</see>, where <c>&lt;FilePath&gt;</c> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling <see cref="WTelegram.Bot.GetFile">GetFile</see> again.<br/><b>Note:</b> This function may not preserve the original file name and MIME type. You should save the file's MIME type and name (if available) when the File object is received.</returns>
 	public Task<File> GetFile(string fileId) =>
 		Task.FromResult(fileId.ParseFileId(true).file);
 
@@ -1593,7 +1615,7 @@ public partial class Bot
 		await Messages_EditInlineBotMessage(businessConnectionId, id, caption, null, await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia);
 	}
 
-	/// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="messageId">Identifier of the message to edit</param>
 	/// <param name="media">An object for a new media content of the message</param>
@@ -1609,7 +1631,7 @@ public partial class Bot
 			await MakeReplyMarkup(replyMarkup), ism.entities), peer, bConnId: businessConnectionId);
 	}
 
-	/// <summary>Use this method to edit animation, audio, document, photo, or video messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
 	/// <param name="inlineMessageId">Identifier of the inline message</param>
 	/// <param name="media">An object for a new media content of the message</param>
 	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
@@ -1751,11 +1773,12 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendSticker(ChatId chatId, InputFile sticker,
 		ReplyParameters? replyParameters = default, IReplyMarkup? replyMarkup = default, string? emoji = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -1764,7 +1787,7 @@ public partial class Bot
 		if (media is TL.InputMediaUploadedDocument doc)
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -2003,6 +2026,7 @@ public partial class Bot
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendInvoice(ChatId chatId, string title, string description, string payload, string currency,
 		IEnumerable<LabeledPrice> prices, string? providerToken = default, string? providerData = default, int? maxTipAmount = default,
@@ -2011,7 +2035,7 @@ public partial class Bot
 		bool needShippingAddress = default, bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default,
 		bool isFlexible = default, ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default,
 		string? startParameter = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -2020,7 +2044,7 @@ public partial class Bot
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
 		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage);
 	}
 
@@ -2028,9 +2052,9 @@ public partial class Bot
 	/// <param name="title">Product name, 1-32 characters</param>
 	/// <param name="description">Product description, 1-255 characters</param>
 	/// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
-	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="currency">Three-letter ISO 4217 currency code, see <a href="https://core.telegram.org/bots/payments#supported-currencies">more on currencies</a>. Pass “XTR” for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="prices">Price breakdown, a list of components (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain exactly one item for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+	/// <param name="providerToken">Payment provider token, obtained via <a href="https://t.me/botfather">@BotFather</a>. Pass an empty string for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="providerData">JSON-serialized data about the invoice, which will be shared with the payment provider. A detailed description of required fields should be provided by the payment provider.</param>
 	/// <param name="maxTipAmount">The maximum accepted amount for tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). For example, for a maximum tip of <c>US$ 1.45</c> pass <c><paramref name="maxTipAmount"/> = 145</c>. See the <em>exp</em> parameter in <a href="https://core.telegram.org/bots/payments/currencies.json">currencies.json</a>, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="suggestedTipAmounts">A array of suggested amounts of tips in the <em>smallest units</em> of the currency (integer, <b>not</b> float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed <paramref name="maxTipAmount"/>.</param>
@@ -2046,8 +2070,8 @@ public partial class Bot
 	/// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <returns>The created invoice link as <em>String</em> on success.</returns>
-	public async Task<string> CreateInvoiceLink(string title, string description, string payload, string? providerToken,
-		string currency, IEnumerable<LabeledPrice> prices, string? providerData = default, int? maxTipAmount = default,
+	public async Task<string> CreateInvoiceLink(string title, string description, string payload, string currency,
+		IEnumerable<LabeledPrice> prices, string? providerToken = default, string? providerData = default, int? maxTipAmount = default,
 		IEnumerable<int>? suggestedTipAmounts = default, string? photoUrl = default, int? photoSize = default, int? photoWidth = default,
 		int? photoHeight = default, bool needName = default, bool needPhoneNumber = default, bool needEmail = default,
 		bool needShippingAddress = default, bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default,
@@ -2121,17 +2145,19 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendGame(long chatId, string gameShortName,
 		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default)
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
+		bool allowPaidBroadcast = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, disableNotification, protectContent, messageEffectId),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 

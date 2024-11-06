@@ -246,6 +246,7 @@ public static class TypesTLConverters
 			KeyboardButtonSwitchInline kbsi => kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ?
 				InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
 				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
+			KeyboardButtonCopy kbco => InlineKeyboardButton.WithCopyText(kbco.text, kbco.copy_text),
 			KeyboardButtonUrlAuth kbua => InlineKeyboardButton.WithLoginUrl(kbua.text, new LoginUrl
 			{
 				Url = kbua.url,
