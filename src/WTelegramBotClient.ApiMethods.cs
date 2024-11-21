@@ -2,9 +2,7 @@
 
 namespace Telegram.Bot;
 
-/// <summary>
-/// Extension methods that map to requests from Bot API documentation
-/// </summary>
+/// <summary>Extension methods that map to requests from Bot API documentation</summary>
 public partial class WTelegramBotClient
 {
     #region Getting updates

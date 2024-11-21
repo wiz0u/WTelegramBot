@@ -9,7 +9,7 @@ namespace Telegram.Bot;
 public partial class WTelegramBotClient : ITelegramBotClient
 {
 	///<inheritdoc/>
-	public virtual async Task<TResponse> SendRequest<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
+	public async Task<TResponse> SendRequest<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
 	{
 		return (TResponse)(object)(request switch
 		{

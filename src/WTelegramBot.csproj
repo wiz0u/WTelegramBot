@@ -28,7 +28,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <PackageTags>Telegram;Bot;Api;Client</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>$(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</PackageReleaseNotes>
-    <NoWarn>NETSDK1138;CS1574;CS0419</NoWarn>
+    <NoWarn>NETSDK1138;CS1574;CS0419;CA1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -71,6 +71,6 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WTelegramClient" Version="4.2.2" />
+    <PackageReference Include="WTelegramClient" Version="4.2.4-dev.3" />
   </ItemGroup>
 </Project>

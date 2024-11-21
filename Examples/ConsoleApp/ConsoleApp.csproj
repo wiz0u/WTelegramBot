@@ -16,9 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-
-    <PackageReference Include="WTelegramBot" Version="7.8.1" />
-
+    <PackageReference Include="WTelegramBot" Version="8.0.1" />
   </ItemGroup>
 
 </Project>

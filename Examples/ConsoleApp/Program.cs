@@ -22,7 +22,8 @@ using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=
 //PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Data Source=...");
 
 using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
-//          use new TelegramBotClient(...) instead, if you want the compatibility layer for your existing code
+//          use new WTelegramBotClient(...) instead, if you want the power of WTelegram with Telegram.Bot compatibility for existing code
+//          use new TelegramBotClient(...)  instead, if you just want Telegram.Bot classic code
 var my = await bot.GetMe();
 Console.WriteLine($"I am @{my.Username}");
 
@@ -94,12 +95,12 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 	if (text == "/start")
 	{
 		//---> It's easy to reply to a message by giving its id to replyParameters: (was broken in Telegram.Bot v20.0.0)
-		await bot.SendTextMessage(msg.Chat, $"Hello, {msg.From}!", replyParameters: msg);
+		await bot.SendMessage(msg.Chat, $"Hello, {msg.From}!", replyParameters: msg);
 	}
 	else if (text == "/wtb")
 	{
 		//---> It's easy to disableWebPreview like before by passing true to linkPreviewOptions: (was broken in Telegram.Bot v20.0.0)
-		await bot.SendTextMessage(msg.Chat, $"Enjoy https://www.nuget.org/packages/WTelegramBot", linkPreviewOptions: true);
+		await bot.SendMessage(msg.Chat, $"Enjoy https://www.nuget.org/packages/WTelegramBot", linkPreviewOptions: true);
 	}
 	else if (text == "/pic")
 	{
@@ -115,7 +116,7 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 	{
 		//---> Show more user info that is normally not accessible in Bot API:
 		var tlUser = msg.From?.TLUser();
-		await bot.SendTextMessage(msg.Chat, $"Your last seen is: {tlUser?.status?.ToString()?[13..]}");
+		await bot.SendMessage(msg.Chat, $"Your last seen is: {tlUser?.status?.ToString()?[13..]}");
 	}
 	else if (text == "/getchat")
 	{
@@ -123,7 +124,7 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 		//---> Demonstrate how to serialize structure to Json, and post it in <pre> code
 		var dump = System.Text.Json.JsonSerializer.Serialize(chat, JsonBotAPI.Options);
 		dump = $"<pre>{TL.HtmlText.Escape(dump)}</pre>";
-		await bot.SendTextMessage(msg.Chat, dump, parseMode: ParseMode.Html);
+		await bot.SendMessage(msg.Chat, dump, parseMode: ParseMode.Html);
 	}
 }
 

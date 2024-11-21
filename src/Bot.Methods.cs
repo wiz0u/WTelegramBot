@@ -66,12 +66,18 @@ public partial class Bot
 
 	/// <summary>A simple method for testing your bot's authentication token.</summary>
 	/// <returns>Basic information about the bot in form of a <see cref="Types.User"/> object.</returns>
-	public async Task<User> GetMe() =>
-		(await _initTask).User();
+	public async Task<User> GetMe()
+	{
+		await InitComplete();
+		var users = await Client.Users_GetUsers(TL.InputUser.Self);
+		_collector.Collect(users.OfType<TL.User>());
+		return User(BotId)!;
+	}
 
 	/// <summary>Use this method to close the bot instance before moving it from one local server to another. You need to delete the webhook before calling this method to ensure that the bot isn't launched again after server restart. The method will return error 429 in the first 10 minutes after the bot is launched.</summary>
 	public async Task Close()
 	{
+		await InitComplete();
 		await Client.Auth_LogOut();
 	}
 
@@ -845,6 +851,7 @@ public partial class Bot
 	/// <returns>A <see cref="UserProfilePhotos"/> object.</returns>
 	public async Task<UserProfilePhotos> GetUserProfilePhotos(long userId, int offset = 0, int limit = 100)
 	{
+		await InitComplete();
 		var inputUser = InputUser(userId);
 		var photos = await Client.Photos_GetUserPhotos(inputUser, offset, limit: limit);
 		return new UserProfilePhotos
@@ -878,6 +885,7 @@ public partial class Bot
 	public async Task<File> GetInfoAndDownloadFile(string fileId, Stream destination, CancellationToken cancellationToken = default)
 	{
 		var (file, location, dc_id) = fileId.ParseFileId(true);
+		await InitComplete();
 		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) => cancellationToken.ThrowIfCancellationRequested());
 		return file;
 	}
@@ -1171,6 +1179,7 @@ public partial class Bot
 	{
 		if (chatId.Identifier is long userId && userId >= 0)
 		{
+			await InitComplete();
 			var inputUser = InputUser(userId);
 			var userFull = await Client.Users_GetFullUser(inputUser);
 			userFull.UserOrChat(_collector);
@@ -1352,6 +1361,7 @@ public partial class Bot
 	/// <returns>An Array of <see cref="Sticker"/> objects.</returns>
 	public async Task<Sticker[]> GetForumTopicIconStickers()
 	{
+		await InitComplete();
 		var mss = await Client.Messages_GetStickerSet(new InputStickerSetEmojiDefaultTopicIcons());
 		CacheStickerSet(mss);
 		var stickers = await mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())).WhenAllSequential();
@@ -1425,6 +1435,7 @@ public partial class Bot
 	public async Task AnswerCallbackQuery(string callbackQueryId, string? text = default, bool showAlert = default,
 		string? url = default, int cacheTime = 0)
 	{
+		await InitComplete();
 		await Client.Messages_SetBotCallbackAnswer(long.Parse(callbackQueryId), cacheTime, text, url, showAlert);
 	}
 
@@ -1444,6 +1455,7 @@ public partial class Bot
 	/// <returns>A <see cref="BusinessConnection"/> object on success.</returns>
 	public async Task<BusinessConnection> GetBusinessConnection(string businessConnectionId)
 	{
+		await InitComplete();
 		var updates = await Client.Account_GetBotBusinessConnection(businessConnectionId);
 		updates.UserOrChat(_collector);
 		var conn = updates.UpdateList.OfType<UpdateBotBusinessConnect>().First().connection;
@@ -1485,6 +1497,7 @@ public partial class Bot
 	public async Task SetMyInfo(string? name = default, string? shortDescription = default, string? description = default,
 		string? languageCode = default)
 	{
+		await InitComplete();
 		await Client.Bots_SetBotInfo(languageCode, name: name, about: shortDescription, description: description);
 	}
 
@@ -1493,6 +1506,7 @@ public partial class Bot
 	/// <returns>Returns bot name, short description (bio) and description (shown in empty chat) on success.</returns>
 	public async Task<(string name, string shortDescription, string description)> GetMyInfo(string? languageCode = default)
 	{
+		await InitComplete();
 		var botInfo = await Client.Bots_GetBotInfo(languageCode);
 		return (botInfo.name, botInfo.about, botInfo.description);
 	}
@@ -1502,6 +1516,7 @@ public partial class Bot
 	/// <param name="menuButton">An object for the bot's new menu button. Defaults to <see cref="MenuButtonDefault"/></param>
 	public async Task SetChatMenuButton(long? chatId = default, MenuButton? menuButton = default)
 	{
+		await InitComplete();
 		var user = chatId.HasValue ? InputUser(chatId.Value) : null;
 		await Client.Bots_SetBotMenuButton(user, menuButton.BotMenuButton());
 	}
@@ -1511,6 +1526,7 @@ public partial class Bot
 	/// <returns><see cref="MenuButton"/> on success.</returns>
 	public async Task<MenuButton> GetChatMenuButton(long? chatId = default)
 	{
+		await InitComplete();
 		var user = chatId.HasValue ? InputUser(chatId.Value) : null;
 		var botMenuButton = await Client.Bots_GetBotMenuButton(user);
 		return botMenuButton.MenuButton();
@@ -1521,6 +1537,7 @@ public partial class Bot
 	/// <param name="forChannels">Pass <see langword="true"/> to change the default administrator rights of the bot in channels. Otherwise, the default administrator rights of the bot for groups and supergroups will be changed.</param>
 	public async Task SetMyDefaultAdministratorRights(ChatAdministratorRights? rights = default, bool forChannels = default)
 	{
+		await InitComplete();
 		var admin_rights = rights.ChatAdminRights();
 		if (forChannels)
 			await Client.Bots_SetBotBroadcastDefaultAdminRights(admin_rights);
@@ -1533,6 +1550,7 @@ public partial class Bot
 	/// <returns><see cref="ChatAdministratorRights"/> on success.</returns>
 	public async Task<ChatAdministratorRights> GetMyDefaultAdministratorRights(bool forChannels = default)
 	{
+		await InitComplete();
 		var full = await Client.Users_GetFullUser(Client.User);
 		return (forChannels ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
 	}
@@ -1573,7 +1591,7 @@ public partial class Bot
 		LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
 	{
 		var tlEntities = ApplyParse(parseMode, ref text!, entities);
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		var media = linkPreviewOptions.InputMediaWebPage();
 		await Messages_EditInlineBotMessage(businessConnectionId, id, text, media,
 			await MakeReplyMarkup(replyMarkup), tlEntities, linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
@@ -1611,7 +1629,7 @@ public partial class Bot
 		bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		await Messages_EditInlineBotMessage(businessConnectionId, id, caption, null, await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia);
 	}
 
@@ -1639,7 +1657,7 @@ public partial class Bot
 	public async Task EditMessageMedia(string inlineMessageId, InputMedia media, InlineKeyboardMarkup? replyMarkup = default,
 		string? businessConnectionId = default)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		var ism = await InputSingleMedia(media);
 		await Messages_EditInlineBotMessage(businessConnectionId, id, ism.message ?? "", ism.media,
 			await MakeReplyMarkup(replyMarkup), ism.entities);
@@ -1680,7 +1698,7 @@ public partial class Bot
 		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default,
 		string? businessConnectionId = default)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
 		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
@@ -1706,7 +1724,7 @@ public partial class Bot
 	public async Task StopMessageLiveLocation(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default,
 		string? businessConnectionId = default)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
 		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
@@ -1730,7 +1748,7 @@ public partial class Bot
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
 	public async Task EditMessageReplyMarkup(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		await Messages_EditInlineBotMessage(businessConnectionId, id, reply_markup: await MakeReplyMarkup(replyMarkup));
 	}
 
@@ -1796,6 +1814,7 @@ public partial class Bot
 	/// <returns>A <see cref="StickerSet"/> object is returned.</returns>
 	public async Task<Telegram.Bot.Types.StickerSet> GetStickerSet(string name)
 	{
+		await InitComplete();
 		var mss = await Client.Messages_GetStickerSet(name);
 		CacheStickerSet(mss);
 		var thumb = mss.set.thumbs?[0].PhotoSize(mss.set.ToFileLocation(mss.set.thumbs[0]), mss.set.thumb_dc_id);
@@ -1825,6 +1844,7 @@ public partial class Bot
 	/// <returns>An Array of <see cref="Sticker"/> objects.</returns>
 	public async Task<Sticker[]> GetCustomEmojiStickers(IEnumerable<string> customEmojiIds)
 	{
+		await InitComplete();
 		var documents = await Client.Messages_GetCustomEmojiDocuments(customEmojiIds.Select(long.Parse).ToArray());
 		return await documents.OfType<TL.Document>().Select(async doc =>
 		{
@@ -1840,6 +1860,7 @@ public partial class Bot
 	/// <returns>The uploaded <see cref="File"/> on success.</returns>
 	public async Task<File> UploadStickerFile(long userId, InputFileStream sticker, StickerFormat stickerFormat)
 	{
+		await InitComplete();
 		var mimeType = MimeType(stickerFormat);
 		var peer = InputPeerUser(userId);
 		var uploadedFile = await Client.UploadFileAsync(sticker.Content, sticker.FileName);
@@ -1885,7 +1906,7 @@ public partial class Bot
 	/// <param name="position">New sticker position in the set, zero-based</param>
 	public async Task SetStickerPositionInSet(InputFileId sticker, int position)
 	{
-		var inputDoc = InputDocument(sticker.Id);
+		var inputDoc = await InputDocument(sticker.Id);
 		await Client.Stickers_ChangeStickerPosition(inputDoc, position);
 	}
 
@@ -1893,7 +1914,7 @@ public partial class Bot
 	/// <param name="sticker">File identifier of the sticker</param>
 	public async Task DeleteStickerFromSet(InputFileId sticker)
 	{
-		var inputDoc = InputDocument(sticker.Id);
+		var inputDoc = await InputDocument(sticker.Id);
 		await Client.Stickers_RemoveStickerFromSet(inputDoc);
 	}
 
@@ -1904,7 +1925,7 @@ public partial class Bot
 	/// <param name="sticker">An object with information about the added sticker. If exactly the same sticker had already been added to the set, then the set remains unchanged.</param>
 	public async Task ReplaceStickerInSet(long userId, string name, string oldSticker, InputSticker sticker)
 	{
-		var inputDoc = InputDocument(oldSticker);
+		var inputDoc = await InputDocument(oldSticker);
 		var tlSticker = await InputStickerSetItem(userId, sticker);
 		var mss = await Client.Stickers_ReplaceSticker(inputDoc, tlSticker);
 		CacheStickerSet(mss);
@@ -1918,7 +1939,7 @@ public partial class Bot
 	public async Task SetStickerInfo(InputFileId sticker, string? emojiList = default, string? keywords = default,
 		MaskPosition? maskPosition = default)
 	{
-		var inputDoc = InputDocument(sticker.Id);
+		var inputDoc = await InputDocument(sticker.Id);
 		await Client.Stickers_ChangeSticker(inputDoc, emojiList, maskPosition.MaskCoord(), keywords);
 	}
 
@@ -1927,6 +1948,7 @@ public partial class Bot
 	/// <param name="title">Sticker set title, 1-64 characters</param>
 	public async Task SetStickerSetTitle(string name, string title)
 	{
+		await InitComplete();
 		await Client.Stickers_RenameStickerSet(name, title);
 	}
 
@@ -1937,6 +1959,7 @@ public partial class Bot
 	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animation-requirements">https://core.telegram.org/stickers#animation-requirements</a> for animated sticker technical requirements), or a <b>WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-requirements">https://core.telegram.org/stickers#video-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
 	public async Task SetStickerSetThumbnail(string name, long userId, StickerFormat format, InputFile? thumbnail = default)
 	{
+		await InitComplete();
 		if (thumbnail == null)
 			await Client.Stickers_SetStickerSetThumb(name, null);
 		else
@@ -1954,6 +1977,7 @@ public partial class Bot
 	/// <param name="customEmojiId">Custom emoji identifier of a sticker from the sticker set; pass an empty string to drop the thumbnail and use the first sticker as the thumbnail.</param>
 	public async Task SetCustomEmojiStickerSetThumbnail(string name, string? customEmojiId = default)
 	{
+		await InitComplete();
 		await Client.Stickers_SetStickerSetThumb(name, null, customEmojiId == null ? null : long.Parse(customEmojiId));
 	}
 
@@ -1961,6 +1985,7 @@ public partial class Bot
 	/// <param name="name">Sticker set name</param>
 	public async Task DeleteStickerSet(string name)
 	{
+		await InitComplete();
 		await Client.Stickers_DeleteStickerSet(name);
 	}
 	#endregion
@@ -1977,6 +2002,7 @@ public partial class Bot
 	public async Task AnswerInlineQuery(string inlineQueryId, IEnumerable<InlineQueryResult> results, int cacheTime = 300,
 		bool isPersonal = default, string? nextOffset = default, InlineQueryResultsButton? button = default)
 	{
+		await InitComplete();
 		var switch_pm = button?.StartParameter == null ? null : new InlineBotSwitchPM { text = button.Text, start_param = button.StartParameter };
 		var switch_webview = button?.WebApp == null ? null : new InlineBotWebView { text = button.Text, url = button.WebApp.Url };
 		await Client.Messages_SetInlineBotResults(long.Parse(inlineQueryId), await InputBotInlineResults(results), cacheTime,
@@ -1989,6 +2015,7 @@ public partial class Bot
 	/// <returns>The sent inline message id if any</returns>
 	public async Task<string?> AnswerWebAppQuery(string webAppQueryId, InlineQueryResult result)
 	{
+		await InitComplete();
 		var sent = await Client.Messages_SendWebViewResultMessage(webAppQueryId, await InputBotInlineResult(result));
 		return sent.msg_id.InlineMessageId();
 	}
@@ -2077,6 +2104,7 @@ public partial class Bot
 		bool needShippingAddress = default, bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default,
 		bool isFlexible = default)
 	{
+		await InitComplete();
 		var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, null,
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
@@ -2090,6 +2118,7 @@ public partial class Bot
 	/// <param name="shippingOptions">A array of available shipping options.</param>
 	public async Task AnswerShippingQuery(string shippingQueryId, string? errorMessage = default, IEnumerable<ShippingOption>? shippingOptions = default)
 	{
+		await InitComplete();
 		await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage, shipping_options:
 			shippingOptions?.Select(so => new TL.ShippingOption { id = so.Id, title = so.Title, prices = so.Prices.LabeledPrices() }).ToArray());
 	}
@@ -2099,6 +2128,7 @@ public partial class Bot
 	/// <param name="errorMessage">Error message in human readable form that explains the reason for failure to proceed with the checkout (e.g. "Sorry, somebody just bought the last of our amazing black T-shirts while you were busy filling out your payment details. Please choose a different color or garment!"). Telegram will display this message to the user.<para/>Leave <see langword="null"/> if everything is alright (goods are available, etc.) and the bot is ready to proceed with the order</param>
 	public async Task AnswerPreCheckoutQuery(string preCheckoutQueryId, string? errorMessage = default)
 	{
+		await InitComplete();
 		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), errorMessage, success: errorMessage == null);
 	}
 
@@ -2108,6 +2138,7 @@ public partial class Bot
 	/// <returns>A <see cref="StarTransactions"/> object.</returns>
 	public async Task<StarTransactions> GetStarTransactions(int offset = 0, int limit = 100)
 	{
+		await InitComplete();
 		var starStatus = await Client.Payments_GetStarsTransactions(InputPeer.Self, offset.ToString(), limit, ascending: true);
 		return new() { Transactions = starStatus.history.Select(MakeStarTransaction).ToArray() };
 	}
@@ -2117,6 +2148,7 @@ public partial class Bot
 	/// <param name="telegramPaymentChargeId">Telegram payment identifier</param>
 	public async Task RefundStarPayment(long userId, string telegramPaymentChargeId)
 	{
+		await InitComplete();
 		await Client.Payments_RefundStarsCharge(InputUser(userId), telegramPaymentChargeId);
 	}
 
@@ -2128,6 +2160,7 @@ public partial class Bot
 	/// <param name="errors">A array describing the errors</param>
 	public async Task SetPassportDataErrors(long userId, IEnumerable<PassportElementError> errors)
 	{
+		await InitComplete();
 		var peer = InputPeerUser(userId);
 		await Client.Users_SetSecureValueErrors(peer, errors.Select(TypesTLConverters.SecureValueError).ToArray());
 	}
@@ -2190,7 +2223,7 @@ public partial class Bot
 	/// <param name="disableEditMessage">Pass <see langword="true"/> if the game message should not be automatically edited to include the current scoreboard</param>
 	public async Task SetGameScore(long userId, int score, string inlineMessageId, bool force = default, bool disableEditMessage = default)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force);
 	}
 
@@ -2216,7 +2249,7 @@ public partial class Bot
 	/// <returns>An Array of <see cref="GameHighScore"/> objects.</returns>
 	public async Task<GameHighScore[]> GetGameHighScores(long userId, string inlineMessageId)
 	{
-		var id = inlineMessageId.ParseInlineMsgID();
+		var id = await ParseInlineMsgID(inlineMessageId);
 		var highScore = await Client.Messages_GetInlineGameHighScores(id, InputUser(userId));
 		_collector.Collect(highScore.users.Values);
 		return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore

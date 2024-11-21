@@ -1,5 +1,5 @@
 # http://EditorConfig.org
 
-[TelegramBotClientExtensions.ApiMethods.cs]
+[*TelegramBotClient*.cs]
 indent_style = space
 indent_size = 4

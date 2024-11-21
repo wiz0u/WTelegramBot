@@ -194,9 +194,16 @@ public partial class Bot
 		var msgs = await Client.GetMessages(peer, messageId);
 		msgs.UserOrChat(_collector);
 		var msgBase = msgs.Messages.FirstOrDefault();
-		var msg = replyToo ? await MakeMessageAndReply(msgBase) : await MakeMessage(msgBase);
-		lock (CachedMessages)
-			return CachedMessages[(peer.ID, messageId)] = msg;
+		return replyToo ? await MakeMessageAndReply(msgBase) : await MakeMessage(msgBase);
+	}
+
+	private Message? CacheMessage(Message? msg, MessageBase msgBase)
+	{
+		//TODO: remove old messages from cache after a configurable time
+		if (msgBase.Peer is { ID: long peerId })
+			lock (CachedMessages)
+				CachedMessages[(peerId, msgBase.ID)] = msg;
+		return msg;
 	}
 
 	private MessageEntity[]? MakeEntities(TL.MessageEntity[]? entities) => entities?.Select(e => e switch
@@ -262,16 +269,19 @@ public partial class Bot
 	}
 
 	private async Task<TL.BotCommandScope?> BotCommandScope(BotCommandScope? scope)
-	=> scope switch
 	{
-		BotCommandScopeAllPrivateChats => new BotCommandScopeUsers(),
-		BotCommandScopeAllGroupChats => new BotCommandScopeChats(),
-		BotCommandScopeAllChatAdministrators => new BotCommandScopeChatAdmins(),
-		BotCommandScopeChat bcsc => new BotCommandScopePeer { peer = await InputPeerChat(bcsc.ChatId) },
-		BotCommandScopeChatAdministrators bcsca => new BotCommandScopePeerAdmins { peer = await InputPeerChat(bcsca.ChatId) },
-		BotCommandScopeChatMember bcscm => new BotCommandScopePeerUser { peer = await InputPeerChat(bcscm.ChatId), user_id = InputUser(bcscm.UserId) },
-		_ => null
-	};
+		await InitComplete();
+		return scope switch
+		{
+			BotCommandScopeAllPrivateChats => new BotCommandScopeUsers(),
+			BotCommandScopeAllGroupChats => new BotCommandScopeChats(),
+			BotCommandScopeAllChatAdministrators => new BotCommandScopeChatAdmins(),
+			BotCommandScopeChat bcsc => new BotCommandScopePeer { peer = await InputPeerChat(bcsc.ChatId) },
+			BotCommandScopeChatAdministrators bcsca => new BotCommandScopePeerAdmins { peer = await InputPeerChat(bcsca.ChatId) },
+			BotCommandScopeChatMember bcscm => new BotCommandScopePeerUser { peer = await InputPeerChat(bcscm.ChatId), user_id = InputUser(bcscm.UserId) },
+			_ => null
+		};
+	}
 
 	private async Task<InputChatPhotoBase> InputChatPhoto(InputFileStream photo)
 	{
@@ -310,8 +320,9 @@ public partial class Bot
 		}
 	}
 
-	private static InputDocument InputDocument(string fileId)
+	private async Task<InputDocument> InputDocument(string fileId)
 	{
+		await InitComplete();
 		var location = (InputDocumentFileLocation)fileId.ParseFileId().location;
 		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
@@ -322,7 +333,7 @@ public partial class Bot
 		switch (file.FileType)
 		{
 			case FileType.Id:
-				return new TL.InputMediaDocument { id = InputDocument(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0 };
+				return new TL.InputMediaDocument { id = await InputDocument(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0 };
 			case FileType.Url:
 				return new InputMediaDocumentExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaDocumentExternal.Flags.spoiler : 0 };
 			default: //case FileType.Stream:
@@ -389,6 +400,7 @@ public partial class Bot
 
 	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker)
 	{
+		await InitComplete();
 		var peer = InputPeerUser(userId);
 		var media = await InputMediaDocument(sticker.Sticker, mimeType: MimeType(sticker.Format));
 		var document = await UploadMediaDocument(peer, media);
@@ -549,7 +561,7 @@ public partial class Bot
 		if (cached != null)
 		{
 			cached.type ??= result.Type.ToString().ToLower();
-			cached.document = InputDocument(cached.id); // above, we used the id to store the fileId
+			cached.document = await InputDocument(cached.id); // above, we used the id to store the fileId
 			cached.id = result.Id;
 			cached.flags = (cached.title != null ? InputBotInlineResultDocument.Flags.has_title : 0)
 				| (cached.description != null ? InputBotInlineResultDocument.Flags.has_description : 0);

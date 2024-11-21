@@ -509,7 +509,7 @@ public partial class Bot
 				if (message.edit_date != default) msg.EditDate = message.edit_date;
 				if (message.flags.HasFlag(TL.Message.Flags.noforwards)) msg.HasProtectedContent = true;
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
-				return await FillTextAndMedia(msg, message.message, message.entities, message.media, message.flags.HasFlag(TL.Message.Flags.invert_media));
+				return CacheMessage(await FillTextAndMedia(msg, message.message, message.entities, message.media, message.flags.HasFlag(TL.Message.Flags.invert_media)), msgBase);
 			case TL.MessageService msgSvc:
 				msg = new WTelegram.Types.Message
 				{
@@ -526,17 +526,17 @@ public partial class Bot
 					msg.MessageThreadId = msgSvc.id;
 				}
 				await FixMsgFrom(msg, msgSvc.from_id, msgSvc.peer_id);
-				if (await MakeServiceMessage(msgSvc, msg) == null) return null;
-				return msg;
+				if (await MakeServiceMessage(msgSvc, msg) == null) return CacheMessage(null, msgBase);
+				return CacheMessage(msg, msgBase);
 			case null:
 				return null;
 			default:
-				return new WTelegram.Types.Message
+				return CacheMessage(new WTelegram.Types.Message
 				{
 					TLMessage = msgBase,
 					Id = msgBase.ID,
 					Chat = await ChatFromPeer(msgBase.Peer, allowUser: true)!,
-				};
+				}, msgBase);
 		}
 
 		async Task FixMsgFrom(Message msg, Peer from_id, Peer peer_id)
