@@ -398,7 +398,7 @@ public partial class Bot
 				case UpdateNewMessage { message: { } message }: return (await MakeMessageAndReply(message, replyToMessage))!;
 				case UpdateNewScheduledMessage { message: { } schedMsg }: return (await MakeMessageAndReply(schedMsg, replyToMessage))!;
 				case UpdateEditMessage { message: { } editMsg }: return (await MakeMessageAndReply(editMsg, replyToMessage))!;
-				case UpdateBotNewBusinessMessage { message: { } bizMsg } biz: return (await MakeMessageAndReply(bizMsg, replyToMessage, bConnId))!;
+				case UpdateBotNewBusinessMessage { message: { } bizMsg }: return (await MakeMessageAndReply(bizMsg, replyToMessage, bConnId))!;
 			}
 		}
 		throw new WTException("Failed to retrieve sent message");
@@ -792,7 +792,10 @@ public partial class Bot
 				ShippingOptionId = mapsm.shipping_option_id,
 				OrderInfo = mapsm.info.OrderInfo(),
 				TelegramPaymentChargeId = mapsm.charge.id,
-				ProviderPaymentChargeId = mapsm.charge.provider_charge_id
+				ProviderPaymentChargeId = mapsm.charge.provider_charge_id,
+				SubscriptionExpirationDate = mapsm.subscription_until_date.NullIfDefault(),
+				IsRecurring = mapsm.flags.HasFlag(MessageActionPaymentSentMe.Flags.recurring_used),
+				IsFirstRecurring = mapsm.flags.HasFlag(MessageActionPaymentSentMe.Flags.recurring_init),
 			},
 			MessageActionRequestedPeer { peers.Length: > 0 } marp => marp.peers[0] is PeerUser
 				? msg.UsersShared = new UsersShared { RequestId = marp.button_id, Users = marp.peers.Select(p => new SharedUser { UserId = p.ID }).ToArray() }

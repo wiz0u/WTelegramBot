@@ -1,4 +1,4 @@
-﻿using Telegram.Bot.Exceptions;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Requests.Abstractions;
 
@@ -42,6 +42,7 @@ public partial class WTelegramBotClient : ITelegramBotClient
 			SendChatActionRequest r => await SendChatAction(r.ChatId, r.Action, r.MessageThreadId, r.BusinessConnectionId, cancellationToken).ReturnTrue(),
 			SetMessageReactionRequest r => await SetMessageReaction(r.ChatId, r.MessageId, r.Reaction, r.IsBig, cancellationToken).ReturnTrue(),
 			GetUserProfilePhotosRequest r => await GetUserProfilePhotos(r.UserId, r.Offset, r.Limit, cancellationToken),
+			SetUserEmojiStatusRequest r => await SetUserEmojiStatus(r.UserId, r.EmojiStatusCustomEmojiId, r.EmojiStatusExpirationDate, cancellationToken).ReturnTrue(),
 			GetFileRequest r => await GetFile(r.FileId, cancellationToken),
 			BanChatMemberRequest r => await BanChatMember(r.ChatId, r.UserId, r.UntilDate, r.RevokeMessages, cancellationToken).ReturnTrue(),
 			UnbanChatMemberRequest r => await UnbanChatMember(r.ChatId, r.UserId, r.OnlyIfBanned, cancellationToken).ReturnTrue(),
@@ -133,15 +134,19 @@ public partial class WTelegramBotClient : ITelegramBotClient
 			SetStickerSetThumbnailRequest r => await SetStickerSetThumbnail(r.Name, r.UserId, r.Format, r.Thumbnail, cancellationToken).ReturnTrue(),
 			SetCustomEmojiStickerSetThumbnailRequest r => await SetCustomEmojiStickerSetThumbnail(r.Name, r.CustomEmojiId, cancellationToken).ReturnTrue(),
 			DeleteStickerSetRequest r => await DeleteStickerSet(r.Name, cancellationToken).ReturnTrue(),
+			GetAvailableGiftsRequest => await GetAvailableGifts(cancellationToken),
+			SendGiftRequest r => await SendGift(r.UserId, r.GiftId, r.Text, r.TextParseMode, r.TextEntities, cancellationToken).ReturnTrue(),
 			AnswerInlineQueryRequest r => await AnswerInlineQuery(r.InlineQueryId, r.Results, r.CacheTime, r.IsPersonal, r.NextOffset, r.Button, cancellationToken).ReturnTrue(),
 			AnswerWebAppQueryRequest r => await AnswerWebAppQuery(r.WebAppQueryId, r.Result, cancellationToken),
+			SavePreparedInlineMessageRequest r => await SavePreparedInlineMessage(r.UserId, r.Result, r.AllowUserChats, r.AllowBotChats, r.AllowGroupChats, r.AllowChannelChats, cancellationToken),
 			SendInvoiceRequest r => await SendInvoice(r.ChatId, r.Title, r.Description, r.Payload, r.Currency, r.Prices, r.ProviderToken, r.ProviderData, r.MaxTipAmount, r.SuggestedTipAmounts, r.PhotoUrl, r.PhotoSize, r.PhotoWidth, r.PhotoHeight, r.NeedName, r.NeedPhoneNumber, r.NeedEmail, r.NeedShippingAddress, r.SendPhoneNumberToProvider, r.SendEmailToProvider, r.IsFlexible, r.ReplyParameters, r.ReplyMarkup, r.StartParameter, r.MessageThreadId, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.AllowPaidBroadcast, cancellationToken),
-			CreateInvoiceLinkRequest r => await CreateInvoiceLink(r.Title, r.Description, r.Payload, r.Currency, r.Prices, r.ProviderToken, r.ProviderData, r.MaxTipAmount, r.SuggestedTipAmounts, r.PhotoUrl, r.PhotoSize, r.PhotoWidth, r.PhotoHeight, r.NeedName, r.NeedPhoneNumber, r.NeedEmail, r.NeedShippingAddress, r.SendPhoneNumberToProvider, r.SendEmailToProvider, r.IsFlexible, cancellationToken),
+			CreateInvoiceLinkRequest r => await CreateInvoiceLink(r.Title, r.Description, r.Payload, r.Currency, r.Prices, r.ProviderToken, r.ProviderData, r.MaxTipAmount, r.SuggestedTipAmounts, r.PhotoUrl, r.PhotoSize, r.PhotoWidth, r.PhotoHeight, r.NeedName, r.NeedPhoneNumber, r.NeedEmail, r.NeedShippingAddress, r.SendPhoneNumberToProvider, r.SendEmailToProvider, r.IsFlexible, r.SubscriptionPeriod, r.BusinessConnectionId, cancellationToken),
 			AnswerShippingQueryRequest r => r.Ok ? await AnswerShippingQuery(r.ShippingQueryId, r.ShippingOptions, cancellationToken).ReturnTrue()
 			                                     : await AnswerShippingQuery(r.ShippingQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
 			AnswerPreCheckoutQueryRequest r => await AnswerPreCheckoutQuery(r.PreCheckoutQueryId, r.ErrorMessage, cancellationToken).ReturnTrue(),
 			GetStarTransactionsRequest r => await GetStarTransactions(r.Offset, r.Limit, cancellationToken),
 			RefundStarPaymentRequest r => await RefundStarPayment(r.UserId, r.TelegramPaymentChargeId, cancellationToken).ReturnTrue(),
+			EditUserStarSubscriptionRequest r => await EditUserStarSubscription(r.UserId, r.TelegramPaymentChargeId, r.IsCanceled, cancellationToken).ReturnTrue(),
 			SetPassportDataErrorsRequest r => await SetPassportDataErrors(r.UserId, r.Errors, cancellationToken).ReturnTrue(),
 			SendGameRequest r => await SendGame(r.ChatId, r.GameShortName, r.ReplyParameters, r.ReplyMarkup, r.MessageThreadId, r.DisableNotification, r.ProtectContent, r.MessageEffectId, r.BusinessConnectionId, r.AllowPaidBroadcast, cancellationToken),
 			SetGameScoreRequest r => await SetGameScore(r.UserId, r.Score, r.ChatId, r.MessageId, r.Force, r.DisableEditMessage, cancellationToken),

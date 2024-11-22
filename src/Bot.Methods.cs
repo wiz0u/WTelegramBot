@@ -1,4 +1,4 @@
-﻿using TL;
+using TL;
 using ChatFullInfo = WTelegram.Types.ChatFullInfo;
 using Message = WTelegram.Types.Message;
 using MessageEntity = Telegram.Bot.Types.MessageEntity;
@@ -859,6 +859,23 @@ public partial class Bot
 			TotalCount = (photos as Photos_PhotosSlice)?.count ?? photos.photos.Length,
 			Photos = photos.photos.Select(pb => pb.PhotoSizes()!).ToArray()
 		};
+	}
+
+	/// <summary>Changes the emoji status for a given user that previously allowed the bot to manage their emoji status via the Mini App method <a href="https://core.telegram.org/bots/webapps#initializing-mini-apps">requestEmojiStatusAccess</a>.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	/// <param name="emojiStatusCustomEmojiId">Custom emoji identifier of the emoji status to set. Pass an empty string to remove the status.</param>
+	/// <param name="emojiStatusExpirationDate">Expiration date of the emoji status, if any</param>
+	public async Task SetUserEmojiStatus(long userId, string? emojiStatusCustomEmojiId = default, DateTime? emojiStatusExpirationDate = default)
+	{
+		await InitComplete();
+		var inputUser = InputUser(userId);
+		EmojiStatus? emojiStatus = null;
+		if (!string.IsNullOrEmpty(emojiStatusCustomEmojiId))
+		{
+			emojiStatus = emojiStatusExpirationDate == null ? new EmojiStatus() : new EmojiStatusUntil { until = emojiStatusExpirationDate.Value };
+			emojiStatus.document_id = long.Parse(emojiStatusCustomEmojiId);
+		}
+		await Client.Bots_UpdateUserEmojiStatus(inputUser, emojiStatus);
 	}
 
 	/// <summary>Use this method to get basic information about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size.</summary>
@@ -1992,6 +2009,39 @@ public partial class Bot
 
 	#region Inline mode
 
+	/// <summary>Returns the list of gifts that can be sent by the bot to users.</summary>
+	/// <returns>A <see cref="GiftList"/> object.</returns>
+	public async Task<GiftList> GetAvailableGifts()
+	{
+		await InitComplete();
+		var starGifts = await Client.Payments_GetStarGifts();
+		var gifts = starGifts.gifts.Where(g => !g.flags.HasFlag(StarGift.Flags.sold_out)).Select(MakeGift).ToArray();
+		return new GiftList { Gifts = gifts };
+	}
+
+	/// <summary>Sends a gift to the given user. The gift can't be converted to Telegram Stars by the user.</summary>
+	/// <param name="userId">Unique identifier of the target user that will receive the gift</param>
+	/// <param name="giftId">Identifier of the gift</param>
+	/// <param name="text">Text that will be shown along with the gift; 0-255 characters</param>
+	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	public async Task SendGift(long userId, string giftId, string? text = default, ParseMode textParseMode = default,
+		IEnumerable<MessageEntity>? textEntities = default)
+	{
+		await InitComplete();
+		var entities = ApplyParse(textParseMode, ref text!, textEntities);
+		var invoice = new InputInvoiceStarGift
+		{
+			flags = text != null ? InputInvoiceStarGift.Flags.has_message : 0,
+			user_id = InputUser(userId),
+			gift_id = long.Parse(giftId),
+			message = new() { text = text, entities = entities },
+		};
+		var paymentForm = await Client.Payments_GetPaymentForm(invoice);
+		if (paymentForm is not TL.Payments_PaymentFormStarGift starGift) throw new RpcException(500, "Unsupported");
+		await Client.Payments_SendStarsForm(starGift.form_id, invoice);
+	}
+
 	/// <summary>Use this method to send answers to an inline query<br/>No more than <b>50</b> results per query are allowed.</summary>
 	/// <param name="inlineQueryId">Unique identifier for the answered query</param>
 	/// <param name="results">A array of results for the inline query</param>
@@ -2023,6 +2073,24 @@ public partial class Bot
 	#endregion Inline mode
 
 	#region Payments
+
+	/// <summary>Stores a message that can be sent by a user of a Mini App.</summary>
+	/// <param name="userId">Unique identifier of the target user that can use the prepared message</param>
+	/// <param name="result">An object describing the message to be sent</param>
+	/// <param name="allowUserChats">Pass <see langword="true"/> if the message can be sent to private chats with users</param>
+	/// <param name="allowBotChats">Pass <see langword="true"/> if the message can be sent to private chats with bots</param>
+	/// <param name="allowGroupChats">Pass <see langword="true"/> if the message can be sent to group and supergroup chats</param>
+	/// <param name="allowChannelChats">Pass <see langword="true"/> if the message can be sent to channel chats</param>
+	/// <returns>A <see cref="PreparedInlineMessage"/> object.</returns>
+	public async Task<PreparedInlineMessage> SavePreparedInlineMessage(long userId, InlineQueryResult result, bool allowUserChats = default,
+		bool allowBotChats = default, bool allowGroupChats = default, bool allowChannelChats = default)
+	{
+		await InitComplete();
+		var botResult = await InputBotInlineResult(result);
+		var peer_types = TypesTLConverters.InlineQueryPeerTypes(allowUserChats, allowBotChats, allowGroupChats, allowChannelChats);
+		var prepared = await Client.Messages_SavePreparedInlineMessage(botResult, InputUser(userId), peer_types);
+		return new PreparedInlineMessage { Id = prepared.id, ExpirationDate = prepared.expire_date };
+	}
 
 	/// <summary>Use this method to send invoices.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -2069,7 +2137,7 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
 		var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
-			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
+			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, null);
 		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage);
@@ -2096,19 +2164,23 @@ public partial class Bot
 	/// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
 	/// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
+	/// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. The currency must be set to “XTR” (Telegram Stars) if the parameter is used. Currently, it must always be 2592000 (30 days) if specified. Any number of subscriptions can be active for a given bot at the same time, including multiple concurrent subscriptions from the same user.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the link will be created. For payments in <a href="https://t.me/BotNews/90">Telegram Stars</a> only.</param>
 	/// <returns>The created invoice link as <em>String</em> on success.</returns>
 	public async Task<string> CreateInvoiceLink(string title, string description, string payload, string currency,
 		IEnumerable<LabeledPrice> prices, string? providerToken = default, string? providerData = default, int? maxTipAmount = default,
 		IEnumerable<int>? suggestedTipAmounts = default, string? photoUrl = default, int? photoSize = default, int? photoWidth = default,
 		int? photoHeight = default, bool needName = default, bool needPhoneNumber = default, bool needEmail = default,
 		bool needShippingAddress = default, bool sendPhoneNumberToProvider = default, bool sendEmailToProvider = default,
-		bool isFlexible = default)
+		bool isFlexible = default, int? subscriptionPeriod = default, string? businessConnectionId = default)
 	{
 		await InitComplete();
-		var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, null,
-			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
-			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible);
-		var exported = await Client.Payments_ExportInvoice(media);
+		var query = new TL.Methods.Payments_ExportInvoice { invoice_media =
+			InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, null,
+				providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
+				sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, subscriptionPeriod) };
+		var exported = businessConnectionId is null ? await Client.Invoke(query)
+			: await Client.InvokeWithBusinessConnection(businessConnectionId, query);
 		return exported.url;
 	}
 
@@ -2155,6 +2227,16 @@ public partial class Bot
 	#endregion Payments
 
 	#region Telegram Passport
+	/// <summary>Allows the bot to cancel or re-enable extension of a subscription paid in Telegram Stars.</summary>
+	/// <param name="userId">Identifier of the user whose subscription will be edited</param>
+	/// <param name="telegramPaymentChargeId">Telegram payment identifier for the subscription</param>
+	/// <param name="isCanceled">Pass <see langword="true"/> to cancel extension of the user subscription; the subscription must be active up to the end of the current subscription period. Pass <see langword="false"/> to allow the user to re-enable a subscription that was previously canceled by the bot.</param>
+	public async Task EditUserStarSubscription(long userId, string telegramPaymentChargeId, bool isCanceled)
+	{
+		await InitComplete();
+		await Client.Payments_BotCancelStarsSubscription(InputUser(userId), charge_id: telegramPaymentChargeId, restore: !isCanceled);
+	}
+
 	/// <summary>Informs a user that some of the Telegram Passport elements they provided contains errors. The user will not be able to re-submit their Passport to you until the errors are fixed (the contents of the field for which you returned the error must change).<br/>Use this if the data submitted by the user doesn't satisfy the standards your service requires for any reason. For example, if a birthday date seems invalid, a submitted document is blurry, a scan shows evidence of tampering, etc. Supply some details in the error message to make sure the user knows how to correct the issues. </summary>
 	/// <param name="userId">User identifier</param>
 	/// <param name="errors">A array describing the errors</param>

@@ -491,12 +491,15 @@ public static class TypesTLConverters
 	};
 
 	internal static InlineQueryPeerType[] InlineQueryPeerTypes(this SwitchInlineQueryChosenChat swiqcc)
+		=> InlineQueryPeerTypes(swiqcc.AllowUserChats, swiqcc.AllowBotChats, swiqcc.AllowGroupChats, swiqcc.AllowChannelChats);
+
+	internal static InlineQueryPeerType[] InlineQueryPeerTypes(bool allowUserChats, bool allowBotChats, bool allowGroupChats, bool allowChannelChats)
 	{
 		var result = new List<InlineQueryPeerType>();
-		if (swiqcc.AllowUserChats == true) result.Add(InlineQueryPeerType.PM);
-		if (swiqcc.AllowBotChats == true) result.Add(InlineQueryPeerType.BotPM);
-		if (swiqcc.AllowGroupChats == true) { result.Add(InlineQueryPeerType.Chat); result.Add(InlineQueryPeerType.Megagroup); }
-		if (swiqcc.AllowChannelChats == true) result.Add(InlineQueryPeerType.Broadcast);
+		if (allowUserChats) result.Add(InlineQueryPeerType.PM);
+		if (allowBotChats) result.Add(InlineQueryPeerType.BotPM);
+		if (allowGroupChats) { result.Add(InlineQueryPeerType.Chat); result.Add(InlineQueryPeerType.Megagroup); }
+		if (allowChannelChats) result.Add(InlineQueryPeerType.Broadcast);
 		return [.. result];
 	}
 
@@ -509,7 +512,7 @@ public static class TypesTLConverters
 			PassportElementErrorDataField e => new SecureValueErrorData { type = type, text = text, data_hash = e.DataHash.FromBase64(), field = e.FieldName },
 			PassportElementErrorFrontSide e => new SecureValueErrorFrontSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
 			PassportElementErrorReverseSide e => new SecureValueErrorReverseSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64()},
+			PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64() },
 			PassportElementErrorFile e => new SecureValueErrorFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
 			PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
 			PassportElementErrorTranslationFile e => new SecureValueErrorTranslationFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
@@ -634,7 +637,7 @@ public static class TypesTLConverters
 	{
 		TimeZoneName = hours.timezone_id,
 		OpeningHours = hours.weekly_open.Select(wo =>
-			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute}).ToArray()
+			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute }).ToArray()
 	};
 
 	internal static Document? Document(this TL.DocumentBase document, TL.PhotoSizeBase? thumb = null)
@@ -692,7 +695,7 @@ public static class TypesTLConverters
 		_ => throw new WTException("Unrecognized MessageExtendedMediaBase")
 	};
 
-	internal static PaidMedia PaidMedia(MessageMedia media) => media switch
+	internal static PaidMedia PaidMedia(TL.MessageMedia media) => media switch
 	{
 		MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
 		MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>

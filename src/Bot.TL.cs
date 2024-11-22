@@ -431,7 +431,8 @@ public partial class Bot
 			StickerSetNames[mss.set.id] = mss.set.short_name;
 	}
 
-	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker)
+	// sync: No async calls. Don't try to resolve missing SetName</param>
+	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker, bool sync = false)
 	{
 		var customEmoji = doc.GetAttribute<DocumentAttributeCustomEmoji>();
 		string? setName = null;
@@ -440,6 +441,7 @@ public partial class Bot
 			case InputStickerSetID issi:
 				lock (StickerSetNames)
 					if (StickerSetNames.TryGetValue(issi.id, out setName)) break;
+				if (sync) break;
 				try
 				{
 					var mss = await Client.Messages_GetStickerSet(issi);
@@ -803,7 +805,7 @@ public partial class Bot
 		string currency, IEnumerable<LabeledPrice> prices, int? maxTipAmount, IEnumerable<int>? suggestedTipAmounts, string? startParameter,
 		string? providerData, string? photoUrl, int? photoSize, int? photoWidth, int? photoHeight,
 		bool needName, bool needPhoneNumber, bool needEmail, bool needShippingAddress,
-		bool sendPhoneNumberToProvider, bool sendEmailToProvider, bool isFlexible) => new()
+		bool sendPhoneNumberToProvider, bool sendEmailToProvider, bool isFlexible, int? subscriptionPeriod) => new()
 		{
 			flags = (photoUrl != null ? TL.InputMediaInvoice.Flags.has_photo : 0) | (startParameter != null ? TL.InputMediaInvoice.Flags.has_start_param : 0)
 				| (providerToken != null ? TL.InputMediaInvoice.Flags.has_provider : 0),
@@ -819,6 +821,7 @@ public partial class Bot
 			invoice = new TL.Invoice
 			{
 				flags = (maxTipAmount.HasValue ? TL.Invoice.Flags.has_max_tip_amount : 0)
+					| (subscriptionPeriod.HasValue ? TL.Invoice.Flags.has_subscription_period : 0)
 					| (needName == true ? TL.Invoice.Flags.name_requested : 0)
 					| (needPhoneNumber == true ? TL.Invoice.Flags.phone_requested : 0)
 					| (needEmail == true ? TL.Invoice.Flags.email_requested : 0)
@@ -830,6 +833,7 @@ public partial class Bot
 				prices = prices.LabeledPrices(),
 				max_tip_amount = maxTipAmount ?? 0,
 				suggested_tip_amounts = suggestedTipAmounts?.Select(sta => (long)sta).ToArray(),
+				subscription_period = subscriptionPeriod ?? 0,
 			},
 			payload = Encoding.UTF8.GetBytes(payload),
 			provider = providerToken,
@@ -961,35 +965,42 @@ public partial class Bot
 		IsEnabled = !bbc.flags.HasFlag(BotBusinessConnection.Flags.disabled)
 	};
 
+	//https://github.com/tdlib/td/blob/66c4751742d2ca810033b289fc57ab4f83cfc833/td/telegram/StarManager.cpp?plain=1#L272
+	//https://github.com/tdlib/telegram-bot-api/blob/53e15345b04fcea73b415897f10d7543005044ce/telegram-bot-api/Client.cpp?plain=1#L4241
 	internal StarTransaction MakeStarTransaction(TL.StarsTransaction transaction)
 	{
-		TransactionPartner partner = transaction.peer switch
+		TransactionPartner? partner = transaction.peer switch
 		{
-			StarsTransactionPeerFragment => new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
+			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
+				? null // starTransactionPartnerUser + userTransactionPurposeGiftedStars
+				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
+			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } => transaction switch
+			{
+				{ stargift: not null } => (transaction.stars > 0) == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
+					? new TransactionPartnerUser { User = User(user_id)!, Gift = MakeGift(transaction.stargift) }
+					: null, // starTransactionPartnerUser + userTransactionPurposeGiftSell
+				{ subscription_period: > 0 } =>
+					new TransactionPartnerUser { User = User(user_id)!,
+						InvoicePayload = transaction.bot_payload.NullOrUtf8(),
+						SubscriptionPeriod = transaction.subscription_period },
+				{ title: null, description: null, photo: null } or { extended_media.Length: > 0 } =>
+					new TransactionPartnerUser { User = User(user_id)!,
+						PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
+						PaidMediaPayload = transaction.bot_payload.NullOrUtf8() },
+				_ => new TransactionPartnerUser { User = User(user_id)!,
+						InvoicePayload = transaction.bot_payload.NullOrUtf8() }
+			},
 			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),
-			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi { RequestCount = 0/*transaction.floodskip_number*/ },
-			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } =>
-				transaction is { title: null, description: null, photo: null } || transaction.extended_media?.Length > 0
-				? new TransactionPartnerUser
-				{
-					User = User(user_id)!,
-					PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
-					PaidMediaPayload = transaction.bot_payload.NullOrUtf8(),
-				}
-				: new TransactionPartnerUser
-				{
-					User = User(user_id)!,
-					InvoicePayload = transaction.bot_payload.NullOrUtf8(),
-				},
-			_ => new TransactionPartnerOther(),
+			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi { RequestCount = transaction.floodskip_number },
+			_ => null,
 		};
 		return new StarTransaction
 		{
 			Id = transaction.id,
 			Amount = checked((int)Math.Abs(transaction.stars)),
 			Date = transaction.date,
-			Source = transaction.stars > 0 ? partner : null,
-			Receiver = transaction.stars <= 0 ? partner : null,
+			Source = transaction.stars > 0 ? partner ?? new TransactionPartnerOther() : null,
+			Receiver = transaction.stars <= 0 ? partner ?? new TransactionPartnerOther() : null,
 		};
 
 		RevenueWithdrawalState? WithdrawalState()
@@ -1003,4 +1014,13 @@ public partial class Bot
 			return null;
 		}
 	}
+
+	internal Gift MakeGift(TL.StarGift gift) => new Gift
+	{
+		Id = gift.id.ToString(),
+		Sticker = MakeSticker((TL.Document)gift.sticker, null, sync: true).Result,
+		StarCount = (int)gift.stars,
+		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
+		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
+	};
 }
