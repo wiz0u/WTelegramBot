@@ -972,35 +972,45 @@ public partial class Bot
 		TransactionPartner? partner = transaction.peer switch
 		{
 			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
-				? null // starTransactionPartnerUser + userTransactionPurposeGiftedStars
-				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },
+				? null																		//td_api::starTransactionTypeUserDeposit
+				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },   //td_api::starTransactionTypeFragmentWithdrawal or starTransactionTypeFragmentDeposit
 			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } => transaction switch
 			{
-				{ stargift: not null } => (transaction.stars > 0) == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
-					? new TransactionPartnerUser { User = User(user_id)!, Gift = MakeGift(transaction.stargift) }
-					: null, // starTransactionPartnerUser + userTransactionPurposeGiftSell
+				{ starref_commission_permille: not 0 } =>
+					new TransactionPartnerAffiliateProgram { SponsorUser = User(user_id)!,	//td_api::starTransactionTypeAffiliateProgramCommission
+						CommissionPerMille = transaction.starref_commission_permille },
+				{ stargift: not null } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
+					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase
+						Gift = MakeGift(transaction.stargift) }
+					: null, 																//td_api::starTransactionTypeGiftSale
 				{ subscription_period: > 0 } =>
-					new TransactionPartnerUser { User = User(user_id)!,
+					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotSubscriptionSale
 						InvoicePayload = transaction.bot_payload.NullOrUtf8(),
+						Affiliate = Affiliate(transaction),
 						SubscriptionPeriod = transaction.subscription_period },
 				{ title: null, description: null, photo: null } or { extended_media.Length: > 0 } =>
-					new TransactionPartnerUser { User = User(user_id)!,
+					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotPaidMediaSale
+						Affiliate = Affiliate(transaction),
 						PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
 						PaidMediaPayload = transaction.bot_payload.NullOrUtf8() },
-				_ => new TransactionPartnerUser { User = User(user_id)!,
+				
+				_ => new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeBotInvoiceSale
+						Affiliate = Affiliate(transaction),
 						InvoicePayload = transaction.bot_payload.NullOrUtf8() }
 			},
-			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),
-			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi { RequestCount = transaction.floodskip_number },
+			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),					//td_api::starTransactionTypeTelegramAdsWithdrawal
+			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi {					//td_api::starTransactionTypeTelegramApiUsage
+						RequestCount = transaction.floodskip_number },
 			_ => null,
 		};
 		return new StarTransaction
 		{
 			Id = transaction.id,
-			Amount = checked((int)Math.Abs(transaction.stars)),
+			Amount = checked((int)Math.Abs(transaction.stars.amount)),
+			NanostarAmount = Math.Abs(transaction.stars.nanos).NullIfZero(),
 			Date = transaction.date,
-			Source = transaction.stars > 0 ? partner ?? new TransactionPartnerOther() : null,
-			Receiver = transaction.stars <= 0 ? partner ?? new TransactionPartnerOther() : null,
+			Source = transaction.stars.IsPositive() ? partner ?? new TransactionPartnerOther() : null,
+			Receiver = transaction.stars.IsPositive() ? null : partner ?? new TransactionPartnerOther(),
 		};
 
 		RevenueWithdrawalState? WithdrawalState()
@@ -1015,7 +1025,7 @@ public partial class Bot
 		}
 	}
 
-	internal Gift MakeGift(TL.StarGift gift) => new Gift
+	internal Gift MakeGift(TL.StarGift gift) => new()
 	{
 		Id = gift.id.ToString(),
 		Sticker = MakeSticker((TL.Document)gift.sticker, null, sync: true).Result,
@@ -1023,4 +1033,15 @@ public partial class Bot
 		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
 		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
 	};
+
+	internal AffiliateInfo? Affiliate(TL.StarsTransaction transaction)
+		=> transaction.starref_commission_permille is > 0 and < 1000 && transaction.starref_peer != null ?
+			new AffiliateInfo
+			{
+				AffiliateChat = transaction.starref_peer is PeerChannel pc ? Chat(pc.channel_id) : null,
+				AffiliateUser = transaction.starref_peer is PeerUser pu ? User(pu.user_id) : null,
+				CommissionPerMille = transaction.starref_commission_permille,
+				Amount = (int)transaction.starref_amount.amount,
+				NanostarAmount = transaction.starref_amount.nanos,
+			} : null;
 }

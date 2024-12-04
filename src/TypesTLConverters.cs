@@ -702,4 +702,6 @@ public static class TypesTLConverters
 			new PaidMediaVideo { Video = document.Video() },
 		_ => throw new WTException("Unrecognized Paid MessageMedia")
 	};
+
+	internal static bool IsPositive(this StarsAmount amount) => amount.amount > 0 || (amount.amount == 0 && amount.nanos > 0);
 }
