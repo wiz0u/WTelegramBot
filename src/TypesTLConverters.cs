@@ -624,7 +624,7 @@ public static class TypesTLConverters
 	{
 		Day = birthday.day,
 		Month = birthday.month,
-		Year = birthday.flags.HasFlag(TL.Birthday.Flags.has_year) ? birthday.year : null
+		Year = birthday.flags.HasFlag(Birthday.Flags.has_year) ? birthday.year : null
 	};
 
 	internal static BusinessLocation? BusinessLocation(this TL.BusinessLocation? loc) => loc == null ? null : new BusinessLocation

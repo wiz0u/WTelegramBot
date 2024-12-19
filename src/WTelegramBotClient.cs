@@ -21,9 +21,10 @@ public partial class WTelegramBotClient(WTelegramBotClientOptions options, HttpC
     /// <inheritdoc/>
     public TimeSpan Timeout
     {
-        get => _httpClient!.Timeout;
-        set => _httpClient!.Timeout = value;
+        get => _httpClient?.Timeout ?? _timeout;
+        set { if (_httpClient != null) _httpClient.Timeout = value; else _timeout = value; }
     }
+    private TimeSpan _timeout = TimeSpan.FromSeconds(100);
 
     /// <summary>Global cancellation token</summary>
     public CancellationToken GlobalCancelToken { get; } = cancellationToken;
