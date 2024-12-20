@@ -584,8 +584,8 @@ public static class TypesTLConverters
 
 	internal static ChatShared? ToSharedChat(this RequestedPeer peer, int requestId) => peer switch
 	{
-		RequestedPeerChat rpc => new ChatShared { RequestId = requestId, ChatId = rpc.chat_id, Title = rpc.title, Photo = rpc.photo.PhotoSizes() },
-		RequestedPeerChannel rpch => new ChatShared { RequestId = requestId, ChatId = rpch.channel_id, Title = rpch.title, Username = rpch.username, Photo = rpch.photo.PhotoSizes() },
+		RequestedPeerChat rpc => new ChatShared { RequestId = requestId, ChatId = -rpc.chat_id, Title = rpc.title, Photo = rpc.photo.PhotoSizes() },
+		RequestedPeerChannel rpch => new ChatShared { RequestId = requestId, ChatId = ZERO_CHANNEL_ID - rpch.channel_id, Title = rpch.title, Username = rpch.username, Photo = rpch.photo.PhotoSizes() },
 		_ => null
 	};
 
@@ -704,4 +704,7 @@ public static class TypesTLConverters
 	};
 
 	internal static bool IsPositive(this StarsAmount amount) => amount.amount > 0 || (amount.amount == 0 && amount.nanos > 0);
+
+	internal static long ToChatId(this Peer peer)
+		=> peer switch { PeerChat pc => -pc.chat_id, PeerChannel pch => ZERO_CHANNEL_ID - pch.channel_id, _ => peer.ID };
 }

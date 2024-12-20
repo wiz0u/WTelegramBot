@@ -799,7 +799,7 @@ public partial class Bot
 			},
 			MessageActionRequestedPeer { peers.Length: > 0 } marp => marp.peers[0] is PeerUser
 				? msg.UsersShared = new UsersShared { RequestId = marp.button_id, Users = marp.peers.Select(p => new SharedUser { UserId = p.ID }).ToArray() }
-				: msg.ChatShared = new ChatShared { RequestId = marp.button_id, ChatId = marp.peers[0].ID },
+				: msg.ChatShared = new ChatShared { RequestId = marp.button_id, ChatId = marp.peers[0].ToChatId() },
 			MessageActionRequestedPeerSentMe { peers.Length: > 0 } marpsm => marpsm.peers[0] is RequestedPeerUser
 				? msg.UsersShared = new UsersShared { RequestId = marpsm.button_id, Users = marpsm.peers.Select(p => p.ToSharedUser()).ToArray() }
 				: msg.ChatShared = marpsm.peers[0].ToSharedChat(marpsm.button_id),
