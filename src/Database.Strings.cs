@@ -26,7 +26,7 @@ internal partial class Database
 /*SaveMBox*/"INSERT INTO WTB_MBoxState(mbox, pts, access_hash) VALUES(@MBox, @pts, @access_hash) ON CONFLICT(MBox) DO UPDATE SET pts=EXCLUDED.pts, access_hash=EXCLUDED.access_hash",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",
 /*SaveUser*/"INSERT INTO WTB_Users (Id, AccessHash, Flags, FirstName, LastName, Username, LanguageCode) VALUES(@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @LanguageCode) ON CONFLICT(Id) DO UPDATE SET AccessHash=EXCLUDED.AccessHash, Flags=EXCLUDED.Flags, FirstName=EXCLUDED.FirstName, LastName=EXCLUDED.LastName, Username=EXCLUDED.Username, LanguageCode=EXCLUDED.LanguageCode",
-/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = @Id;",
+/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = -@Id OR Id = -1000000000000-@Id;",
 /*SaveChat*/"INSERT INTO WTB_Chats (Id, AccessHash, Flags, FirstName, LastName, Username, Type) VALUES(@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @Type) ON CONFLICT(Id) DO UPDATE SET AccessHash=EXCLUDED.AccessHash, Flags=EXCLUDED.Flags, FirstName=EXCLUDED.FirstName, LastName=EXCLUDED.LastName, Username=EXCLUDED.Username, Type=EXCLUDED.Type",
 		],
 		[ // SQL Server
@@ -44,7 +44,7 @@ internal partial class Database
 /*SaveMBox*/"MERGE INTO WTB_MBoxState USING (VALUES (@MBox, @pts, @access_hash)) AS NEW (mbox, pts, access_hash) ON WTB_MBoxState.MBox = NEW.MBox\nWHEN MATCHED THEN UPDATE SET pts=NEW.pts, access_hash=NEW.access_hash\nWHEN NOT MATCHED THEN INSERT (mbox, pts, access_hash) VALUES (NEW.mbox, NEW.pts, NEW.access_hash);",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",
 /*SaveUser*/"MERGE INTO WTB_Users USING (VALUES (@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @LanguageCode)) AS NEW (Id, AccessHash, Flags, FirstName, LastName, Username, LanguageCode) ON WTB_Users.Id = NEW.Id\nWHEN MATCHED THEN UPDATE SET AccessHash=NEW.AccessHash, Flags=NEW.Flags, FirstName=NEW.FirstName, LastName=NEW.LastName, Username=NEW.Username, LanguageCode=NEW.LanguageCode\nWHEN NOT MATCHED THEN INSERT (Id, AccessHash, Flags, FirstName, LastName, Username, LanguageCode) VALUES (NEW.Id, NEW.AccessHash, NEW.Flags, NEW.FirstName, NEW.LastName, NEW.Username, NEW.LanguageCode);",
-/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = @Id;",
+/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = -@Id OR Id = -1000000000000-@Id;",
 /*SaveChat*/"MERGE INTO WTB_Chats USING (VALUES (@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @Type)) AS NEW (Id, AccessHash, Flags, FirstName, LastName, Username, Type) ON WTB_Chats.Id = NEW.Id\nWHEN MATCHED THEN UPDATE SET AccessHash=NEW.AccessHash, Flags=NEW.Flags, FirstName=NEW.FirstName, LastName=NEW.LastName, Username=NEW.Username, Type=NEW.Type\nWHEN NOT MATCHED THEN INSERT (Id, AccessHash, Flags, FirstName, LastName, Username, Type) VALUES (NEW.Id, NEW.AccessHash, NEW.Flags, NEW.FirstName, NEW.LastName, NEW.Username, NEW.Type);",
 		],
 		[ // MySQL
@@ -62,7 +62,7 @@ internal partial class Database
 /*SaveMBox*/"REPLACE INTO WTB_MBoxState(mbox, pts, access_hash) VALUES(@MBox, @pts, @access_hash)",
 /*LoadUser*/"SELECT AccessHash, Flags, FirstName, LastName, Username, LanguageCode FROM WTB_Users WHERE Id = @Id;",
 /*SaveUser*/"REPLACE INTO WTB_Users (Id, AccessHash, Flags, FirstName, LastName, Username, LanguageCode) VALUES(@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @LanguageCode)",
-/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = @Id;",
+/*LoadChat*/"SELECT AccessHash, Flags, FirstName, LastName, Username, Type FROM WTB_Chats WHERE Id = -@Id OR Id = -1000000000000-@Id;",
 /*SaveChat*/"REPLACE INTO WTB_Chats (Id, AccessHash, Flags, FirstName, LastName, Username, Type) VALUES(@Id, @AccessHash, @Flags, @FirstName, @LastName, @Username, @Type)",
 		]
 	];

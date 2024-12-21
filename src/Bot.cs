@@ -31,7 +31,7 @@ public partial class Bot : IDisposable
 	/// <summary>Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.TLUpdate"/>)</summary>
 	public bool WantUnknownTLUpdates { get; set; }
 
-	const long ZERO_CHANNEL_ID = -1000000000000;
+	internal const long ZERO_CHANNEL_ID = -1000000000000;
 	static readonly User GroupAnonymousBot = new() { Id = 1087968824, Username = "GroupAnonymousBot", FirstName = "Group", IsBot = true };
 	static readonly User ServiceNotification = new() { Id = 777000, FirstName = "Telegram" };
 

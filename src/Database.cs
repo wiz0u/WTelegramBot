@@ -28,7 +28,8 @@ internal partial class Database : IDisposable
 				var end = defCmd.IndexOfAny([',', ' ', ')', ';'], at + 1);
 				var param = command.CreateParameter();
 				param.ParameterName = defCmd[at..end];
-				command.Parameters.Add(param);
+				if (!command.Parameters.Contains(param.ParameterName))
+					command.Parameters.Add(param);
 			}
 		}
 		connection.Open();
@@ -196,7 +197,7 @@ internal partial class Database : IDisposable
 		var firstName = reader.GetString(2);
 		return new Chat
 		{
-			Id = id,
+			Id = type == ChatType.Group ? -id : Bot.ZERO_CHANNEL_ID - id,
 			AccessHash = reader.GetInt64(0),
 			Type = type,
 			Title = type == ChatType.Private ? null : firstName,
