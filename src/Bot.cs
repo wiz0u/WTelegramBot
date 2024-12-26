@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Collections.Immutable;
+using System.Data.Common;
 using System.Reflection;
 using TL;
 using Chat = WTelegram.Types.Chat;
@@ -37,9 +38,9 @@ public partial class Bot : IDisposable
 
 	/// <summary>Task launched from constructor</summary>
 	protected readonly Task<Task> _initTask;
-	private readonly Database _database;
-	internal readonly Database.CachedTable<Chat> _chats;
-	internal readonly Database.CachedTable<User> _users;
+	private readonly IBotStorage _database;
+	internal readonly IBotStorage.ISetCache<Chat> _chats;
+	internal readonly IBotStorage.ISetCache<User> _users;
 	private readonly BotCollectorPeer _collector;
 	private readonly SemaphoreSlim _pendingCounter = new(0);
 	/// <summary>Cache StickerSet ID => Name</summary>
@@ -51,12 +52,33 @@ public partial class Bot : IDisposable
 	private const int DefaultAllowedUpdates = 0b111_1110_0101_1111_1111_1110; /// all <see cref="UpdateType"/> except Unknown=0, ChatMember=13, MessageReaction=15, MessageReactionCount=16
 	private bool NotAllowed(UpdateType updateType) => (_state.AllowedUpdates & (1 << (int)updateType)) == 0;
 	private readonly State _state = new();
-	internal class State
+	public sealed class State
 	{
-		public List<Update> PendingUpdates = [];
-		public byte[]? SessionData;
-		public int LastUpdateId;
-		public int AllowedUpdates = -1; // if GetUpdates is never called, OnMessage/OnUpdate should receive all updates
+		internal State() { }
+		internal List<Update> PendingUpdates = [];
+		internal byte[]? SessionData;
+		internal int LastUpdateId;
+		internal int AllowedUpdates = -1; // if GetUpdates is never called, OnMessage/OnUpdate should receive all updates
+
+		public ReadOnlyMemory<byte>? SessionDataMemory => SessionData;
+
+		public void LoadState(StateBuffer buffer)
+		{
+			SessionData = buffer.SessionData.ToArray();
+			LastUpdateId = buffer.LastUpdateId;
+			AllowedUpdates = buffer.AllowedUpdates;
+		}
+
+		public StateBuffer SaveState()
+			=> new(LastUpdateId, SessionData, AllowedUpdates);
+
+		public Stream CreateSessionStoreStream(Action<byte[]> save)
+			=> new IBotStorage.SessionStore(SessionData, save);
+	}
+
+	public readonly record struct StateBuffer(int LastUpdateId, Memory<byte> SessionData, int AllowedUpdates)
+	{
+		public static StateBuffer Empty => new(0, null, -1);
 	}
 
 	/// <summary>Create a new <see cref="Bot"/> instance in TCP mode.</summary>
@@ -68,14 +90,41 @@ public partial class Bot : IDisposable
 	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = SqlCommands.Detect)
 		: this(botToken, apiId, apiHash, dbConnection, null, sqlCommands) { }
 
-	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
-	/// <param name="botToken">The bot token</param>
-	/// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
-	/// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
-	/// <param name="dbConnection">DB connection for storage and later resume</param>
-	/// <param name="httpClient">An <see cref="HttpClient"/>, or null for TCP mode</param>
-	/// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
-	public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, HttpClient? httpClient, SqlCommands sqlCommands = SqlCommands.Detect)
+
+    /// <summary>Create a new <see cref="Bot"/> instance in TCP mode.</summary>
+    /// <param name="botToken">The bot token</param>
+    /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
+    /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
+    /// <param name="storage">Storage for the bot and later resume</param>
+    public Bot(string botToken, int apiId, string apiHash, IBotStorage storage)
+		: this(botToken, apiId, apiHash, storage, null) { }
+
+    /// <summary>Create a new <see cref="Bot"/> instance.</summary>
+    /// <param name="botToken">The bot token</param>
+    /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
+    /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
+    /// <param name="storage">Storage for the bot and later resume</param>
+    /// <param name="httpClient">An <see cref="HttpClient"/>, or null for TCP mode</param>
+    public Bot(string botToken, int apiId, string apiHash, IBotStorage storage, HttpClient? httpClient)
+        : this(what => what switch
+        {
+            "api_id" => apiId.ToString(),
+            "api_hash" => apiHash,
+            "bot_token" => botToken,
+            "device_model" => "server",
+            _ => null
+        },
+        storage, httpClient)
+    { }
+
+    /// <summary>Create a new <see cref="Bot"/> instance.</summary>
+    /// <param name="botToken">The bot token</param>
+    /// <param name="apiId">API id (see https://my.telegram.org/apps)</param>
+    /// <param name="apiHash">API hash (see https://my.telegram.org/apps)</param>
+    /// <param name="dbConnection">DB connection for storage and later resume</param>
+    /// <param name="httpClient">An <see cref="HttpClient"/>, or null for TCP mode</param>
+    /// <param name="sqlCommands">Template for SQL strings (auto-detect by default)</param>
+    public Bot(string botToken, int apiId, string apiHash, DbConnection dbConnection, HttpClient? httpClient, SqlCommands sqlCommands = SqlCommands.Detect)
 		: this(what => what switch
 		{
 			"api_id" => apiId.ToString(),
@@ -87,28 +136,42 @@ public partial class Bot : IDisposable
 		dbConnection, sqlCommands == SqlCommands.Detect ? null : Database.DefaultSqlCommands[(int)sqlCommands], httpClient)
 	{ }
 
+    /// <summary>Create a new <see cref="Bot"/> instance.</summary>
+    /// <param name="configProvider">Configuration callback ("MTProxy" can be used for connection)</param>
+    /// <param name="storage">Storage for the bot and later resume</param>
+    /// <param name="httpClient">An <see cref="HttpClient"/>, or null for TCP mode</param>
+    public Bot(Func<string, string?> configProvider, IBotStorage storage, HttpClient? httpClient = null)
+    {
+        var botToken = configProvider("bot_token") ?? throw new ArgumentNullException(nameof(configProvider), "bot_token is unset");
+        BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
+        _collector = new(this);
+        var version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion; 
+        Helpers.Log(1, $"WTelegramBot {version} using {storage.GetType().Name} {storage.DataSource}");
+		_database = storage;
+		storage.AssignBotState(_state);
+        _database.GetTables(out _users, out _chats);
+        Client = new Client(configProvider, _database.LoadSessionState());
+        if ((_httpClient = httpClient) != null)
+            Client.HttpMode(httpClient);
+        Client.MTProxyUrl = configProvider("MTProxy");
+        Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
+        _initTask = new Task<Task>(() => InitLogin(botToken));
+    }
+
 	/// <summary>Create a new <see cref="Bot"/> instance.</summary>
 	/// <param name="configProvider">Configuration callback ("MTProxy" can be used for connection)</param>
 	/// <param name="dbConnection">DB connection for storage and later resume</param>
 	/// <param name="sqlCommands">SQL queries for your specific DB engine (null for auto-detect)</param>
 	/// <param name="httpClient">An <see cref="HttpClient"/>, or null for TCP mode</param>
 	public Bot(Func<string, string?> configProvider, DbConnection dbConnection, string[]? sqlCommands = null, HttpClient? httpClient = null)
-	{
-		var botToken = configProvider("bot_token") ?? throw new ArgumentNullException(nameof(configProvider), "bot_token is unset");
-		BotId = long.Parse(botToken[0..botToken.IndexOf(':')]);
-		sqlCommands ??= Database.DefaultSqlCommands[(int)Database.DetectType(dbConnection)];
-		_collector = new(this);
-		var version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-		Helpers.Log(1, $"WTelegramBot {version} using {dbConnection.GetType().Name} {dbConnection.DataSource}");
-		_database = new Database(dbConnection, sqlCommands, _state);
-		_database.GetTables(out _users, out _chats);
-		Client = new Client(configProvider, _database.LoadSessionState());
-		if ((_httpClient = httpClient) != null)
-			Client.HttpMode(httpClient);
-		Client.MTProxyUrl = configProvider("MTProxy");
-		Manager = Client.WithUpdateManager(OnTLUpdate, _database.LoadMBoxStates(), _collector);
-		_initTask = new Task<Task>(() => InitLogin(botToken));
-	}
+		: this(
+			  configProvider,
+			  new Database(
+				  dbConnection,
+                  sqlCommands ??= Database.DefaultSqlCommands[(int)Database.DetectType(dbConnection)]
+			  ),
+			  httpClient
+		) { }
 
 	private async Task InitLogin(string botToken)
 	{

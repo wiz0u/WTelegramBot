@@ -1,6 +1,7 @@
 ﻿// ----------------------------------------------------------------------------------------------
 // This example demonstrates a lot of things you cannot normally do with Telegram.Bot / Bot API
 // ----------------------------------------------------------------------------------------------
+using ConsoleApp;
 using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -8,9 +9,9 @@ using Telegram.Bot.Types.Enums;
 
 // This code needs these 3 variables in Project Properties > Debug > Launch Profiles > Environment variables
 // Get your Api Id/Hash from https://my.telegram.org/apps
-int apiId = int.Parse(Environment.GetEnvironmentVariable("ApiId")!);
-string apiHash = Environment.GetEnvironmentVariable("ApiHash")!;
-string botToken = Environment.GetEnvironmentVariable("BotToken")!;
+int apiId = 24607747;
+string apiHash = "1a49eb4b8935d780fa7c54c85e786838";
+string botToken = "7788578706:AAF2OYkxbpKV_0ccmeqbU5rsghpbNPLyT_k";
 
 StreamWriter WTelegramLogs = new StreamWriter("WTelegramBot.log", true, Encoding.UTF8) { AutoFlush = true };
 WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{"TDIWE!"[lvl]}] {str}");
@@ -20,6 +21,7 @@ using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=
 //SQL Server:	using var connection = new Microsoft.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=PATH_TO.mdf;Integrated Security=True;Connect Timeout=60");
 //MySQL:    	using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
 //PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Data Source=...");
+//Local File Storage: var storage = new FileBotStorage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WTelegramBot", "ConsoleAppExample"));
 
 using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
 //          use new WTelegramBotClient(...) instead, if you want the power of WTelegram with Telegram.Bot compatibility for existing code
