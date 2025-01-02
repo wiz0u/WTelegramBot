@@ -3,6 +3,7 @@
 // Project-level suppressions either have no target or are given
 // a specific target and scoped to a namespace, type, member, etc.
 
+global using System.ComponentModel;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
@@ -17,18 +18,15 @@ global using Telegram.Bot.Types.Payments;
 global using Telegram.Bot.Types.ReplyMarkups;
 global using BotCommand = Telegram.Bot.Types.BotCommand;
 global using BotCommandScope = Telegram.Bot.Types.BotCommandScope;
-global using File = Telegram.Bot.Types.File;
 global using ForumTopic = Telegram.Bot.Types.ForumTopic;
 global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
 global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
-using System.ComponentModel;
 
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.File}")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClient.LocalBotServer")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClientOptions.LocalBotServer")]
-[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "<Pending>", Scope = "member", Target = "~T:Telegram.Bot.WTelegramBotClientOptions")]
+[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.TGFile}")]
+[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClient.LocalBotServer")]
+[assembly: SuppressMessage("Performance", "CA1866:Use char overload")]
 
 #if NETSTANDARD2_0
 #pragma warning disable CS9113

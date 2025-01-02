@@ -880,8 +880,8 @@ public partial class Bot
 
 	/// <summary>Use this method to get basic information about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size.</summary>
 	/// <param name="fileId">File identifier to get information about</param>
-	/// <returns>A <see cref="File"/> object is returned. The file can then be downloaded via <see cref="WTelegram.Bot.DownloadFile">DownloadFile</see>, where <c>&lt;FilePath&gt;</c> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling <see cref="WTelegram.Bot.GetFile">GetFile</see> again.<br/><b>Note:</b> This function may not preserve the original file name and MIME type. You should save the file's MIME type and name (if available) when the File object is received.</returns>
-	public Task<File> GetFile(string fileId) =>
+	/// <returns>A <see cref="TGFile"/> object is returned. The file can then be downloaded via <see cref="WTelegram.Bot.DownloadFile">DownloadFile</see>, where <c>&lt;FilePath&gt;</c> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling <see cref="WTelegram.Bot.GetFile">GetFile</see> again.<br/><b>Note:</b> This function may not preserve the original file name and MIME type. You should save the file's MIME type and name (if available) when the File object is received.</returns>
+	public Task<TGFile> GetFile(string fileId) =>
 		Task.FromResult(fileId.ParseFileId(true).file);
 
 	/// <summary>Use this method to download a file.</summary>
@@ -899,7 +899,7 @@ public partial class Bot
 	/// <param name="destination">Destination stream to write file to</param>
 	/// <param name="cancellationToken">If you need to abort the download</param>
 	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
-	public async Task<File> GetInfoAndDownloadFile(string fileId, Stream destination, CancellationToken cancellationToken = default)
+	public async Task<TGFile> GetInfoAndDownloadFile(string fileId, Stream destination, CancellationToken cancellationToken = default)
 	{
 		var (file, location, dc_id) = fileId.ParseFileId(true);
 		await InitComplete();
@@ -1874,8 +1874,8 @@ public partial class Bot
 	/// <param name="userId">User identifier of sticker file owner</param>
 	/// <param name="sticker">A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format. See <a href="https://core.telegram.org/stickers">https://core.telegram.org/stickers</a> for technical requirements. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="stickerFormat">Format of the sticker, must be one of <see cref="StickerFormat.Static">Static</see>, <see cref="StickerFormat.Animated">Animated</see>, <see cref="StickerFormat.Video">Video</see></param>
-	/// <returns>The uploaded <see cref="File"/> on success.</returns>
-	public async Task<File> UploadStickerFile(long userId, InputFileStream sticker, StickerFormat stickerFormat)
+	/// <returns>The uploaded <see cref="TGFile"/> on success.</returns>
+	public async Task<TGFile> UploadStickerFile(long userId, InputFileStream sticker, StickerFormat stickerFormat)
 	{
 		await InitComplete();
 		var mimeType = MimeType(stickerFormat);
@@ -1886,7 +1886,7 @@ public partial class Bot
 		var messageMedia = await Client.Messages_UploadMedia(peer, media);
 		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
 			throw new WTException("Unexpected UploadMedia result");
-		var file = new Telegram.Bot.Types.File { FileSize = doc.size }.SetFileIds(doc.ToFileLocation(), doc.dc_id);
+		var file = new TGFile { FileSize = doc.size }.SetFileIds(doc.ToFileLocation(), doc.dc_id);
 		file.FilePath = file.FileId + '/' + sticker.FileName;
 		return file;
 	}
@@ -1972,8 +1972,8 @@ public partial class Bot
 	/// <summary>Use this method to set the thumbnail of a regular or mask sticker set. The format of the thumbnail file must match the format of the stickers in the set.</summary>
 	/// <param name="name">Sticker set name</param>
 	/// <param name="userId">User identifier of the sticker set owner</param>
-	/// <param name="format">Format of the thumbnail, must be one of <see cref="StickerFormat.Static">Static</see> for a <b>.WEBP</b> or <b>.PNG</b> image, <see cref="StickerFormat.Animated">Animated</see> for a <b>.TGS</b> animation, or <see cref="StickerFormat.Video">Video</see> for a <b>WEBM</b> video</param>
-	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animation-requirements">https://core.telegram.org/stickers#animation-requirements</a> for animated sticker technical requirements), or a <b>WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-requirements">https://core.telegram.org/stickers#video-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
+	/// <param name="format">Format of the thumbnail, must be one of <see cref="StickerFormat.Static">Static</see> for a <b>.WEBP</b> or <b>.PNG</b> image, <see cref="StickerFormat.Animated">Animated</see> for a <b>.TGS</b> animation, or <see cref="StickerFormat.Video">Video</see> for a <b>.WEBM</b> video</param>
+	/// <param name="thumbnail">A <b>.WEBP</b> or <b>.PNG</b> image with the thumbnail, must be up to 128 kilobytes in size and have a width and height of exactly 100px, or a <b>.TGS</b> animation with a thumbnail up to 32 kilobytes in size (see <a href="https://core.telegram.org/stickers#animation-requirements">https://core.telegram.org/stickers#animation-requirements</a> for animated sticker technical requirements), or a <b>.WEBM</b> video with the thumbnail up to 32 kilobytes in size; see <a href="https://core.telegram.org/stickers#video-requirements">https://core.telegram.org/stickers#video-requirements</a> for video sticker technical requirements. Pass a <em>FileId</em> as a String to send a file that already exists on the Telegram servers, pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Animated and video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.</param>
 	public async Task SetStickerSetThumbnail(string name, long userId, StickerFormat format, InputFile? thumbnail = default)
 	{
 		await InitComplete();
@@ -2015,7 +2015,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var starGifts = await Client.Payments_GetStarGifts();
-		var gifts = starGifts.gifts.Where(g => !g.flags.HasFlag(StarGift.Flags.sold_out)).Select(MakeGift).ToArray();
+		var gifts = starGifts.gifts.OfType<StarGift>().Where(g => !g.flags.HasFlag(StarGift.Flags.sold_out)).Select(MakeGift).ToArray();
 		return new GiftList { Gifts = gifts };
 	}
 
@@ -2025,14 +2025,16 @@ public partial class Bot
 	/// <param name="text">Text that will be shown along with the gift; 0-255 characters</param>
 	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
 	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	/// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
 	public async Task SendGift(long userId, string giftId, string? text = default, ParseMode textParseMode = default,
-		IEnumerable<MessageEntity>? textEntities = default)
+		IEnumerable<MessageEntity>? textEntities = default, bool payForUpgrade = default)
 	{
 		await InitComplete();
 		var entities = ApplyParse(textParseMode, ref text!, textEntities);
 		var invoice = new InputInvoiceStarGift
 		{
-			flags = text != null ? InputInvoiceStarGift.Flags.has_message : 0,
+			flags = text != null ? InputInvoiceStarGift.Flags.has_message : 0
+				| (payForUpgrade ? InputInvoiceStarGift.Flags.include_upgrade : 0),
 			user_id = InputUser(userId),
 			gift_id = long.Parse(giftId),
 			message = new() { text = text, entities = entities },
@@ -2040,6 +2042,40 @@ public partial class Bot
 		var paymentForm = await Client.Payments_GetPaymentForm(invoice);
 		if (paymentForm is not TL.Payments_PaymentFormStarGift starGift) throw new RpcException(500, "Unsupported");
 		await Client.Payments_SendStarsForm(starGift.form_id, invoice);
+	}
+
+	/// <summary>Verifies a user on behalf of the organization which is represented by the bot.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+	public async Task VerifyUser(long userId, string? customDescription = default)
+	{
+		await InitComplete();
+		await Client.Bots_SetCustomVerification(InputUser(userId), null, customDescription, true);
+	}
+
+	/// <summary>Verifies a chat on behalf of the organization which is represented by the bot.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+	public async Task VerifyChat(ChatId chatId, string? customDescription = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		await Client.Bots_SetCustomVerification(peer, null, customDescription, true);
+	}
+
+	/// <summary>Removes verification from a user who is currently verified on behalf of the organization represented by the bot.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	public async Task RemoveUserVerification(long userId)
+	{
+		await InitComplete();
+		await Client.Bots_SetCustomVerification(InputUser(userId), enabled: false);
+	}
+
+	/// <summary>Removes verification from a chat that is currently verified on behalf of the organization represented by the bot.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	public async Task RemoveChatVerification(ChatId chatId)
+	{
+		var peer = await InputPeerChat(chatId);
+		await Client.Bots_SetCustomVerification(peer, enabled: false);
 	}
 
 	/// <summary>Use this method to send answers to an inline query<br/>No more than <b>50</b> results per query are allowed.</summary>

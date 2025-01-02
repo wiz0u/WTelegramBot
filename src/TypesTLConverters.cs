@@ -304,7 +304,7 @@ public static class TypesTLConverters
 	}
 
 	/// <summary>Decode FileId into TL.InputFileLocation</summary>
-	public static (File file, InputFileLocationBase location, int dc_id) ParseFileId(this string fileId, bool generateFile = false)
+	public static (TGFile file, InputFileLocationBase location, int dc_id) ParseFileId(this string fileId, bool generateFile = false)
 	{
 		var idBytes = fileId.FromBase64();
 		if (idBytes[^1] != 42) throw new WTException("Unsupported file_id format");
@@ -322,7 +322,7 @@ public static class TypesTLConverters
 		if (filename.EndsWith("FileLocation")) filename = filename[..^12];
 		filename = $"{filename}_{fileUniqueId}";
 		if (filename.Contains("Photo")) filename += ".jpg";
-		return (new File
+		return (new TGFile
 		{
 			FilePath = $"{fileId}/{filename}",
 			FileId = fileId,

@@ -477,7 +477,7 @@ public partial class Bot
 		{
 			var premiumLocation = doc.ToFileLocation();
 			premiumLocation.thumb_size = "f";
-			result.PremiumAnimation = new Telegram.Bot.Types.File { FileSize = doc.size }.SetFileIds(premiumLocation, doc.dc_id, "f");
+			result.PremiumAnimation = new TGFile { FileSize = doc.size }.SetFileIds(premiumLocation, doc.dc_id, "f");
 			result.PremiumAnimation.FilePath = result.PremiumAnimation.FileId + "/Sticker_" + result.PremiumAnimation.FileUniqueId;
 		}
 		if (doc.GetAttribute<DocumentAttributeImageSize>() is { } imageSize) { result.Width = imageSize.w; result.Height = imageSize.h; }
@@ -574,7 +574,7 @@ public partial class Bot
 		{
 			InlineQueryResultArticle r => MakeIbir(r, r.Title, r.Description, r.InputMessageContent, null, default, null, false,
 				r.ThumbnailUrl, "image/jpeg", r.ThumbnailWidth, r.ThumbnailHeight,
-				r.Url, "text/html", url: r.HideUrl == true ? null : r.Url),
+				r.Url, "text/html", url: r.Url),
 			InlineQueryResultAudio r => MakeIbir(r, r.Title, r.Performer, r.InputMessageContent, r.Caption, r.ParseMode, r.CaptionEntities, false,
 				null, null, 0, 0,
 				r.AudioUrl, "audio/mpeg", new DocumentAttributeAudio { duration = r.AudioDuration ?? 0, title = r.Title, performer = r.Performer, flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }),
@@ -979,9 +979,9 @@ public partial class Bot
 				{ starref_commission_permille: not 0 } =>
 					new TransactionPartnerAffiliateProgram { SponsorUser = User(user_id)!,	//td_api::starTransactionTypeAffiliateProgramCommission
 						CommissionPerMille = transaction.starref_commission_permille },
-				{ stargift: not null } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
+				{ stargift: StarGift starGift } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
 					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase
-						Gift = MakeGift(transaction.stargift) }
+						Gift = MakeGift(starGift) }
 					: null, 																//td_api::starTransactionTypeGiftSale
 				{ subscription_period: > 0 } =>
 					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotSubscriptionSale
@@ -1032,6 +1032,7 @@ public partial class Bot
 		StarCount = (int)gift.stars,
 		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
 		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
+		UpgradeStarCount = ((int)gift.upgrade_stars).NullIfZero()
 	};
 
 	internal AffiliateInfo? Affiliate(TL.StarsTransaction transaction)

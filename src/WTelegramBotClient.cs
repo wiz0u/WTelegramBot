@@ -12,7 +12,7 @@ namespace Telegram.Bot;
 public partial class WTelegramBotClient(WTelegramBotClientOptions options, HttpClient? httpClient = default, CancellationToken cancellationToken = default)
     : WTelegram.Bot(options.WTCConfig, options.DbConnection, options.SqlCommands, httpClient), ITelegramBotClient, IDisposable
 {
-    /// <summary>The bot token</summary>
+    /// <summary>Bot token</summary>
     public string Token => options.Token;
 
     /// <inheritdoc/>
@@ -83,7 +83,7 @@ public partial class WTelegramBotClient(WTelegramBotClientOptions options, HttpC
     /// <param name="destination">Destination stream to write file to</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>On success, a <see cref="File"/> object is returned.</returns>
-    public new async Task<Types.File> GetInfoAndDownloadFile(
+    public new async Task<Types.TGFile> GetInfoAndDownloadFile(
         string fileId,
         Stream destination,
         CancellationToken cancellationToken = default
