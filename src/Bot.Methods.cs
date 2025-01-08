@@ -60,6 +60,21 @@ public partial class Bot
 				messages.Add(msg);
 		return messages;
 	}
+
+	/// <summary>Use this method to change the bot's photo</summary>
+	/// <param name="photo">New bot photo, can be an existing <see cref="InputFileId"/>, or uploaded using <see cref="InputFileStream"/>, or <see langword="null"/> to delete photo</param>
+	public async Task<Telegram.Bot.Types.PhotoSize[]> SetMyPhoto(InputFile? photo)
+	{
+		var im = photo == null ? null : await InputMediaPhoto(photo);
+		var pp = im switch
+		{
+			null => await Client.Photos_UpdateProfilePhoto(null),
+			TL.InputMediaPhoto imp => await Client.Photos_UpdateProfilePhoto(imp.id),
+			TL.InputMediaUploadedPhoto imup => await Client.Photos_UploadProfilePhoto(imup.file),
+			_ => throw new WTException("Unsupported InputFile photo"),
+		};
+		return pp.photo.PhotoSizes()!;
+	}
 	#endregion Power-up methods
 
 	#region Available methods
@@ -109,12 +124,12 @@ public partial class Bot
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, 
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true, linkPreviewOptions?.IsDisabled == true),
 				peer, text, replyToMessage, businessConnectionId);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, 
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true),
 				peer, text, replyToMessage, businessConnectionId);
 	}
@@ -556,8 +571,13 @@ public partial class Bot
 				tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 			multimedia.Add(tlMedia);
 		}
-		var impm = new InputMediaPaidMedia { flags = payload != null ? InputMediaPaidMedia.Flags.has_payload : 0,
-			stars_amount = starCount, extended_media = [.. multimedia], payload = payload };
+		var impm = new InputMediaPaidMedia
+		{
+			flags = payload != null ? InputMediaPaidMedia.Flags.has_payload : 0,
+			stars_amount = starCount,
+			extended_media = [.. multimedia],
+			payload = payload
+		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, 0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
@@ -1015,7 +1035,7 @@ public partial class Bot
 		var peer = await InputPeerChat(chatId);
 		try
 		{
-		await Client.Messages_EditChatDefaultBannedRights(peer, permissions.ToChatBannedRights());
+			await Client.Messages_EditChatDefaultBannedRights(peer, permissions.ToChatBannedRights());
 		}
 		catch (RpcException ex) when (ex.Message.EndsWith("_NOT_MODIFIED")) { }
 	}
@@ -1113,7 +1133,7 @@ public partial class Bot
 
 	/// <summary>Use this method to set (or delete) a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="photo">New chat photo, uploaded using <see cref="InputFileStream"/>, or null to delete photo</param>
+	/// <param name="photo">New chat photo, uploaded using <see cref="InputFileStream"/>, or <see langword="null"/> to delete photo</param>
 	public async Task SetChatPhoto(ChatId chatId, InputFileStream? photo)
 	{
 		var peer = await InputPeerChat(chatId);
@@ -1164,7 +1184,7 @@ public partial class Bot
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
 			new TL.Methods.Messages_UpdatePinnedMessage
 			{
-				peer = peer, 
+				peer = peer,
 				id = messageId,
 				flags = (disableNotification ? TL.Methods.Messages_UpdatePinnedMessage.Flags.silent : 0)
 					| (pin ? 0 : TL.Methods.Messages_UpdatePinnedMessage.Flags.unpin)
@@ -1249,9 +1269,11 @@ public partial class Bot
 				Photo = full.ChatPhoto.ChatPhoto(),
 				AvailableReactions = full.AvailableReactions switch
 				{
-					/*chatReactionsNone*/ null => [],
+					/*chatReactionsNone*/
+					null => [],
 					ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
-					/*chatReactionsAll*/ _ => null,
+					/*chatReactionsAll*/
+					_ => null,
 				},
 				MaxReactionCount = full.AvailableReactions == null ? 0 : Reactions_uniq_max,
 				Description = full.About,
@@ -1409,7 +1431,7 @@ public partial class Bot
 	public async Task EditForumTopic(ChatId chatId, int messageThreadId, string? name = default, string? iconCustomEmojiId = default)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null : 
+		await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null :
 			iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
 	}
 
@@ -2211,10 +2233,13 @@ public partial class Bot
 		bool isFlexible = default, int? subscriptionPeriod = default, string? businessConnectionId = default)
 	{
 		await InitComplete();
-		var query = new TL.Methods.Payments_ExportInvoice { invoice_media =
+		var query = new TL.Methods.Payments_ExportInvoice
+		{
+			invoice_media =
 			InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, null,
 				providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
-				sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, subscriptionPeriod) };
+				sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, subscriptionPeriod)
+		};
 		var exported = businessConnectionId is null ? await Client.Invoke(query)
 			: await Client.InvokeWithBusinessConnection(businessConnectionId, query);
 		return exported.url;
