@@ -33,15 +33,16 @@ Bot.Dispose();
 Other points to note:
 - Error messages on `ApiRequestException` may sometimes differ from the usual Bot API errors
 - FileID/FileUniqueID/InlineMessageId strings are not compatible with official Bot API ones, they are to be used with this library only.
-- There is no native support for Webhooks / HTTP / HttpClient (but see [support for ASP.NET apps](#support-for-aspnet-apps))
+- There is no native support for Webhooks (but see [support for ASP.NET apps](#support-for-aspnet-apps))
 - Methods DeleteWebhookAsync & LogOutAsync are forwarded to the Cloud Bot API. Use method CloseAsync to logout locally.
 - Texts in Markdown (V1) will be parsed as MarkdownV2. some discrepancy or error may arise due to reserved characters
 
 ## Support for ASP.NET apps
 
-`WTelegramBotClient` doesn't support `HttpClient` or parallel instantiations,
-so make sure you declare only one instance.  
-For example, instead of `services.AddHttpClient().AddTypedClient<...` you would use:
+If you can't establish a permanent TCP connection to Telegram server, `WTelegramBotClient` now supports using a `HttpClient` on the constructor (like TelegramBotClient).
+This is however not recommended as it is less efficient and does not work well in parallel calls.
+
+The recommended code for client instantiation would be something like:
 
 ```csharp
 services.AddSingleton<ITelegramBotClient>(sp =>
