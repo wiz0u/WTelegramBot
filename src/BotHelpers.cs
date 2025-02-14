@@ -27,6 +27,7 @@ public static class BotHelpers
 		[".ogg"] = "audio/ogg",
 		[".mp3"] = "audio/mpeg",
 		[".wav"] = "audio/x-wav",
+		[".flac"] = "audio/flac",
 		[".tgs"] = "application/x-tgsticker",
 		[".pdf"] = "application/pdf",
 	};

@@ -9,7 +9,7 @@ namespace WTelegram;
 
 public partial class Bot
 {
-	private async Task<ReplyMarkup?> MakeReplyMarkup(IReplyMarkup? replyMarkup) => replyMarkup switch
+	private async Task<TL.ReplyMarkup?> MakeReplyMarkup(ReplyMarkup? replyMarkup) => replyMarkup switch
 	{
 		ReplyKeyboardRemove rkr => new ReplyKeyboardHide { flags = rkr.Selective == true ? ReplyKeyboardHide.Flags.selective : 0 },
 		ForceReplyMarkup frm => new ReplyKeyboardForceReply
@@ -298,6 +298,13 @@ public partial class Bot
 		throw new WTException("Unrecognized InputFileStream type");
 	}
 
+	private async Task<InputDocument> InputDocument(string fileId)
+	{
+		await InitComplete();
+		var location = (InputDocumentFileLocation)fileId.ParseFileId().location;
+		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
+	}
+
 	private static InputPhoto InputPhoto(string fileId)
 	{
 		var location = (InputPhotoFileLocation)fileId.ParseFileId().location;
@@ -319,23 +326,52 @@ public partial class Bot
 				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler == true ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
 		}
 	}
-
-	private async Task<InputDocument> InputDocument(string fileId)
+	
+	private async Task<TL.InputDocument> UploadMediaDocument(InputPeerUser peer, TL.InputMedia media)
 	{
-		await InitComplete();
-		var location = (InputDocumentFileLocation)fileId.ParseFileId().location;
-		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
+		if (media is TL.InputMediaDocument imd) return imd.id; // already on Telegram, no need to upload
+		var messageMedia = await Client.Messages_UploadMedia(peer, media);
+		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
+			throw new WTException("Unexpected UploadMedia result");
+		return doc;
+	}
+
+	private async Task<TL.InputPhoto?> UploadMediaPhoto(InputPeer peer, InputFile? cover)
+	{
+		if (cover == null) return null;
+		var media = await InputMediaPhoto(cover);
+		if (media is TL.InputMediaPhoto imp) return imp.id; // already on Telegram, no need to upload
+		var messageMedia = await Client.Messages_UploadMedia(peer, media);
+		if (messageMedia is not MessageMediaPhoto { photo: TL.Photo photo })
+			throw new WTException("Unexpected UploadMedia result");
+		return photo;
 	}
 
 	/// <summary>Return TL structure for the document InputFile. Upload the file for InputFileStream</summary>
-	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, bool hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
+	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, TL.InputPhoto? video_cover = default, int? video_timestamp = default, bool hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
 	{
 		switch (file.FileType)
 		{
 			case FileType.Id:
-				return new TL.InputMediaDocument { id = await InputDocument(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0 };
+				return new TL.InputMediaDocument
+				{
+					id = await InputDocument(((InputFileId)file).Id),
+					video_cover = video_cover,
+					video_timestamp = video_timestamp ?? 0,
+					flags = (hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0)
+						| (video_timestamp.HasValue ? TL.InputMediaDocument.Flags.has_video_timestamp : 0)
+						| (video_cover != null ? TL.InputMediaDocument.Flags.has_video_cover : 0)
+				};
 			case FileType.Url:
-				return new InputMediaDocumentExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaDocumentExternal.Flags.spoiler : 0 };
+				return new InputMediaDocumentExternal
+				{
+					url = ((InputFileUrl)file).Url.AbsoluteUri,
+					video_cover = video_cover,
+					video_timestamp = video_timestamp ?? 0,
+					flags = (hasSpoiler == true ? TL.InputMediaDocumentExternal.Flags.spoiler : 0)
+						| (video_timestamp.HasValue ? TL.InputMediaDocumentExternal.Flags.has_video_timestamp : 0)
+						| (video_cover != null ? TL.InputMediaDocumentExternal.Flags.has_video_cover : 0)
+				};
 			default: //case FileType.Stream:
 				var stream = (InputFileStream)file;
 				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName ?? defaultFilename);
@@ -346,19 +382,29 @@ public partial class Bot
 					if (!string.IsNullOrEmpty(fileExt))
 						BotHelpers.ExtToMimeType.TryGetValue(fileExt, out mimeType);
 				}
-				return new InputMediaUploadedDocument(uploadedFile, mimeType) { flags = hasSpoiler == true ? InputMediaUploadedDocument.Flags.spoiler : 0 };
+				return new InputMediaUploadedDocument(uploadedFile, mimeType)
+				{
+					video_cover = video_cover,
+					video_timestamp = video_timestamp ?? 0,
+					flags = (hasSpoiler == true ? TL.InputMediaUploadedDocument.Flags.spoiler : 0)
+						| (video_timestamp.HasValue ? TL.InputMediaUploadedDocument.Flags.has_video_timestamp : 0)
+						| (video_cover != null ? TL.InputMediaUploadedDocument.Flags.has_video_cover : 0)
+				};
 		}
 	}
 
 	/// <summary>Return TL structure for the InputMedia and its caption. Upload the file/thumb for InputFileStream and add attributes</summary>
-	public async Task<TL.InputSingleMedia> InputSingleMedia(InputMedia media)
+	public async Task<TL.InputSingleMedia> InputSingleMedia(InputPeer peer, InputMedia media)
 	{
 		var caption = media.Caption;
 		var captionEntities = ApplyParse(media.ParseMode, ref caption, media.CaptionEntities);
-		var tlMedia = media is Telegram.Bot.Types.InputMediaPhoto imp
-			? await InputMediaPhoto(media.Media, imp.HasSpoiler)
-			: await InputMediaDocument(media.Media,
-				media switch { InputMediaVideo imv => imv.HasSpoiler, InputMediaAnimation ima => ima.HasSpoiler, _ => false });
+		var tlMedia = media switch
+		{
+			Telegram.Bot.Types.InputMediaPhoto imp => await InputMediaPhoto(media.Media, imp.HasSpoiler),
+			Telegram.Bot.Types.InputMediaVideo imv => await InputMediaDocument(media.Media, await UploadMediaPhoto(peer, imv.Cover), imv.StartTimestamp, imv.HasSpoiler),
+			Telegram.Bot.Types.InputMediaAnimation ima => await InputMediaDocument(media.Media, hasSpoiler: ima.HasSpoiler),
+			_ => await InputMediaDocument(media.Media)
+		};
 		if (tlMedia is TL.InputMediaUploadedDocument doc)
 		{
 			switch (media)
@@ -414,15 +460,6 @@ public partial class Bot
 			flags = (sticker.MaskPosition != null ? TL.InputStickerSetItem.Flags.has_mask_coords : 0)
 				| (keywords != "" ? TL.InputStickerSetItem.Flags.has_keywords : 0),
 		};
-	}
-
-	private async Task<TL.InputDocument> UploadMediaDocument(InputPeerUser peer, TL.InputMedia media)
-	{
-		if (media is TL.InputMediaDocument imd) return imd.id; // already on Telegram, no need to upload
-		var messageMedia = await Client.Messages_UploadMedia(peer, media);
-		if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
-			throw new WTException("Unexpected UploadMedia result");
-		return doc;
 	}
 
 	private void CacheStickerSet(Messages_StickerSet mss)
@@ -867,7 +904,7 @@ public partial class Bot
 	//TODO: InvokeWithBusinessConnection might need to be done on a specific DcId !? see BotBusinessConnection.dc_id
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
 		bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		var query = new TL.Methods.Messages_SendMessage
@@ -885,7 +922,7 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
-		InputReplyTo? reply_to, ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
 		bool allow_paid_floodskip, bool invert_media)
 	{
 		var query = new TL.Methods.Messages_SendMedia
@@ -974,13 +1011,20 @@ public partial class Bot
 			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
 				? null																		//td_api::starTransactionTypeUserDeposit
 				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },   //td_api::starTransactionTypeFragmentWithdrawal or starTransactionTypeFragmentDeposit
+			StarsTransactionPeer { peer: PeerChannel { channel_id: var channel_id } } => transaction switch
+			{
+				{ stargift: StarGift starGift } when transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
+					=> new TransactionPartnerChat { Chat = Chat(channel_id)!,               //td_api::starTransactionTypeGiftPurchase (dialog_id)
+						Gift = MakeGift(starGift) },
+				_ => null
+			},
 			StarsTransactionPeer { peer: PeerUser { user_id: var user_id } } => transaction switch
 			{
 				{ starref_commission_permille: not 0 } =>
 					new TransactionPartnerAffiliateProgram { SponsorUser = User(user_id)!,	//td_api::starTransactionTypeAffiliateProgramCommission
 						CommissionPerMille = transaction.starref_commission_permille },
 				{ stargift: StarGift starGift } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
-					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase
+					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase (user_id)
 						Gift = MakeGift(starGift) }
 					: null, 																//td_api::starTransactionTypeGiftSale
 				{ subscription_period: > 0 } =>

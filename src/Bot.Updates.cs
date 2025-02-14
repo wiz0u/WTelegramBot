@@ -620,7 +620,7 @@ public partial class Bot
 					}.SetFileIds(document.ToFileLocation(), document.dc_id);
 				}
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
-					msg.Video = document.Video(thumb);
+					msg.Video = document.Video(mmd);
 				else if (document.GetAttribute<DocumentAttributeAudio>() is { } audio)
 				{
 					msg.Audio = new Telegram.Bot.Types.Audio

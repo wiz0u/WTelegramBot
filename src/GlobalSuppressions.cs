@@ -23,6 +23,7 @@ global using InputFile = Telegram.Bot.Types.InputFile;
 global using InputMedia = Telegram.Bot.Types.InputMedia;
 global using LabeledPrice = Telegram.Bot.Types.Payments.LabeledPrice;
 global using ShippingOption = Telegram.Bot.Types.Payments.ShippingOption;
+global using ReplyMarkup = Telegram.Bot.Types.ReplyMarkups.ReplyMarkup;
 
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Scope = "member", Target = "~M:WTelegram.Bot.GetFile(System.String)~System.Threading.Tasks.Task{Telegram.Bot.Types.TGFile}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Scope = "member", Target = "~P:Telegram.Bot.WTelegramBotClient.LocalBotServer")]

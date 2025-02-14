@@ -18,7 +18,7 @@
 
 Release Notes:
 $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</Description>
-    <Copyright>Copyright © Olivier Marcoux 2024</Copyright>
+    <Copyright>Copyright © Olivier Marcoux 2024-2025</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/wiz0u/WTelegramBot</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
@@ -71,6 +71,6 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WTelegramClient" Version="4.2.7" />
+    <PackageReference Include="WTelegramClient" Version="4.2.9-dev.4" />
   </ItemGroup>
 </Project>

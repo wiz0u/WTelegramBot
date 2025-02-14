@@ -34,7 +34,7 @@ public partial class WTelegramBotClient
     ) => GetUpdates(offset, limit, timeout, allowedUpdates, cancellationToken);
 
     /// <summary>Use this method to specify a URL and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified URL, containing a JSON-serialized <see cref="Update"/>. In case of an unsuccessful request (a request with response <a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">HTTP status code</a> different from <c>2XY</c>), we will repeat the request and give up after a reasonable amount of attempts.<br/>If you'd like to make sure that the webhook was set by you, you can specify secret data in the parameter <paramref name="secretToken"/>. If specified, the request will contain a header “X-Telegram-Bot-Api-Secret-Token” with the secret token as content.</summary>
-    /// <remarks><p><b>Notes</b><br/><b>1.</b> You will not be able to receive updates using <see cref="WTelegram.Bot.GetUpdates">GetUpdates</see> for as long as an outgoing webhook is set up.<br/><b>2.</b> To use a self-signed certificate, you need to upload your <a href="https://core.telegram.org/bots/self-signed">public key certificate</a> using <paramref name="certificate"/> parameter. Please upload as InputFile, sending a String will not work.<br/><b>3.</b> Ports currently supported <em>for webhooks</em>: <b>443, 80, 88, 8443</b>.</p><p>If you're having any trouble setting up webhooks, please check out this <a href="https://core.telegram.org/bots/webhooks">amazing guide to webhooks</a>.</p></remarks>
+    /// <remarks><b>Notes</b><br/><b>1.</b> You will not be able to receive updates using <see cref="WTelegram.Bot.GetUpdates">GetUpdates</see> for as long as an outgoing webhook is set up.<br/><b>2.</b> To use a self-signed certificate, you need to upload your <a href="https://core.telegram.org/bots/self-signed">public key certificate</a> using <paramref name="certificate"/> parameter. Please upload as InputFile, sending a String will not work.<br/><b>3.</b> Ports currently supported <em>for webhooks</em>: <b>443, 80, 88, 8443</b>.<br/>If you're having any trouble setting up webhooks, please check out this <a href="https://core.telegram.org/bots/webhooks">amazing guide to webhooks</a>.<br/></remarks>
     /// <param name="url">HTTPS URL to send updates to. Use an empty string to remove webhook integration</param>
     /// <param name="certificate">Upload your public key certificate so that the root certificate in use can be checked. See our <a href="https://core.telegram.org/bots/self-signed">self-signed guide</a> for details.</param>
     /// <param name="ipAddress">The fixed IP address which will be used to send webhook requests instead of the IP address resolved through DNS</param>
@@ -179,7 +179,7 @@ public partial class WTelegramBotClient
         string text,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         LinkPreviewOptions? linkPreviewOptions = default,
         int? messageThreadId = default,
         IEnumerable<MessageEntity>? entities = default,
@@ -205,7 +205,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId, entities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -217,6 +217,7 @@ public partial class WTelegramBotClient
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the forwarded message from forwarding and saving</param>
+    /// <param name="videoStartTimestamp">New start timestamp for the forwarded video in the message</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> ForwardMessage(
@@ -226,8 +227,9 @@ public partial class WTelegramBotClient
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
+        int? videoStartTimestamp = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent, videoStartTimestamp).ThrowAsApi(this);
 
     /// <summary>We removed all Async suffix from method names. Use <see cref="ForwardMessage">ForwardMessage</see> instead</summary>
     [Obsolete("We removed all Async suffix from method names. Use ForwardMessage instead")]
@@ -236,10 +238,11 @@ public partial class WTelegramBotClient
         ChatId fromChatId,
         int messageId,
         int? messageThreadId = default,
+        int? videoStartTimestamp = default,
         bool disableNotification = default,
         bool protectContent = default,
         CancellationToken cancellationToken = default
-    ) => ForwardMessage(chatId, fromChatId, messageId, messageThreadId, disableNotification, protectContent, cancellationToken);
+    ) => ForwardMessage(chatId, fromChatId, messageId, messageThreadId, disableNotification, protectContent, videoStartTimestamp, cancellationToken);
 
     /// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -290,6 +293,7 @@ public partial class WTelegramBotClient
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="videoStartTimestamp">New start timestamp for the copied video in the message</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The <see cref="MessageId"/> of the sent message on success.</returns>
     public async Task<MessageId> CopyMessage(
@@ -299,15 +303,16 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? messageThreadId = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
         bool disableNotification = default,
         bool protectContent = default,
         bool allowPaidBroadcast = default,
+        int? videoStartTimestamp = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, videoStartTimestamp).ThrowAsApi(this);
 
     /// <summary>We removed all Async suffix from method names. Use <see cref="CopyMessage">CopyMessage</see> instead</summary>
     [Obsolete("We removed all Async suffix from method names. Use CopyMessage instead")]
@@ -316,6 +321,7 @@ public partial class WTelegramBotClient
         ChatId fromChatId,
         int messageId,
         int? messageThreadId = default,
+        int? videoStartTimestamp = default,
         string? caption = default,
         ParseMode parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
@@ -324,9 +330,9 @@ public partial class WTelegramBotClient
         bool protectContent = default,
         bool allowPaidBroadcast = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default
-    ) => CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, cancellationToken);
+    ) => CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, videoStartTimestamp, cancellationToken);
 
     /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -390,7 +396,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? messageThreadId = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
@@ -419,7 +425,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -451,7 +457,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? duration = default,
         string? performer = default,
         string? title = default,
@@ -484,7 +490,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration, performer, title, thumbnail, messageThreadId, captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -514,7 +520,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         InputFile? thumbnail = default,
         int? messageThreadId = default,
         IEnumerable<MessageEntity>? captionEntities = default,
@@ -543,7 +549,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -570,6 +576,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="cover">Cover for the video in the message. Pass a FileId to send a file that exists on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a file from the Internet, or use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
+    /// <param name="startTimestamp">Start timestamp for the video in the message</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVideo(
@@ -578,7 +586,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? duration = default,
         int? width = default,
         int? height = default,
@@ -593,8 +601,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        InputFile? cover = default,
+        int? startTimestamp = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, cover, startTimestamp).ThrowAsApi(this);
 
     /// <summary>We removed all Async suffix from method names. Use <see cref="SendVideo">SendVideo</see> instead</summary>
     [Obsolete("We removed all Async suffix from method names. Use SendVideo instead")]
@@ -606,6 +616,8 @@ public partial class WTelegramBotClient
         int? width = default,
         int? height = default,
         InputFile? thumbnail = default,
+        InputFile? cover = default,
+        int? startTimestamp = default,
         string? caption = default,
         ParseMode parseMode = default,
         IEnumerable<MessageEntity>? captionEntities = default,
@@ -617,10 +629,10 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
-    ) => SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration, width, height, thumbnail, messageThreadId, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
+    ) => SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration, width, height, thumbnail, messageThreadId, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cover, startTimestamp, cancellationToken);
 
     /// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound).</summary>
     /// <remarks>Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -651,7 +663,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? duration = default,
         int? width = default,
         int? height = default,
@@ -688,7 +700,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration, width, height, thumbnail, messageThreadId, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -717,7 +729,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? duration = default,
         int? messageThreadId = default,
         IEnumerable<MessageEntity>? captionEntities = default,
@@ -744,7 +756,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration, messageThreadId, captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -769,7 +781,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         InputFile videoNote,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? duration = default,
         int? length = default,
         InputFile? thumbnail = default,
@@ -796,7 +808,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration, length, thumbnail, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -825,7 +837,7 @@ public partial class WTelegramBotClient
         string? caption = default,
         ParseMode parseMode = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? payload = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
@@ -851,7 +863,7 @@ public partial class WTelegramBotClient
         bool protectContent = default,
         bool allowPaidBroadcast = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendPaidMedia(chatId, starCount, media, caption, parseMode, replyParameters, replyMarkup, payload, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -919,7 +931,7 @@ public partial class WTelegramBotClient
         double latitude,
         double longitude,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         double? horizontalAccuracy = default,
         int? livePeriod = default,
         int? heading = default,
@@ -949,7 +961,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, horizontalAccuracy, livePeriod, heading, proximityAlertRadius, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -981,7 +993,7 @@ public partial class WTelegramBotClient
         string title,
         string address,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? foursquareId = default,
         string? foursquareType = default,
         string? googlePlaceId = default,
@@ -1013,7 +1025,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -1041,7 +1053,7 @@ public partial class WTelegramBotClient
         string? lastName = default,
         string? vcard = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
@@ -1065,7 +1077,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -1105,7 +1117,7 @@ public partial class WTelegramBotClient
         bool allowsMultipleAnswers = default,
         int? correctOptionId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? explanation = default,
         ParseMode explanationParseMode = default,
         IEnumerable<MessageEntity>? explanationEntities = default,
@@ -1147,7 +1159,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendPoll(chatId, question, options, isAnonymous, type, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -1169,7 +1181,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         string? emoji = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
@@ -1177,7 +1189,7 @@ public partial class WTelegramBotClient
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? Emoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? DiceEmoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
 
     /// <summary>We removed all Async suffix from method names. Use <see cref="SendDice">SendDice</see> instead</summary>
     [Obsolete("We removed all Async suffix from method names. Use SendDice instead")]
@@ -1190,7 +1202,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendDice(chatId, emoji, replyParameters, replyMarkup, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -1220,7 +1232,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => SendChatAction(chatId, action, messageThreadId, businessConnectionId, cancellationToken);
 
-    /// <summary>Use this method to change the chosen reactions on a message. Service messages can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel. Bots can't use paid reactions.</summary>
+    /// <summary>Use this method to change the chosen reactions on a message. Service messages of some types can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel. Bots can't use paid reactions.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the target message. If the message belongs to a media group, the reaction is set to the first non-deleted message in the group instead.</param>
     /// <param name="reaction">A list of reaction types to set on the message. Currently, as non-premium users, bots can set up to one reaction per message. A custom emoji reaction can be used if it is either already present on the message or explicitly allowed by chat administrators. Paid reactions can't be used by bots.</param>
@@ -2929,7 +2941,7 @@ public partial class WTelegramBotClient
         ChatId chatId,
         InputFile sticker,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? emoji = default,
         int? messageThreadId = default,
         bool disableNotification = default,
@@ -2952,7 +2964,7 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         string? messageEffectId = default,
         ReplyParameters? replyParameters = default,
-        IReplyMarkup? replyMarkup = default,
+        ReplyMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, cancellationToken);
@@ -3248,7 +3260,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => DeleteStickerSet(name, cancellationToken);
 
-    /// <summary>Returns the list of gifts that can be sent by the bot to users.</summary>
+    /// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>A <see cref="GiftList"/> object.</returns>
     public async Task<GiftList> GetAvailableGifts(
@@ -3261,37 +3273,37 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => GetAvailableGifts(cancellationToken);
 
-    /// <summary>Sends a gift to the given user. The gift can't be converted to Telegram Stars by the user.</summary>
-    /// <param name="userId">Unique identifier of the target user that will receive the gift</param>
+    /// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
+    /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
     /// <param name="giftId">Identifier of the gift</param>
-    /// <param name="text">Text that will be shown along with the gift; 0-255 characters</param>
+    /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
     /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
     /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
     /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SendGift(
-        long userId,
+        ChatId chatId,
         string giftId,
         string? text = default,
         ParseMode textParseMode = default,
         IEnumerable<MessageEntity>? textEntities = default,
         bool payForUpgrade = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendGift(userId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
 
     /// <summary>We removed all Async suffix from method names. Use <see cref="SendGift">SendGift</see> instead</summary>
     [Obsolete("We removed all Async suffix from method names. Use SendGift instead")]
     public Task SendGiftAsync(
-        long userId,
+        ChatId chatId,
         string giftId,
         bool payForUpgrade = default,
         string? text = default,
         ParseMode textParseMode = default,
         IEnumerable<MessageEntity>? textEntities = default,
         CancellationToken cancellationToken = default
-    ) => SendGift(userId, giftId, text, textParseMode, textEntities, payForUpgrade, cancellationToken);
+    ) => SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade, cancellationToken);
 
-    /// <summary>Verifies a user on behalf of the organization which is represented by the bot.</summary>
+    /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -3309,7 +3321,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => VerifyUser(userId, customDescription, cancellationToken);
 
-    /// <summary>Verifies a chat on behalf of the organization which is represented by the bot.</summary>
+    /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -3327,7 +3339,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => VerifyChat(chatId, customDescription, cancellationToken);
 
-    /// <summary>Removes verification from a user who is currently verified on behalf of the organization represented by the bot.</summary>
+    /// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task RemoveUserVerification(
@@ -3342,7 +3354,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => RemoveUserVerification(userId, cancellationToken);
 
-    /// <summary>Removes verification from a chat that is currently verified on behalf of the organization represented by the bot.</summary>
+    /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task RemoveChatVerification(
@@ -3648,7 +3660,7 @@ public partial class WTelegramBotClient
 
     /// <summary>If you sent an invoice requesting a shipping address and the parameter <em>IsFlexible</em> was specified, the Bot API will send an <see cref="Update"/> with a <em>ShippingQuery</em> field to the bot. Use this method to reply to shipping queries</summary>
     /// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="errorMessage">Error message in human readable form that explains why it is impossible to complete the order (e.g. "Sorry, delivery to your desired address is unavailable'). Telegram will display this message to the user.</param>
+    /// <param name="errorMessage">Error message in human readable form that explains why it is impossible to complete the order (e.g. “Sorry, delivery to your desired address is unavailable”). Telegram will display this message to the user.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task AnswerShippingQuery(
         string shippingQueryId,

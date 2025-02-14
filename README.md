@@ -1,4 +1,4 @@
-[![Bot API 8.2](https://img.shields.io/badge/Bot_API-8.2-blueviolet)](https://core.telegram.org/bots/api)
+[![Bot API 8.3](https://img.shields.io/badge/Bot_API-8.3-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)
@@ -87,4 +87,4 @@ If your question is more specific to WTelegram.Bot, or an issue with library beh
 
 If you like this library, you can [buy me a coffee](https://www.buymeacoffee.com/wizou) ❤ This will help the project keep going.
 
-© 2024 Olivier Marcoux
+© 2021-2025 Olivier Marcoux

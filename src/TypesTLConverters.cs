@@ -236,7 +236,7 @@ public static class TypesTLConverters
 			HorizontalAccuracy = geo.flags.HasFlag(GeoPoint.Flags.has_accuracy_radius) ? geo.accuracy_radius : null
 		};
 
-	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
+	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this TL.ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
 		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => btn switch
 		{
 			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
@@ -256,9 +256,9 @@ public static class TypesTLConverters
 			_ => new InlineKeyboardButton(btn.Text),
 		})));
 
-	internal static Video Video(this TL.Document document, PhotoSizeBase? thumb = null)
+	internal static Video Video(this TL.Document document, MessageMediaDocument mmd)
 	{
-		thumb ??= document.LargestThumbSize;
+		var thumb = document.LargestThumbSize;
 		var video = document.GetAttribute<DocumentAttributeVideo>();
 		return new Video
 		{
@@ -268,7 +268,9 @@ public static class TypesTLConverters
 			Duration = (int)(video?.duration + 0.5 ?? 0.0),
 			Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
 			FileName = document.Filename,
-			MimeType = document.mime_type
+			MimeType = document.mime_type,
+			Cover = mmd.video_cover?.PhotoSizes(),
+			StartTimestamp = mmd.video_timestamp.NullIfZero(),
 		}.SetFileIds(document.ToFileLocation(), document.dc_id);
 	}
 
@@ -589,18 +591,18 @@ public static class TypesTLConverters
 		_ => null
 	};
 
-	internal static Reaction Reaction(this ReactionType reaction) => reaction switch
+	internal static TL.Reaction Reaction(this ReactionType reaction) => reaction switch
 	{
-		ReactionTypeEmoji rte => new ReactionEmoji { emoticon = rte.Emoji },
-		ReactionTypeCustomEmoji rtce => new ReactionCustomEmoji { document_id = long.Parse(rtce.CustomEmojiId) },
-		ReactionTypePaid => new ReactionPaid { },
+		ReactionTypeEmoji rte => new TL.ReactionEmoji { emoticon = rte.Emoji },
+		ReactionTypeCustomEmoji rtce => new TL.ReactionCustomEmoji { document_id = long.Parse(rtce.CustomEmojiId) },
+		ReactionTypePaid => new TL.ReactionPaid { },
 		_ => throw new WTException("Unrecognized ReactionType")
 	};
-	internal static ReactionType ReactionType(this Reaction reaction) => reaction switch
+	internal static ReactionType ReactionType(this TL.Reaction reaction) => reaction switch
 	{
-		ReactionEmoji rte => new ReactionTypeEmoji { Emoji = rte.emoticon },
-		ReactionCustomEmoji rce => new ReactionTypeCustomEmoji { CustomEmojiId = rce.document_id.ToString() },
-		ReactionPaid => new ReactionTypePaid { },
+		TL.ReactionEmoji rte => new ReactionTypeEmoji { Emoji = rte.emoticon },
+		TL.ReactionCustomEmoji rce => new ReactionTypeCustomEmoji { CustomEmojiId = rce.document_id.ToString() },
+		TL.ReactionPaid => new ReactionTypePaid { },
 		_ => throw new WTException("Unrecognized Reaction")
 	};
 
@@ -699,7 +701,7 @@ public static class TypesTLConverters
 	{
 		MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
 		MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>
-			new PaidMediaVideo { Video = document.Video() },
+			new PaidMediaVideo { Video = document.Video(mmd) },
 		_ => throw new WTException("Unrecognized Paid MessageMedia")
 	};
 
