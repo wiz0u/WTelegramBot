@@ -3,7 +3,7 @@ name: Dev build
 on:
   push:
     branches: [ master ]
-    paths-ignore: [ '.**', 'Examples/**', '**.md' ]
+#    paths-ignore: [ '.**', 'Examples/**', '**.md' ]
 
 env:
   PROJECT_PATH: src/WTelegramBot.csproj
@@ -17,6 +17,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 100
+        submodules: true
     - name: Determine version
       run: |
         git fetch --depth=100 --tags
