@@ -542,7 +542,7 @@ public static class TypesTLConverters
 		_ => throw new WTException("Unrecognized EncryptedPassportElementType")
 	};
 
-	internal static EncryptedPassportElement EncryptedPassportElement(this SecureValue sv) => new()
+	internal static EncryptedPassportElement EncryptedPassportElement(this TL.SecureValue sv) => new()
 	{
 		Type = sv.type switch
 		{

@@ -72,6 +72,10 @@ public partial class WTelegramBotClient(WTelegramBotClientOptions options, HttpC
     }
 
     /// <inheritdoc/>
+    public Task DownloadFile(TGFile file, Stream destination, CancellationToken cancellationToken = default)
+        => DownloadFile(file.FilePath!, destination, cancellationToken);
+
+    /// <inheritdoc/>
     public new async Task DownloadFile(string filePath, Stream destination, CancellationToken cancellationToken = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(GlobalCancelToken, cancellationToken);

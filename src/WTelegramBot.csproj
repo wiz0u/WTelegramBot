@@ -32,8 +32,8 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\.github\dev.yml" Link="Data\dev.yml" />
-    <None Include="..\.github\release.yml" Link="Data\release.yml" />
+    <None Include="..\.github\workflows\dev.yml" Link="Data\dev.yml" />
+    <None Include="..\.github\workflows\release.yml" Link="Data\release.yml" />
     <None Include="..\README.md" Link="Data\README.md" Pack="true" PackagePath="\" />
     <None Include="..\CHANGES.md" Link="Data\CHANGES.md" Pack="true" PackagePath="\" />
     <None Include="..\logo.png" Link="Data\logo.png" Pack="true" PackagePath="\" />
@@ -59,6 +59,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extend.Types.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\ITelegramBotClient.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
     <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClient*.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
+    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\PassportDecrypter.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
