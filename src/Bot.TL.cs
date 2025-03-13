@@ -25,7 +25,7 @@ public partial class Bot
 				| (rkm.OneTimeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.single_use : 0)
 				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0),
 			placeholder = rkm.InputFieldPlaceholder,
-			rows = rkm.Keyboard.Select(row => new KeyboardButtonRow { buttons = row.Select(MakeKeyboardButton).ToArray() }).ToArray()
+			rows = [.. rkm.Keyboard.Select(row => new KeyboardButtonRow { buttons = [.. row.Select(MakeKeyboardButton)] })]
 		},
 		InlineKeyboardMarkup ikm => new ReplyInlineMarkup
 		{
@@ -235,7 +235,7 @@ public partial class Bot
 	protected TL.MessageEntity[]? ApplyParse(ParseMode parseMode, ref string? text, IEnumerable<MessageEntity>? entities)
 	{
 		if (entities != null)
-			return entities.Select(e => e.Type switch
+			return [.. entities.Select(e => e.Type switch
 			{
 				MessageEntityType.Bold => new TL.MessageEntityBold { offset = e.Offset, length = e.Length },
 				MessageEntityType.Italic => new TL.MessageEntityItalic { offset = e.Offset, length = e.Length },
@@ -250,7 +250,7 @@ public partial class Bot
 				MessageEntityType.Blockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length },
 				MessageEntityType.ExpandableBlockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length, flags = MessageEntityBlockquote.Flags.collapsed },
 				_ => (TL.MessageEntity)null!
-			}).Where(e => e != null).ToArray();
+			}).Where(e => e != null)];
 		else if (text == null)
 			return null;
 		return parseMode switch

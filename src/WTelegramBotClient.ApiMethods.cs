@@ -1,4 +1,4 @@
-#pragma warning disable IDE0060, CS1580
+#pragma warning disable IDE0060, IDE0305, CS1580
 
 namespace Telegram.Bot;
 

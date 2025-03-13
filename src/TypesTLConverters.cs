@@ -465,7 +465,7 @@ public static class TypesTLConverters
 		{ n = (int)maskPosition.Point - 1, x = maskPosition.XShift, y = maskPosition.YShift, zoom = maskPosition.Scale };
 
 	internal static TL.LabeledPrice[] LabeledPrices(this IEnumerable<Payments.LabeledPrice> prices)
-		=> prices.Select(p => new TL.LabeledPrice { label = p.Label, amount = p.Amount }).ToArray();
+		=> [.. prices.Select(p => new TL.LabeledPrice { label = p.Label, amount = p.Amount })];
 
 	internal static TL.BotCommand BotCommand(this BotCommand bc)
 		=> new() { command = bc.Command.StartsWith("/") ? bc.Command[1..] : bc.Command, description = bc.Description };
@@ -516,9 +516,9 @@ public static class TypesTLConverters
 			PassportElementErrorReverseSide e => new SecureValueErrorReverseSide { type = type, text = text, file_hash = e.FileHash.FromBase64() },
 			PassportElementErrorSelfie e => new SecureValueErrorSelfie { type = type, text = text, file_hash = e.FileHash.FromBase64() },
 			PassportElementErrorFile e => new SecureValueErrorFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			PassportElementErrorFiles e => new SecureValueErrorFiles { type = type, text = text, file_hash = [.. e.FileHashes.Select(FromBase64)] },
 			PassportElementErrorTranslationFile e => new SecureValueErrorTranslationFile { type = type, text = text, file_hash = e.FileHash.FromBase64() },
-			PassportElementErrorTranslationFiles e => new SecureValueErrorTranslationFiles { type = type, text = text, file_hash = e.FileHashes.Select(FromBase64).ToArray() },
+			PassportElementErrorTranslationFiles e => new SecureValueErrorTranslationFiles { type = type, text = text, file_hash = [.. e.FileHashes.Select(FromBase64)] },
 			PassportElementErrorUnspecified e => new SecureValueError { type = type, text = text, hash = e.ElementHash.FromBase64() },
 			_ => throw new WTException("Unrecognized PassportElementError")
 		};
@@ -574,7 +574,7 @@ public static class TypesTLConverters
 
 	internal static PassportData PassportData(this MessageActionSecureValuesSentMe masvsm) => new()
 	{
-		Data = masvsm.values.Select(EncryptedPassportElement).ToArray(),
+		Data = [.. masvsm.values.Select(EncryptedPassportElement)],
 		Credentials = new EncryptedCredentials { Data = masvsm.credentials.data.ToBase64(), Hash = masvsm.credentials.hash.ToBase64(), Secret = masvsm.credentials.secret.ToBase64() }
 	};
 
@@ -638,8 +638,8 @@ public static class TypesTLConverters
 	internal static BusinessOpeningHours? BusinessOpeningHours(this TL.BusinessWorkHours? hours) => hours == null ? null : new BusinessOpeningHours
 	{
 		TimeZoneName = hours.timezone_id,
-		OpeningHours = hours.weekly_open.Select(wo =>
-			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute }).ToArray()
+		OpeningHours = [.. hours.weekly_open.Select(wo =>
+			new BusinessOpeningHoursInterval { OpeningMinute = wo.start_minute, ClosingMinute = wo.end_minute })]
 	};
 
 	internal static Document? Document(this TL.DocumentBase document, TL.PhotoSizeBase? thumb = null)

@@ -52,7 +52,7 @@ public partial class Bot
 	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
 	{
 		var peer = await InputPeerChat(chatId);
-		var msgs = await Client.GetMessages(peer, messageIds.Select(id => (InputMessageID)id).ToArray());
+		var msgs = await Client.GetMessages(peer, [.. messageIds.Select(id => (InputMessageID)id)]);
 		msgs.UserOrChat(_collector);
 		var messages = new List<Message>();
 		foreach (var msgBase in msgs.Messages)
@@ -226,7 +226,7 @@ public partial class Bot
 	public async Task<List<Message>> CopyMessages(ChatId chatId, ChatId fromChatId, int[] messageIds, bool removeCaption = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
 	{
-		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageIds.Select(id => (InputMessageID)id).ToArray());
+		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), [.. messageIds.Select(id => (InputMessageID)id)]);
 		msgs.UserOrChat(_collector);
 		var peer = await InputPeerChat(chatId);
 		var reply_to = await MakeReplyTo(null, messageThreadId, peer);
@@ -799,7 +799,7 @@ public partial class Bot
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
 				question = new() { text = question, entities = quEntities },
-				answers = options.Select(MakePollAnswer).ToArray(),
+				answers = [.. options.Select(MakePollAnswer)],
 				close_period = openPeriod.GetValueOrDefault(),
 				close_date = closeDate.GetValueOrDefault(),
 			},
@@ -871,7 +871,7 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		reaction ??= [];
-		var updates = await Client.Messages_SendReaction(peer, messageId, reaction.Select(TypesTLConverters.Reaction).ToArray(), big: isBig);
+		var updates = await Client.Messages_SendReaction(peer, messageId, [.. reaction.Select(TypesTLConverters.Reaction)], big: isBig);
 	}
 
 	/// <summary>Use this method to get a list of profile pictures for a user.</summary>
@@ -887,7 +887,7 @@ public partial class Bot
 		return new UserProfilePhotos
 		{
 			TotalCount = (photos as Photos_PhotosSlice)?.count ?? photos.photos.Length,
-			Photos = photos.photos.Select(pb => pb.PhotoSizes()!).ToArray()
+			Photos = [.. photos.photos.Select(pb => pb.PhotoSizes()!)]
 		};
 	}
 
@@ -1246,7 +1246,7 @@ public partial class Bot
 				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
 				CanSendGift = true,
-				ActiveUsernames = user.username == null && user.usernames == null ? null : user.ActiveUsernames.ToArray(),
+				ActiveUsernames = user.username == null && user.usernames == null ? null : [.. user.ActiveUsernames],
 				Birthdate = full.birthday.Birthdate(),
 				BusinessIntro = await MakeBusinessIntro(full.business_intro),
 				BusinessLocation = full.business_location.BusinessLocation(),
@@ -1284,7 +1284,7 @@ public partial class Bot
 				{
 					/*chatReactionsNone*/
 					null => [],
-					ChatReactionsSome crs => crs.reactions.Select(TypesTLConverters.ReactionType).ToArray(),
+					ChatReactionsSome crs => [.. crs.reactions.Select(TypesTLConverters.ReactionType)],
 					/*chatReactionsAll*/
 					_ => null,
 				},
@@ -1305,7 +1305,7 @@ public partial class Bot
 				chat.AccessHash = channel.access_hash;
 				var channelFull = (ChannelFull)full;
 				if (channelFull.flags2.HasFlag(ChannelFull.Flags2.has_reactions_limit)) chat.MaxReactionCount = channelFull.reactions_limit;
-				chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : channel.ActiveUsernames.ToArray();
+				chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : [.. channel.ActiveUsernames];
 				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
 				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = channel.color.background_emoji_id.ToString();
 				if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = channel.profile_color.color;
@@ -1521,7 +1521,7 @@ public partial class Bot
 	/// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands</param>
 	public async Task SetMyCommands(IEnumerable<BotCommand> commands, BotCommandScope? scope = default, string? languageCode = default)
 	{
-		await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, commands.Select(TypesTLConverters.BotCommand).ToArray());
+		await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, [.. commands.Select(TypesTLConverters.BotCommand)]);
 	}
 
 	/// <summary>Use this method to delete the list of the bot's commands for the given scope and user language. After deletion, <a href="https://core.telegram.org/bots/api#determining-list-of-commands">higher level commands</a> will be shown to affected users.</summary>
@@ -1539,7 +1539,7 @@ public partial class Bot
 	public async Task<BotCommand[]> GetMyCommands(BotCommandScope? scope = default, string? languageCode = default)
 	{
 		var commands = await Client.Bots_GetBotCommands(await BotCommandScope(scope), languageCode);
-		return commands.Select(TypesTLConverters.BotCommand).ToArray();
+		return [.. commands.Select(TypesTLConverters.BotCommand)];
 	}
 
 	/// <summary>Use this method to change the bot's name, short description (bio) or description (shown in empty chat).</summary>
@@ -1898,7 +1898,7 @@ public partial class Bot
 	public async Task<Sticker[]> GetCustomEmojiStickers(IEnumerable<string> customEmojiIds)
 	{
 		await InitComplete();
-		var documents = await Client.Messages_GetCustomEmojiDocuments(customEmojiIds.Select(long.Parse).ToArray());
+		var documents = await Client.Messages_GetCustomEmojiDocuments([.. customEmojiIds.Select(long.Parse)]);
 		return await documents.OfType<TL.Document>().Select(async doc =>
 		{
 			var attrib = doc.GetAttribute<DocumentAttributeCustomEmoji>();
@@ -2287,7 +2287,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var starStatus = await Client.Payments_GetStarsTransactions(InputPeer.Self, offset.ToString(), limit, ascending: true);
-		return new() { Transactions = starStatus.history.Select(MakeStarTransaction).ToArray() };
+		return new() { Transactions = [.. starStatus.history.Select(MakeStarTransaction)] };
 	}
 
 	/// <summary>Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</summary>
@@ -2319,7 +2319,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var peer = InputPeerUser(userId);
-		await Client.Users_SetSecureValueErrors(peer, errors.Select(TypesTLConverters.SecureValueError).ToArray());
+		await Client.Users_SetSecureValueErrors(peer, [.. errors.Select(TypesTLConverters.SecureValueError)]);
 	}
 	#endregion Telegram Passport
 

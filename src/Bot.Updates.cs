@@ -144,7 +144,7 @@ public partial class Bot
 						PollId = umpv.poll_id.ToString(),
 						VoterChat = umpv.peer is PeerChannel pc ? await ChannelOrResolve(pc.channel_id) : null,
 						User = umpv.peer is PeerUser pu ? await UserOrResolve(pu.user_id) : null,
-						OptionIds = umpv.options.Select(o => (int)o[0]).ToArray()
+						OptionIds = [.. umpv.options.Select(o => (int)o[0])]
 					},
 					TLUpdate = update
 				};
@@ -230,8 +230,8 @@ public partial class Bot
 						User = await UserFromPeer(ubmr.actor),
 						ActorChat = await ChatFromPeer(ubmr.actor),
 						Date = ubmr.date,
-						OldReaction = ubmr.old_reactions.Select(TypesTLConverters.ReactionType).ToArray(),
-						NewReaction = ubmr.new_reactions.Select(TypesTLConverters.ReactionType).ToArray(),
+						OldReaction = [.. ubmr.old_reactions.Select(TypesTLConverters.ReactionType)],
+						NewReaction = [.. ubmr.new_reactions.Select(TypesTLConverters.ReactionType)],
 					},
 					TLUpdate = update
 				};
@@ -244,7 +244,7 @@ public partial class Bot
 						Chat = await ChatFromPeer(ubmrs.peer, true),
 						MessageId = ubmrs.msg_id,
 						Date = ubmrs.date,
-						Reactions = ubmrs.reactions.Select(rc => new Telegram.Bot.Types.ReactionCount { Type = rc.reaction.ReactionType(), TotalCount = rc.count }).ToArray(),
+						Reactions = [.. ubmrs.reactions.Select(rc => new Telegram.Bot.Types.ReactionCount { Type = rc.reaction.ReactionType(), TotalCount = rc.count })],
 					},
 					TLUpdate = update
 				};
@@ -754,7 +754,7 @@ public partial class Bot
 				msg.PaidMedia = new PaidMediaInfo
 				{
 					StarCount = (int)mmpm.stars_amount,
-					PaidMedia = mmpm.extended_media.Select(TypesTLConverters.PaidMedia).ToArray()
+					PaidMedia = [.. mmpm.extended_media.Select(TypesTLConverters.PaidMedia)]
 				};
 				break;
 			default:
@@ -873,7 +873,7 @@ public partial class Bot
 		{
 			Id = poll.id.ToString(),
 			Question = poll.question.text,
-			Options = poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results?[i].voters ?? 0 }).ToArray(),
+			Options = [.. poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results?[i].voters ?? 0 })],
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
 			IsAnonymous = !poll.flags.HasFlag(TL.Poll.Flags.public_voters),
