@@ -877,7 +877,7 @@ public partial class Bot
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
 			IsAnonymous = !poll.flags.HasFlag(TL.Poll.Flags.public_voters),
-			Type = poll.flags.HasFlag(TL.Poll.Flags.quiz) ? "quiz" : "regular",
+			Type = poll.flags.HasFlag(TL.Poll.Flags.quiz) ? PollType.Quiz : PollType.Regular,
 			AllowsMultipleAnswers = poll.flags.HasFlag(TL.Poll.Flags.multiple_choice),
 			CorrectOptionId = correctOption < 0 ? null : correctOption,
 			Explanation = pollResults.solution,
