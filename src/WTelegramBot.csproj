@@ -48,20 +48,6 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Args\**\*" Link="Telegram.Bot/Args/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Exceptions\**\*" Link="Telegram.Bot/Exceptions/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extensions\**\*" Link="Telegram.Bot/Extensions/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Polling\**\*" Link="Telegram.Bot/Polling/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Requests\**\*" Link="Telegram.Bot/Requests/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Serialization\**\*" Link="Telegram.Bot/Serialization/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Types\**\*" Link="Telegram.Bot/Types/%(RecursiveDir)/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\Extend.Types.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\ITelegramBotClient.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\TelegramBotClient*.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-    <Compile Include="..\Telegram.Bot\src\Telegram.Bot\PassportDecrypter.cs" Link="Telegram.Bot/%(FileName)%(Extension)" />
-  </ItemGroup>
-  
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Nullable" Version="1.3.1" PrivateAssets="all" />
@@ -72,6 +58,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Telegram.Bot" Version="22.5.0-dev.23" />
     <PackageReference Include="WTelegramClient" Version="4.3.3-dev.1" Condition="'$(Configuration)' == 'Release'"/>
     <ProjectReference Include="..\..\WTelegramClient\src\WTelegramClient.csproj" Condition="'$(Configuration)' == 'Debug'"/>
   </ItemGroup>
