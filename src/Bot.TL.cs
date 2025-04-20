@@ -326,7 +326,7 @@ public partial class Bot
 				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler == true ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
 		}
 	}
-	
+
 	private async Task<TL.InputDocument> UploadMediaDocument(InputPeerUser peer, TL.InputMedia media)
 	{
 		if (media is TL.InputMediaDocument imd) return imd.id; // already on Telegram, no need to upload
@@ -830,7 +830,7 @@ public partial class Bot
 			_ => throw new NotImplementedException()
 		};
 	}
-	
+
 	private static string MimeType(StickerFormat stickerFormat) => stickerFormat switch
 	{
 		StickerFormat.Animated => "application/x-tgsticker",
@@ -1009,7 +1009,7 @@ public partial class Bot
 		TransactionPartner? partner = transaction.peer switch
 		{
 			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
-				? null																		//td_api::starTransactionTypeUserDeposit
+				? null                                                                      //td_api::starTransactionTypeUserDeposit
 				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },   //td_api::starTransactionTypeFragmentWithdrawal or starTransactionTypeFragmentDeposit
 			StarsTransactionPeer { peer: PeerChannel { channel_id: var channel_id } } => transaction switch
 			{
@@ -1026,7 +1026,7 @@ public partial class Bot
 				{ stargift: StarGift starGift } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
 					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase (user_id)
 						Gift = MakeGift(starGift) }
-					: null, 																//td_api::starTransactionTypeGiftSale
+					: null,                                                                 //td_api::starTransactionTypeGiftSale
 				{ subscription_period: > 0 } =>
 					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotSubscriptionSale
 						InvoicePayload = transaction.bot_payload.NullOrUtf8(),
@@ -1037,12 +1037,12 @@ public partial class Bot
 						Affiliate = Affiliate(transaction),
 						PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
 						PaidMediaPayload = transaction.bot_payload.NullOrUtf8() },
-				
+
 				_ => new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeBotInvoiceSale
 						Affiliate = Affiliate(transaction),
 						InvoicePayload = transaction.bot_payload.NullOrUtf8() }
 			},
-			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),					//td_api::starTransactionTypeTelegramAdsWithdrawal
+			StarsTransactionPeerAds => new TransactionPartnerTelegramAds(),                 //td_api::starTransactionTypeTelegramAdsWithdrawal
 			StarsTransactionPeerAPI => new TransactionPartnerTelegramApi {					//td_api::starTransactionTypeTelegramApiUsage
 						RequestCount = transaction.floodskip_number },
 			_ => null,

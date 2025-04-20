@@ -1778,6 +1778,67 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi(this);
 
+    /// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="GiftList"/> object.</returns>
+    public async Task<GiftList> GetAvailableGifts(
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetAvailableGifts().ThrowAsApi(this);
+
+    /// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
+    /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
+    /// <param name="giftId">Identifier of the gift</param>
+    /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SendGift(
+        ChatId chatId,
+        string giftId,
+        string? text = default,
+        ParseMode textParseMode = default,
+        IEnumerable<MessageEntity>? textEntities = default,
+        bool payForUpgrade = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
+
+    /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task VerifyUser(
+        long userId,
+        string? customDescription = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).VerifyUser(userId, customDescription).ThrowAsApi(this);
+
+    /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task VerifyChat(
+        ChatId chatId,
+        string? customDescription = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).VerifyChat(chatId, customDescription).ThrowAsApi(this);
+
+    /// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveUserVerification(
+        long userId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveUserVerification(userId).ThrowAsApi(this);
+
+    /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveChatVerification(
+        ChatId chatId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveChatVerification(chatId).ThrowAsApi(this);
+
     #endregion Updating messages
 
     #region Stickers
@@ -1975,67 +2036,6 @@ public partial class WTelegramBotClient
         string name,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).DeleteStickerSet(name).ThrowAsApi(this);
-
-    /// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns>A <see cref="GiftList"/> object.</returns>
-    public async Task<GiftList> GetAvailableGifts(
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GetAvailableGifts().ThrowAsApi(this);
-
-    /// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
-    /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
-    /// <param name="giftId">Identifier of the gift</param>
-    /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
-    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SendGift(
-        ChatId chatId,
-        string giftId,
-        string? text = default,
-        ParseMode textParseMode = default,
-        IEnumerable<MessageEntity>? textEntities = default,
-        bool payForUpgrade = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
-
-    /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-    /// <param name="userId">Unique identifier of the target user</param>
-    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task VerifyUser(
-        long userId,
-        string? customDescription = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).VerifyUser(userId, customDescription).ThrowAsApi(this);
-
-    /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task VerifyChat(
-        ChatId chatId,
-        string? customDescription = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).VerifyChat(chatId, customDescription).ThrowAsApi(this);
-
-    /// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-    /// <param name="userId">Unique identifier of the target user</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task RemoveUserVerification(
-        long userId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).RemoveUserVerification(userId).ThrowAsApi(this);
-
-    /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task RemoveChatVerification(
-        ChatId chatId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).RemoveChatVerification(chatId).ThrowAsApi(this);
 
     #endregion
 

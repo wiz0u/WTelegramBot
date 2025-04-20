@@ -1,4 +1,5 @@
 using TL;
+using TL.Methods;
 using ChatFullInfo = WTelegram.Types.ChatFullInfo;
 using Message = WTelegram.Types.Message;
 using MessageEntity = Telegram.Bot.Types.MessageEntity;
@@ -853,13 +854,8 @@ public partial class Bot
 			await Client.Messages_SetTyping(peer, action.ChatAction(), messageThreadId);
 		else
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
-				new TL.Methods.Messages_SetTyping
-				{
-					flags = messageThreadId != 0 ? TL.Methods.Messages_SetTyping.Flags.has_top_msg_id : 0,
-					peer = peer,
-					top_msg_id = messageThreadId,
-					action = action.ChatAction(),
-				});
+				new Messages_SetTyping { peer = peer, action = action.ChatAction(), top_msg_id = messageThreadId,
+					flags = messageThreadId != 0 ? Messages_SetTyping.Flags.has_top_msg_id : 0 });
 	}
 
 	/// <summary>Use this method to change the chosen reactions on a message. Service messages of some types can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel. Bots can't use paid reactions.</summary>
@@ -1194,13 +1190,9 @@ public partial class Bot
 			await Client.Messages_UpdatePinnedMessage(peer, messageId, silent: disableNotification, unpin: !pin);
 		else
 			await Client.InvokeWithBusinessConnection(businessConnectionId,
-			new TL.Methods.Messages_UpdatePinnedMessage
-			{
-				peer = peer,
-				id = messageId,
-				flags = (disableNotification ? TL.Methods.Messages_UpdatePinnedMessage.Flags.silent : 0)
-					| (pin ? 0 : TL.Methods.Messages_UpdatePinnedMessage.Flags.unpin)
-			});
+				new Messages_UpdatePinnedMessage { peer = peer, id = messageId,
+					flags = (disableNotification ? Messages_UpdatePinnedMessage.Flags.silent : 0)
+						| (pin ? 0 : Messages_UpdatePinnedMessage.Flags.unpin) });
 	}
 
 	/// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the '<see cref="ChatMemberAdministrator.CanPinMessages"/>' admin right in a supergroup or '<see cref="ChatMemberAdministrator.CanEditMessages"/>' administrator right in a channel</summary>
@@ -1829,6 +1821,75 @@ public partial class Bot
 	{
 		await Client.DeleteMessages(await InputPeerChat(chatId), messageIds);
 	}
+
+	/// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
+	/// <returns>A <see cref="GiftList"/> object.</returns>
+	public async Task<GiftList> GetAvailableGifts()
+	{
+		await InitComplete();
+		var starGifts = await Client.Payments_GetStarGifts();
+		var gifts = starGifts.gifts.OfType<StarGift>().Where(g => !g.flags.HasFlag(StarGift.Flags.sold_out)).Select(MakeGift).ToArray();
+		return new GiftList { Gifts = gifts };
+	}
+
+	/// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
+	/// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
+	/// <param name="giftId">Identifier of the gift</param>
+	/// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
+	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	/// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
+	public async Task SendGift(ChatId chatId, string giftId, string? text = default, ParseMode textParseMode = default,
+		IEnumerable<MessageEntity>? textEntities = default, bool payForUpgrade = default)
+	{
+		await InitComplete();
+		var entities = ApplyParse(textParseMode, ref text!, textEntities);
+		var invoice = new InputInvoiceStarGift
+		{
+			flags = text != null ? InputInvoiceStarGift.Flags.has_message : 0
+				| (payForUpgrade ? InputInvoiceStarGift.Flags.include_upgrade : 0),
+			peer = await InputPeerChat(chatId),
+			gift_id = long.Parse(giftId),
+			message = new() { text = text, entities = entities },
+		};
+		var paymentForm = await Client.Payments_GetPaymentForm(invoice);
+		if (paymentForm is not TL.Payments_PaymentFormStarGift starGift) throw new RpcException(500, "Unsupported");
+		await Client.Payments_SendStarsForm(starGift.form_id, invoice);
+	}
+
+	/// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+	public async Task VerifyUser(long userId, string? customDescription = default)
+	{
+		await InitComplete();
+		await Client.Bots_SetCustomVerification(InputUser(userId), null, customDescription, true);
+	}
+
+	/// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+	public async Task VerifyChat(ChatId chatId, string? customDescription = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		await Client.Bots_SetCustomVerification(peer, null, customDescription, true);
+	}
+
+	/// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	public async Task RemoveUserVerification(long userId)
+	{
+		await InitComplete();
+		await Client.Bots_SetCustomVerification(InputUser(userId), enabled: false);
+	}
+
+	/// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	public async Task RemoveChatVerification(ChatId chatId)
+	{
+		var peer = await InputPeerChat(chatId);
+		await Client.Bots_SetCustomVerification(peer, enabled: false);
+	}
 	#endregion Updating messages
 
 	#region Stickers
@@ -2045,75 +2106,6 @@ public partial class Bot
 
 	#region Inline mode
 
-	/// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
-	/// <returns>A <see cref="GiftList"/> object.</returns>
-	public async Task<GiftList> GetAvailableGifts()
-	{
-		await InitComplete();
-		var starGifts = await Client.Payments_GetStarGifts();
-		var gifts = starGifts.gifts.OfType<StarGift>().Where(g => !g.flags.HasFlag(StarGift.Flags.sold_out)).Select(MakeGift).ToArray();
-		return new GiftList { Gifts = gifts };
-	}
-
-	/// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
-	/// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
-	/// <param name="giftId">Identifier of the gift</param>
-	/// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
-	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-	/// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
-	public async Task SendGift(ChatId chatId, string giftId, string? text = default, ParseMode textParseMode = default,
-		IEnumerable<MessageEntity>? textEntities = default, bool payForUpgrade = default)
-	{
-		await InitComplete();
-		var entities = ApplyParse(textParseMode, ref text!, textEntities);
-		var invoice = new InputInvoiceStarGift
-		{
-			flags = text != null ? InputInvoiceStarGift.Flags.has_message : 0
-				| (payForUpgrade ? InputInvoiceStarGift.Flags.include_upgrade : 0),
-			peer = await InputPeerChat(chatId),
-			gift_id = long.Parse(giftId),
-			message = new() { text = text, entities = entities },
-		};
-		var paymentForm = await Client.Payments_GetPaymentForm(invoice);
-		if (paymentForm is not TL.Payments_PaymentFormStarGift starGift) throw new RpcException(500, "Unsupported");
-		await Client.Payments_SendStarsForm(starGift.form_id, invoice);
-	}
-
-	/// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-	/// <param name="userId">Unique identifier of the target user</param>
-	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-	public async Task VerifyUser(long userId, string? customDescription = default)
-	{
-		await InitComplete();
-		await Client.Bots_SetCustomVerification(InputUser(userId), null, customDescription, true);
-	}
-
-	/// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-	public async Task VerifyChat(ChatId chatId, string? customDescription = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		await Client.Bots_SetCustomVerification(peer, null, customDescription, true);
-	}
-
-	/// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-	/// <param name="userId">Unique identifier of the target user</param>
-	public async Task RemoveUserVerification(long userId)
-	{
-		await InitComplete();
-		await Client.Bots_SetCustomVerification(InputUser(userId), enabled: false);
-	}
-
-	/// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	public async Task RemoveChatVerification(ChatId chatId)
-	{
-		var peer = await InputPeerChat(chatId);
-		await Client.Bots_SetCustomVerification(peer, enabled: false);
-	}
-
 	/// <summary>Use this method to send answers to an inline query<br/>No more than <b>50</b> results per query are allowed.</summary>
 	/// <param name="inlineQueryId">Unique identifier for the answered query</param>
 	/// <param name="results">A array of results for the inline query</param>
@@ -2247,7 +2239,7 @@ public partial class Bot
 		bool isFlexible = default, int? subscriptionPeriod = default, string? businessConnectionId = default)
 	{
 		await InitComplete();
-		var query = new TL.Methods.Payments_ExportInvoice
+		var query = new Payments_ExportInvoice
 		{
 			invoice_media =
 			InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, null,
@@ -2263,7 +2255,8 @@ public partial class Bot
 	/// <param name="shippingQueryId">Unique identifier for the query to be answered</param>
 	/// <param name="shippingOptions">Required on success. A array of available shipping options.</param>
 	/// <param name="errorMessage">Required on failure. Error message in human readable form that explains why it is impossible to complete the order (e.g. “Sorry, delivery to your desired address is unavailable”). Telegram will display this message to the user.</param>
-	public async Task AnswerShippingQuery(string shippingQueryId, IEnumerable<ShippingOption>? shippingOptions = default, string? errorMessage = default)
+	public async Task AnswerShippingQuery(string shippingQueryId, IEnumerable<ShippingOption>? shippingOptions = default,
+		string? errorMessage = default)
 	{
 		await InitComplete();
 		await Client.Messages_SetBotShippingResults(long.Parse(shippingQueryId), error: errorMessage, shipping_options:
