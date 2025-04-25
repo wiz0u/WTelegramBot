@@ -709,4 +709,91 @@ public static class TypesTLConverters
 
 	internal static long ToChatId(this Peer peer)
 		=> peer switch { PeerChat pc => -pc.chat_id, PeerChannel pch => ZERO_CHANNEL_ID - pch.channel_id, _ => peer.ID };
+
+	internal static BusinessBotRights BusinessBotRights(this TL.BusinessBotRights rights) => new()
+	{
+		CanReply = rights.flags.HasFlag(TL.BusinessBotRights.Flags.reply),
+		CanReadMessages = rights.flags.HasFlag(TL.BusinessBotRights.Flags.read_messages),
+		CanDeleteSentMessages = rights.flags.HasFlag(TL.BusinessBotRights.Flags.delete_sent_messages),
+		CanDeleteAllMessages = rights.flags.HasFlag(TL.BusinessBotRights.Flags.delete_received_messages),
+		CanEditName = rights.flags.HasFlag(TL.BusinessBotRights.Flags.edit_name),
+		CanEditBio = rights.flags.HasFlag(TL.BusinessBotRights.Flags.edit_bio),
+		CanEditProfilePhoto = rights.flags.HasFlag(TL.BusinessBotRights.Flags.edit_profile_photo),
+		CanEditUsername = rights.flags.HasFlag(TL.BusinessBotRights.Flags.edit_username),
+		CanChangeGiftSettings = rights.flags.HasFlag(TL.BusinessBotRights.Flags.change_gift_settings),
+		CanViewGiftsAndStars = rights.flags.HasFlag(TL.BusinessBotRights.Flags.view_gifts),
+		CanConvertGiftsToStars = rights.flags.HasFlag(TL.BusinessBotRights.Flags.sell_gifts),
+		CanTransferAndUpgradeGifts = rights.flags.HasFlag(TL.BusinessBotRights.Flags.transfer_and_upgrade_gifts),
+		CanTransferStars = rights.flags.HasFlag(TL.BusinessBotRights.Flags.transfer_stars),
+		CanManageStories = rights.flags.HasFlag(TL.BusinessBotRights.Flags.manage_stories),
+	};
+
+	internal static AcceptedGiftTypes AcceptedGiftTypes(this DisallowedGiftsSettings.Flags flags) => new()
+	{
+		UnlimitedGifts = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_unlimited_stargifts),
+		LimitedGifts = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_limited_stargifts),
+		UniqueGifts = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_unique_stargifts),
+		PremiumSubscription = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_premium_gifts),
+	};
+
+	internal static MediaArea MediaArea(this StoryArea area)
+	{
+		return area.Type switch
+		{
+			StoryAreaTypeLocation satl => new MediaAreaGeoPoint
+			{
+				coordinates = area.Position.Coordinates(),
+				geo = new() { lat = satl.Latitude, lon = satl.Longitude },
+				address = satl.Address.GeoPointAddress(),
+				flags = satl.Address != null ? MediaAreaGeoPoint.Flags.has_address : 0
+			},
+			StoryAreaTypeSuggestedReaction satsr => new MediaAreaSuggestedReaction
+			{
+				coordinates = area.Position.Coordinates(),
+				reaction = satsr.ReactionType.Reaction(),
+				flags = (satsr.IsDark ? MediaAreaSuggestedReaction.Flags.dark : 0) |
+						(satsr.IsFlipped ? MediaAreaSuggestedReaction.Flags.flipped : 0)
+			},
+			StoryAreaTypeLink satl => new MediaAreaUrl
+			{
+				coordinates = area.Position.Coordinates(),
+				url = satl.Url
+			},
+			StoryAreaTypeWeather satw => new MediaAreaWeather
+			{
+				coordinates = area.Position.Coordinates(),
+				emoji = satw.Emoji,
+				temperature_c = satw.Temperature,
+				color = satw.BackgroundColor
+			},
+			StoryAreaTypeUniqueGift satug => new MediaAreaStarGift
+			{
+				coordinates = area.Position.Coordinates(),
+				slug = satug.Name
+			},
+			_ => throw new WTException("Unsupported " + area.Type),
+		};
+	}
+
+	internal static MediaAreaCoordinates Coordinates(this StoryAreaPosition pos) => new()
+	{
+		x = pos.XPercentage,
+		y = pos.YPercentage,
+		w = pos.WidthPercentage,
+		h = pos.HeightPercentage,
+		rotation = pos.RotationAngle,
+		radius = pos.CornerRadiusPercentage,
+		flags = pos.CornerRadiusPercentage > 0 ? MediaAreaCoordinates.Flags.has_radius : 0
+	};
+
+	internal static GeoPointAddress? GeoPointAddress(this LocationAddress? addr) => addr == null ? null : new()
+	{
+		country_iso2 = addr.CountryCode,
+		state = addr.State,
+		city = addr.City,
+		street = addr.Street,
+		flags = (addr.State != null ? TL.GeoPointAddress.Flags.has_state : 0) |
+				(addr.City != null ? TL.GeoPointAddress.Flags.has_city : 0) |
+				(addr.Street != null ? TL.GeoPointAddress.Flags.has_street : 0)
+	};
 }

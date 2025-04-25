@@ -468,7 +468,9 @@ public partial class Bot
 			StickerSetNames[mss.set.id] = mss.set.short_name;
 	}
 
-	// sync: No async calls. Don't try to resolve missing SetName</param>
+	private Task<Sticker> MakeSticker(TL.Document doc) => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>());
+
+	// sync = true: No async calls. Won't try to resolve missing SetName</param>
 	private async Task<Sticker> MakeSticker(TL.Document doc, DocumentAttributeSticker? sticker, bool sync = false)
 	{
 		var customEmoji = doc.GetAttribute<DocumentAttributeCustomEmoji>();
@@ -901,8 +903,6 @@ public partial class Bot
 		return cb;
 	}
 
-	//TODO: InvokeWithBusinessConnection might need to be done on a specific DcId !? see BotBusinessConnection.dc_id
-
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
 		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
 		bool allow_paid_floodskip, bool invert_media, bool no_webpage)
@@ -989,7 +989,7 @@ public partial class Bot
 	{
 		Title = intro.title,
 		Message = intro.description,
-		Sticker = intro.sticker is TL.Document doc ? await MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>()) : null
+		Sticker = intro.sticker is TL.Document doc ? await MakeSticker(doc) : null
 	};
 
 	private async Task<BusinessConnection> MakeBusinessConnection(BotBusinessConnection bbc) => new BusinessConnection
@@ -998,7 +998,7 @@ public partial class Bot
 		User = await UserOrResolve(bbc.user_id),
 		UserChatId = bbc.user_id,
 		Date = bbc.date,
-		CanReply = bbc.flags.HasFlag(BotBusinessConnection.Flags.can_reply),
+		Rights = bbc.rights.BusinessBotRights(),
 		IsEnabled = !bbc.flags.HasFlag(BotBusinessConnection.Flags.disabled)
 	};
 
@@ -1006,6 +1006,7 @@ public partial class Bot
 	//https://github.com/tdlib/telegram-bot-api/blob/53e15345b04fcea73b415897f10d7543005044ce/telegram-bot-api/Client.cpp?plain=1#L4241
 	internal StarTransaction MakeStarTransaction(TL.StarsTransaction transaction)
 	{
+		var is_purchase = transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund);
 		TransactionPartner? partner = transaction.peer switch
 		{
 			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
@@ -1013,7 +1014,7 @@ public partial class Bot
 				: new TransactionPartnerFragment { WithdrawalState = WithdrawalState() },   //td_api::starTransactionTypeFragmentWithdrawal or starTransactionTypeFragmentDeposit
 			StarsTransactionPeer { peer: PeerChannel { channel_id: var channel_id } } => transaction switch
 			{
-				{ stargift: StarGift starGift } when transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
+				{ stargift: StarGift starGift } when is_purchase
 					=> new TransactionPartnerChat { Chat = Chat(channel_id)!,               //td_api::starTransactionTypeGiftPurchase (dialog_id)
 						Gift = MakeGift(starGift) },
 				_ => null
@@ -1023,22 +1024,32 @@ public partial class Bot
 				{ starref_commission_permille: not 0 } =>
 					new TransactionPartnerAffiliateProgram { SponsorUser = User(user_id)!,	//td_api::starTransactionTypeAffiliateProgramCommission
 						CommissionPerMille = transaction.starref_commission_permille },
-				{ stargift: StarGift starGift } => transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund)
-					? new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeGiftPurchase (user_id)
+				{ flags: var flags } when flags.HasFlag(StarsTransaction.Flags.business_transfer) => is_purchase ? null :
+					new TransactionPartnerUser { User = User(user_id)!,                     //td_api::starTransactionTypeBusinessBotTransferReceive
+						TransactionType = TransactionPartnerUserTransactionType.BusinessAccountTransfer },
+				{ stargift: StarGift starGift } => is_purchase
+					? new TransactionPartnerUser { User = User(user_id)!,                   //td_api::starTransactionTypeGiftPurchase (user_id)
+						TransactionType = TransactionPartnerUserTransactionType.GiftPurchase,
 						Gift = MakeGift(starGift) }
 					: null,                                                                 //td_api::starTransactionTypeGiftSale
 				{ subscription_period: > 0 } =>
 					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotSubscriptionSale
+						TransactionType = TransactionPartnerUserTransactionType.InvoicePayment,
 						InvoicePayload = transaction.bot_payload.NullOrUtf8(),
 						Affiliate = Affiliate(transaction),
 						SubscriptionPeriod = transaction.subscription_period },
+				{ premium_gift_months: > 0 } when is_purchase =>
+					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypePremiumPurchase,
+						TransactionType = TransactionPartnerUserTransactionType.PremiumPurchase,
+						PremiumSubscriptionDuration = transaction.premium_gift_months },
 				{ title: null, description: null, photo: null } or { extended_media.Length: > 0 } =>
 					new TransactionPartnerUser { User = User(user_id)!,						//td_api::starTransactionTypeBotPaidMediaSale
+						TransactionType = TransactionPartnerUserTransactionType.PaidMediaPayment,
 						Affiliate = Affiliate(transaction),
 						PaidMedia = transaction.extended_media?.Select(TypesTLConverters.PaidMedia).ToArray(),
 						PaidMediaPayload = transaction.bot_payload.NullOrUtf8() },
-
 				_ => new TransactionPartnerUser { User = User(user_id)!,					//td_api::starTransactionTypeBotInvoiceSale
+						TransactionType = TransactionPartnerUserTransactionType.InvoicePayment,
 						Affiliate = Affiliate(transaction),
 						InvoicePayload = transaction.bot_payload.NullOrUtf8() }
 			},
@@ -1072,11 +1083,21 @@ public partial class Bot
 	internal Gift MakeGift(TL.StarGift gift) => new()
 	{
 		Id = gift.id.ToString(),
-		Sticker = MakeSticker((TL.Document)gift.sticker, null, sync: true).Result,
-		StarCount = (int)gift.stars,
+		Sticker = gift.sticker is TL.Document doc ? MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>(), sync: true).Result : null!,
+		StarCount = checked((int)gift.stars),
+		UpgradeStarCount = gift.upgrade_stars.IntIfPositive(),
 		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
 		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
-		UpgradeStarCount = ((int)gift.upgrade_stars).NullIfZero()
+	};
+
+	internal async Task<UniqueGift> MakeUniqueGift(TL.StarGiftUnique sgu) => new UniqueGift
+	{
+		BaseName = sgu.title,
+		Name = sgu.slug,
+		Number = sgu.num,
+		Model = await UniqueGiftModel(sgu.attributes.OfType<StarGiftAttributeModel>().First()),
+		Symbol = await UniqueGiftSymbol(sgu.attributes.OfType<StarGiftAttributePattern>().First()),
+		Backdrop = UniqueGiftBackdrop(sgu.attributes.OfType<StarGiftAttributeBackdrop>().First())
 	};
 
 	internal AffiliateInfo? Affiliate(TL.StarsTransaction transaction)
@@ -1089,4 +1110,107 @@ public partial class Bot
 				Amount = (int)transaction.starref_amount.amount,
 				NanostarAmount = transaction.starref_amount.nanos,
 			} : null;
+
+	private async Task<InputPeer> GetBusinessPeer(string businessConnectionId)
+	{
+		await InitComplete();
+		var updates = await Client.Account_GetBotBusinessConnection(businessConnectionId); //TODO cache
+		updates.UserOrChat(_collector);
+		var conn = updates.UpdateList.OfType<UpdateBotBusinessConnect>().First().connection;
+		return updates.Users[conn.user_id];
+	}
+
+	private async Task<InputSavedStarGift> InputSavedStarGift(string giftId)
+	{
+		await InitComplete();
+		if (giftId.IndexOf('_') is >= 0 and int underscore_pos)
+			return new InputSavedStarGiftChat {
+				peer = await InputPeerChat(long.Parse(giftId[..underscore_pos])), 
+				saved_id = long.Parse(giftId[(underscore_pos+1)..]) };
+		else
+			return new InputSavedStarGiftUser { msg_id = int.Parse(giftId) };
+	}
+
+	private async Task<OwnedGift> OwnedGift(SavedStarGift gift)
+	{
+		switch (gift.gift)
+		{
+			case StarGiftUnique sgu:
+				return new OwnedGiftUnique
+				{
+					OwnedGiftId = gift.msg_id.ToString(),
+					Gift = await MakeUniqueGift(sgu),
+					SenderUser = User(gift.from_id.ID),
+					SendDate = gift.date,
+					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
+					CanBeTransferred = gift.flags.HasFlag(SavedStarGift.Flags.has_transfer_stars),
+					TransferStarCount = gift.transfer_stars.IntIfPositive(),
+				};
+			case StarGift sg:
+				var doc = (TL.Document)sg.sticker;
+				var sticker = await MakeSticker(doc);
+				return new OwnedGiftRegular
+				{
+					OwnedGiftId = gift.msg_id.ToString(),
+					Gift = MakeGift(sg),
+					SenderUser = User(gift.from_id.ID),
+					SendDate = gift.date,
+					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
+					Text = gift.message?.text,
+					Entities = MakeEntities(gift.message?.entities),
+					IsPrivate = gift.flags.HasFlag(SavedStarGift.Flags.name_hidden),
+					CanBeUpgraded = gift.flags.HasFlag(SavedStarGift.Flags.can_upgrade),
+					WasRefunded = gift.flags.HasFlag(SavedStarGift.Flags.refunded),
+					ConvertStarCount = gift.convert_stars.IntIfPositive(),
+					PrepaidUpgradeStarCount = gift.upgrade_stars.IntIfPositive(),
+				};
+			default:
+				return null!;
+		}
+	}
+
+	private async Task<UniqueGiftModel> UniqueGiftModel(StarGiftAttributeModel model) => new()
+	{
+		Name = model.name,
+		Sticker = await MakeSticker((TL.Document)model.document),
+		RarityPerMille = model.rarity_permille
+	};
+
+	private async Task<UniqueGiftSymbol> UniqueGiftSymbol(StarGiftAttributePattern pattern) => new()
+	{
+		Name = pattern.name,
+		Sticker = await MakeSticker((TL.Document)pattern.document),
+		RarityPerMille = pattern.rarity_permille
+	};
+
+	private static UniqueGiftBackdrop UniqueGiftBackdrop(StarGiftAttributeBackdrop backdrop) => new()
+	{
+		Name = backdrop.name,
+		Colors = new UniqueGiftBackdropColors()
+		{
+			CenterColor = backdrop.center_color,
+			EdgeColor = backdrop.edge_color,
+			SymbolColor = backdrop.pattern_color,
+			TextColor = backdrop.text_color
+		},
+		RarityPerMille = backdrop.rarity_permille,
+	};
+
+	private async Task<TL.InputMedia> GetStoryMedia(InputStoryContent content)
+	{
+		TL.InputMedia tlMedia;
+		if (content is InputStoryContentPhoto iscp)
+			tlMedia = await InputMediaPhoto(iscp.Photo);
+		else if (content is InputStoryContentVideo iscv)
+		{
+			tlMedia = await InputMediaDocument(iscv.Video, mimeType: "video/mp4", defaultFilename: "story.mp4");
+			if (tlMedia is TL.InputMediaUploadedDocument doc)
+				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
+					duration = iscv.Duration, w = 720, h = 1280, video_start_ts = iscv.CoverFrameTimestamp ?? 0.0,
+					flags = (iscv.IsAnimation ? DocumentAttributeVideo.Flags.nosound : 0)
+						| (iscv.CoverFrameTimestamp.HasValue ? DocumentAttributeVideo.Flags.has_video_start_ts : 0)}];
+		}
+		else throw new RpcException(500, $"Unsupported {content}");
+		return tlMedia;
+	}
 }

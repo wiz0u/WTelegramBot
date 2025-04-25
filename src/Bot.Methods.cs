@@ -544,7 +544,7 @@ public partial class Bot
 
 	/// <summary>Use this method to send paid media.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
-	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-2500</param>
+	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-10000</param>
 	/// <param name="media">A array describing the media to be sent; up to 10 items</param>
 	/// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
@@ -799,7 +799,7 @@ public partial class Bot
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
 					| (closeDate.HasValue ? TL.Poll.Flags.has_close_date : 0),
-				question = new() { text = question, entities = quEntities },
+				question = new TextWithEntities() { text = question, entities = quEntities },
 				answers = [.. options.Select(MakePollAnswer)],
 				close_period = openPeriod.GetValueOrDefault(),
 				close_date = closeDate.GetValueOrDefault(),
@@ -1093,7 +1093,7 @@ public partial class Bot
 	/// <summary>Use this method to create a <a href="https://telegram.org/blog/superchannels-star-reactions-subscriptions#star-subscriptions">subscription invite link</a> for a channel chat. The bot must have the <em>CanInviteUsers</em> administrator rights. The link can be edited using the method <see cref="WTelegram.Bot.EditChatSubscriptionInviteLink">EditChatSubscriptionInviteLink</see> or revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
 	/// <param name="chatId">Unique identifier for the target channel chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. Currently, it must always be 2592000 (30 days).</param>
-	/// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-2500</param>
+	/// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-10000</param>
 	/// <param name="name">Invite link name; 0-32 characters</param>
 	/// <returns>The new invite link as a <see cref="ChatInviteLink"/> object.</returns>
 	public async Task<ChatInviteLink> CreateChatSubscriptionInviteLink(ChatId chatId, int subscriptionPeriod, int subscriptionPrice,
@@ -1237,7 +1237,7 @@ public partial class Bot
 				AccessHash = user.access_hash,
 				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
-				CanSendGift = !user.IsBot,
+				AcceptedGiftTypes = full.disallowed_gifts.flags.AcceptedGiftTypes(),
 				ActiveUsernames = user.username == null && user.usernames == null ? null : [.. user.ActiveUsernames],
 				Birthdate = full.birthday.Birthdate(),
 				BusinessIntro = await MakeBusinessIntro(full.business_intro),
@@ -1315,7 +1315,8 @@ public partial class Bot
 				chat.HasVisibleHistory = !channelFull.flags.HasFlag(ChannelFull.Flags.hidden_prehistory);
 				chat.HasProtectedContent = channel.flags.HasFlag(Channel.Flags.noforwards);
 				chat.StickerSetName = channelFull.stickerset?.short_name;
-				chat.CanSendGift = channelFull.flags2.HasFlag(ChannelFull.Flags2.stargifts_available);
+				var can_send_gift = channelFull.flags2.HasFlag(ChannelFull.Flags2.stargifts_available);
+				chat.AcceptedGiftTypes = new() { UnlimitedGifts = can_send_gift, LimitedGifts = can_send_gift, UniqueGifts = can_send_gift };
 				chat.CanSetStickerSet = channelFull.flags.HasFlag(ChannelFull.Flags.can_set_stickers);
 				chat.CustomEmojiStickerSetName = channelFull.emojiset?.short_name;
 				chat.LinkedChatId = channelFull.linked_chat_id == 0 ? null : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
@@ -1325,6 +1326,7 @@ public partial class Bot
 			{
 				chat.Permissions = basicChat.default_banned_rights.ChatPermissions();
 				chat.HasProtectedContent = basicChat.flags.HasFlag(TL.Chat.Flags.noforwards);
+				chat.AcceptedGiftTypes = new();
 				var chatFull = (ChatFull)full;
 				if (chatFull.flags.HasFlag(ChatFull.Flags.has_reactions_limit)) chat.MaxReactionCount = chatFull.reactions_limit;
 			}
@@ -1409,7 +1411,7 @@ public partial class Bot
 		await InitComplete();
 		var mss = await Client.Messages_GetStickerSet(new InputStickerSetEmojiDefaultTopicIcons());
 		CacheStickerSet(mss);
-		var stickers = await mss.documents.OfType<TL.Document>().Select(doc => MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>())).WhenAllSequential();
+		var stickers = await mss.documents.OfType<TL.Document>().Select(MakeSticker).WhenAllSequential();
 		return stickers;
 	}
 
@@ -1857,6 +1859,30 @@ public partial class Bot
 		await Client.Payments_SendStarsForm(starGift.form_id, invoice);
 	}
 
+	/// <summary>Gifts a Telegram Premium subscription to the given user.</summary>
+	/// <param name="userId">Unique identifier of the target user who will receive a Telegram Premium subscription</param>
+	/// <param name="monthCount">Number of months the Telegram Premium subscription will be active for the user; must be one of 3, 6, or 12</param>
+	/// <param name="starCount">Number of Telegram Stars to pay for the Telegram Premium subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months</param>
+	/// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
+	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, and “CustomEmoji” are ignored.</param>
+	public async Task GiftPremiumSubscription(long userId, int monthCount, int starCount, string? text = default, ParseMode textParseMode = default,
+		IEnumerable<MessageEntity>? textEntities = default)
+	{
+		await InitComplete();
+		var entities = ApplyParse(textParseMode, ref text!, textEntities);
+		var invoice = new InputInvoicePremiumGiftStars { user_id = InputUser(userId), months = monthCount };
+		var ppfb = await Client.Payments_GetPaymentForm(invoice);
+		if (ppfb is not Payments_PaymentFormStars) throw new RpcException(500, "Unsupported");
+		if (ppfb.Invoice.prices is not [{ amount: var amount }] || amount != starCount) throw new RpcException(400, "Wrong purchase price specified");
+		if (text != null)
+		{
+			invoice.flags |= InputInvoicePremiumGiftStars.Flags.has_message;
+			invoice.message = new TextWithEntities() { text = text, entities = entities };
+		}
+		await Client.Payments_SendStarsForm(ppfb.FormId, invoice);
+	}
+
 	/// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
 	/// <param name="userId">Unique identifier of the target user</param>
 	/// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
@@ -1889,6 +1915,309 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		await Client.Bots_SetCustomVerification(peer, enabled: false);
+	}
+
+	/// <summary>Marks incoming message as read on behalf of a business account. Requires the <em>CanReadMessages</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to read the message</param>
+	/// <param name="chatId">Unique identifier of the chat in which the message was received. The chat must have been active in the last 24 hours.</param>
+	/// <param name="messageId">Unique identifier of the message to mark as read</param>
+	public async Task ReadBusinessMessage(string businessConnectionId, long chatId, int messageId)
+	{
+		var peer = await InputPeerChat(chatId);
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Messages_ReadHistory { peer = peer, max_id = messageId });
+	}
+
+	/// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
+	/// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+	public async Task DeleteBusinessMessages(string businessConnectionId, IEnumerable<int> messageIds)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Messages_DeleteMessages { id = [.. messageIds] });
+	}
+
+	/// <summary>Changes the first and last name of a managed business account. Requires the <em>CanChangeName</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="firstName">The new value of the first name for the business account; 1-64 characters</param>
+	/// <param name="lastName">The new value of the last name for the business account; 0-64 characters</param>
+	public async Task SetBusinessAccountName(string businessConnectionId, string firstName, string? lastName = default)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Account_UpdateProfile {
+				flags = Account_UpdateProfile.Flags.has_first_name | Account_UpdateProfile.Flags.has_last_name,
+				first_name = firstName, last_name = lastName });
+	}
+
+	/// <summary>Changes the username of a managed business account. Requires the <em>CanChangeUsername</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="username">The new value of the username for the business account; 0-32 characters</param>
+	public async Task SetBusinessAccountUsername(string businessConnectionId, string? username = default)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Account_UpdateUsername { username = username });
+	}
+
+	/// <summary>Changes the bio of a managed business account. Requires the <em>CanChangeBio</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="bio">The new value of the bio for the business account; 0-140 characters</param>
+	public async Task SetBusinessAccountBio(string businessConnectionId, string? bio = default)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Account_UpdateProfile { flags = Account_UpdateProfile.Flags.has_about, about = bio });
+	}
+
+	/// <summary>Changes the profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="photo">The new profile photo to set</param>
+	/// <param name="isPublic">Pass <see langword="true"/> to set the public photo, which will be visible even if the main photo is hidden by the business account's privacy settings. An account can have only one public photo.</param>
+	public async Task SetBusinessAccountProfilePhoto(string businessConnectionId, InputProfilePhoto photo, bool isPublic = default)
+	{
+		//TODO: check why tdlib doesn't use InvokeWithBusinessConnection
+		var peer = await GetBusinessPeer(businessConnectionId);
+		switch (photo)
+		{
+			case InputProfilePhotoStatic ipps:
+				if (ipps.Photo.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
+				var imup = (InputMediaUploadedPhoto)await InputMediaPhoto(ipps.Photo);
+				await Client.InvokeWithBusinessConnection(businessConnectionId,
+					new Photos_UploadProfilePhoto { file = imup.file,
+						flags = Photos_UploadProfilePhoto.Flags.has_file | (isPublic ? Photos_UploadProfilePhoto.Flags.fallback : 0) });
+				break;
+			case InputProfilePhotoAnimated ippa:
+				if (ippa.Animation.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
+				var imud = (InputMediaUploadedDocument)await InputMediaDocument(ippa.Animation);
+				await Client.InvokeWithBusinessConnection(businessConnectionId,
+					new Photos_UploadProfilePhoto { video = imud.file, video_start_ts =	ippa.MainFrameTimestamp ?? 0.0,
+						flags = Photos_UploadProfilePhoto.Flags.has_video | (isPublic ? Photos_UploadProfilePhoto.Flags.fallback : 0)
+							| (ippa.MainFrameTimestamp.HasValue ? Photos_UploadProfilePhoto.Flags.has_video_start_ts : 0)});
+				break;
+		}
+	}
+
+	/// <summary>Removes the current profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="isPublic">Pass <see langword="true"/> to remove the public photo, which is visible even if the main photo is hidden by the business account's privacy settings. After the main photo is removed, the previous profile photo (if present) becomes the main photo.</param>
+	public async Task RemoveBusinessAccountProfilePhoto(string businessConnectionId, bool isPublic = default)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Photos_UpdateProfilePhoto { flags = isPublic ? Photos_UpdateProfilePhoto.Flags.fallback : 0});
+	}
+
+	/// <summary>Changes the privacy settings pertaining to incoming gifts in a managed business account. Requires the <em>CanChangeGiftSettings</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="showGiftButton">Pass <see langword="true"/>, if a button for sending a gift to the user or by the business account must always be shown in the input field</param>
+	/// <param name="acceptedGiftTypes">Types of gifts accepted by the business account</param>
+	public async Task SetBusinessAccountGiftSettings(string businessConnectionId, bool showGiftButton, AcceptedGiftTypes acceptedGiftTypes)
+	{
+		await InitComplete();
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Account_SetGlobalPrivacySettings { settings = new() {
+				flags = GlobalPrivacySettings.Flags.has_disallowed_gifts | (showGiftButton ? GlobalPrivacySettings.Flags.display_gifts_button : 0),
+				disallowed_gifts = new() {
+					flags = (acceptedGiftTypes.UnlimitedGifts ? 0 : DisallowedGiftsSettings.Flags.disallow_unlimited_stargifts) |
+							(acceptedGiftTypes.LimitedGifts ? 0 : DisallowedGiftsSettings.Flags.disallow_limited_stargifts) |
+							(acceptedGiftTypes.UniqueGifts ? 0 : DisallowedGiftsSettings.Flags.disallow_unique_stargifts) |
+							(acceptedGiftTypes.PremiumSubscription ? 0 : DisallowedGiftsSettings.Flags.disallow_premium_gifts) } } });
+	}
+
+	/// <summary>Returns the amount of Telegram Stars owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <returns><see cref="StarAmount"/> on success.</returns>
+	public async Task<StarAmount> GetBusinessAccountStarBalance(string businessConnectionId)
+	{
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var pss = await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Payments_GetStarsStatus { peer = peer });
+		return new StarAmount { Amount = (int)pss.balance.amount, NanostarAmount = pss.balance.nanos };
+	}
+
+	/// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
+	public async Task TransferBusinessAccountStars(string businessConnectionId, int starCount)
+	{
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var invoice = new InputInvoiceBusinessBotTransferStars { bot = TL.InputUser.Self, stars = starCount };
+		var ppfb = await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Payments_GetPaymentForm { invoice = invoice });
+		if (ppfb is Payments_PaymentForm) throw new RpcException(500, "Unsupported");
+		if (ppfb.Invoice.prices is not [{ amount: var amount }] || amount != starCount) throw new RpcException(400, "Wrong transfer price specified");
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Payments_SendStarsForm { form_id = ppfb.FormId, invoice = invoice });
+	}
+
+	/// <summary>Returns the gifts received and owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the account's profile page</param>
+	/// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the account's profile page</param>
+	/// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
+	/// <param name="excludeLimited">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times</param>
+	/// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
+	/// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
+	/// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
+	/// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+	/// <returns><see cref="OwnedGifts"/> on success.</returns>
+	public async Task<OwnedGifts> GetBusinessAccountGifts(string businessConnectionId, bool excludeUnsaved = default,
+		bool excludeSaved = default, bool excludeUnlimited = default, bool excludeLimited = default, bool excludeUnique = default,
+		bool sortByPrice = default, string? offset = default, int? limit = default)
+	{
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var pssg = await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Payments_GetSavedStarGifts
+			{
+				flags = (excludeUnsaved ? Payments_GetSavedStarGifts.Flags.exclude_unsaved : 0)
+					| (excludeSaved ? Payments_GetSavedStarGifts.Flags.exclude_saved : 0)
+					| (excludeUnlimited ? Payments_GetSavedStarGifts.Flags.exclude_unlimited : 0)
+					| (excludeLimited ? Payments_GetSavedStarGifts.Flags.exclude_limited : 0)
+					| (excludeUnique ? Payments_GetSavedStarGifts.Flags.exclude_unique : 0)
+					| (sortByPrice ? Payments_GetSavedStarGifts.Flags.sort_by_value : 0),
+				peer = peer,
+				offset = offset,
+				limit = limit ?? 100
+			});
+		pssg.UserOrChat(_collector);
+		return new OwnedGifts
+		{
+			Gifts = await pssg.gifts.Select(OwnedGift).WhenAllSequential(),
+			NextOffset = pssg.next_offset,
+			TotalCount = pssg.count
+		};
+	}
+
+	/// <summary>Converts a given regular gift to Telegram Stars. Requires the <em>CanConvertGiftsToStars</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="ownedGiftId">Unique identifier of the regular gift that should be converted to Telegram Stars</param>
+	public async Task ConvertGiftToStars(string businessConnectionId, string ownedGiftId)
+	{
+		var stargift = await InputSavedStarGift(ownedGiftId);
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Payments_ConvertStarGift { stargift = stargift });
+	}
+
+	/// <summary>Upgrades a given regular gift to a unique gift. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Additionally requires the <em>CanTransferStars</em> business bot right if the upgrade is paid.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="ownedGiftId">Unique identifier of the regular gift that should be upgraded to a unique one</param>
+	/// <param name="keepOriginalDetails">Pass <see langword="true"/> to keep the original gift text, sender and receiver in the upgraded gift</param>
+	/// <param name="starCount">The amount of Telegram Stars that will be paid for the upgrade from the business account balance. If <c>gift.PrepaidUpgradeStarCount &gt; 0</c>, then pass 0, otherwise, the <em>CanTransferStars</em> business bot right is required and <c>gift.UpgradeStarCount</c> must be passed.</param>
+	public async Task UpgradeGift(string businessConnectionId, string ownedGiftId, bool keepOriginalDetails = default,
+		int? starCount = default)
+	{
+		var stargift = await InputSavedStarGift(ownedGiftId);
+		if (starCount != 0)
+		{
+			var invoice = new InputInvoiceStarGiftUpgrade { stargift = stargift,
+				flags = keepOriginalDetails ? InputInvoiceStarGiftUpgrade.Flags.keep_original_details : 0 };
+			var ppfb = await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_GetPaymentForm { invoice = invoice });
+			if (ppfb is not Payments_PaymentFormStarGift) throw new RpcException(500, "Unsupported");
+			if (ppfb.Invoice.prices is not [{ amount: var amount }] || amount != starCount) throw new RpcException(400, "Wrong upgrade price specified");
+			await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_SendStarsForm { form_id = ppfb.FormId, invoice = invoice });
+		}
+		else
+		{
+			await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_UpgradeStarGift { stargift = stargift,
+					flags = keepOriginalDetails ? Payments_UpgradeStarGift.Flags.keep_original_details : 0 });
+		}
+	}
+
+	/// <summary>Transfers an owned unique gift to another user. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Requires <em>CanTransferStars</em> business bot right if the transfer is paid.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="ownedGiftId">Unique identifier of the regular gift that should be transferred</param>
+	/// <param name="newOwnerChatId">Unique identifier of the chat which will own the gift. The chat must be active in the last 24 hours.</param>
+	/// <param name="starCount">The amount of Telegram Stars that will be paid for the transfer from the business account balance. If positive, then the <em>CanTransferStars</em> business bot right is required.</param>
+	public async Task TransferGift(string businessConnectionId, string ownedGiftId, long newOwnerChatId, int? starCount = default)
+	{
+		var peer = await InputPeerChat(newOwnerChatId);
+		var stargift = await InputSavedStarGift(ownedGiftId);
+		if (starCount != 0)
+		{
+			var invoice = new InputInvoiceStarGiftTransfer { stargift = stargift, to_id = peer };
+			var ppfb = await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_GetPaymentForm { invoice = invoice });
+			if (ppfb is not Payments_PaymentFormStarGift) throw new RpcException(500, "Unsupported");
+			if (ppfb.Invoice.prices is not [{ amount: var amount }] || amount != starCount) throw new RpcException(400, "Wrong transfer price specified");
+			await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_SendStarsForm { form_id = ppfb.FormId, invoice = invoice });
+		}
+		else
+		{
+			await Client.InvokeWithBusinessConnection(businessConnectionId,
+				new Payments_TransferStarGift { stargift = stargift, to_id = peer });
+		}
+	}
+
+	/// <summary>Posts a story on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="content">Content of the story</param>
+	/// <param name="activePeriod">Period after which the story is moved to the archive, in seconds; must be one of <c>6 * 3600</c>, <c>12 * 3600</c>, <c>86400</c>, or <c>2 * 86400</c></param>
+	/// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="areas">A list of clickable areas to be shown on the story</param>
+	/// <param name="postToChatPage">Pass <see langword="true"/> to keep the story accessible after it expires</param>
+	/// <param name="protectContent">Pass <see langword="true"/> if the content of the story must be protected from forwarding and screenshotting</param>
+	/// <returns><see cref="Story"/> on success.</returns>
+	public async Task<Story> PostStory(string businessConnectionId, InputStoryContent content, int activePeriod, string? caption = default,
+		ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, IEnumerable<StoryArea>? areas = default,
+		bool postToChatPage = default, bool protectContent = default)
+	{
+		//TODO: check why tdlib doesn't use InvokeWithBusinessConnection
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var tlMedia = await GetStoryMedia(content);
+		//tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
+		var updates = await Client.Stories_SendStory(peer, tlMedia, [new InputPrivacyValueAllowAll()], Helpers.RandomLong(), caption, entities, activePeriod,
+			areas?.Select(TypesTLConverters.MediaArea).ToArray(), pinned: postToChatPage, noforwards: protectContent);
+		updates.UserOrChat(_collector);
+		return new Story()
+		{
+			Chat = Chat(peer.ID)!,
+			Id = updates.UpdateList.OfType<UpdateStoryID>().FirstOrDefault()?.id ?? 0
+		};
+	}
+
+	/// <summary>Edits a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="storyId">Unique identifier of the story to edit</param>
+	/// <param name="content">Content of the story</param>
+	/// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="areas">A list of clickable areas to be shown on the story</param>
+	/// <returns><see cref="Story"/> on success.</returns>
+	public async Task<Story> EditStory(string businessConnectionId, int storyId, InputStoryContent content, string? caption = default,
+		ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default, IEnumerable<StoryArea>? areas = default)
+	{
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var tlMedia = await GetStoryMedia(content);
+		//tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
+		var updates = await Client.Stories_EditStory(peer, storyId, tlMedia, caption, entities, [new InputPrivacyValueAllowAll()],
+			areas?.Select(TypesTLConverters.MediaArea).ToArray());
+		updates.UserOrChat(_collector);
+		return new Story()
+		{
+			Chat = Chat(peer.ID)!,
+			Id = updates.UpdateList.OfType<UpdateStory>().FirstOrDefault()?.story.ID ?? 0
+		};
+	}
+
+	/// <summary>Deletes a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="storyId">Unique identifier of the story to delete</param>
+	public async Task DeleteStory(string businessConnectionId, int storyId)
+	{
+		var peer = await GetBusinessPeer(businessConnectionId);
+		await Client.InvokeWithBusinessConnection(businessConnectionId,
+			new Stories_DeleteStories { peer = peer, id = [storyId] });
 	}
 	#endregion Updating messages
 
@@ -1934,7 +2263,7 @@ public partial class Bot
 		var thumb = mss.set.thumbs?[0].PhotoSize(mss.set.ToFileLocation(mss.set.thumbs[0]), mss.set.thumb_dc_id);
 		var stickers = await mss.documents.OfType<TL.Document>().Select(async doc =>
 		{
-			var sticker = await MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>());
+			var sticker = await MakeSticker(doc);
 			if (thumb == null && doc.id == mss.set.thumb_document_id)
 			{
 				var thumbPhotoSize = new TL.PhotoSize() { type = "t", w = sticker.Width, h = sticker.Height, size = (int)doc.size };

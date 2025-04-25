@@ -527,7 +527,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to send paid media.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
-    /// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-2500</param>
+    /// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-10000</param>
     /// <param name="media">A array describing the media to be sent; up to 10 items</param>
     /// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
@@ -1034,7 +1034,7 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to create a <a href="https://telegram.org/blog/superchannels-star-reactions-subscriptions#star-subscriptions">subscription invite link</a> for a channel chat. The bot must have the <em>CanInviteUsers</em> administrator rights. The link can be edited using the method <see cref="WTelegram.Bot.EditChatSubscriptionInviteLink">EditChatSubscriptionInviteLink</see> or revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
     /// <param name="chatId">Unique identifier for the target channel chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. Currently, it must always be 2592000 (30 days).</param>
-    /// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-2500</param>
+    /// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-10000</param>
     /// <param name="name">Invite link name; 0-32 characters</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The new invite link as a <see cref="ChatInviteLink"/> object.</returns>
@@ -1803,6 +1803,24 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
 
+    /// <summary>Gifts a Telegram Premium subscription to the given user.</summary>
+    /// <param name="userId">Unique identifier of the target user who will receive a Telegram Premium subscription</param>
+    /// <param name="monthCount">Number of months the Telegram Premium subscription will be active for the user; must be one of 3, 6, or 12</param>
+    /// <param name="starCount">Number of Telegram Stars to pay for the Telegram Premium subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months</param>
+    /// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, and “CustomEmoji” are ignored.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task GiftPremiumSubscription(
+        long userId,
+        int monthCount,
+        int starCount,
+        string? text = default,
+        ParseMode textParseMode = default,
+        IEnumerable<MessageEntity>? textEntities = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GiftPremiumSubscription(userId, monthCount, starCount, text, textParseMode, textEntities).ThrowAsApi(this);
+
     /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
@@ -1838,6 +1856,232 @@ public partial class WTelegramBotClient
         ChatId chatId,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).RemoveChatVerification(chatId).ThrowAsApi(this);
+
+    /// <summary>Marks incoming message as read on behalf of a business account. Requires the <em>CanReadMessages</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to read the message</param>
+    /// <param name="chatId">Unique identifier of the chat in which the message was received. The chat must have been active in the last 24 hours.</param>
+    /// <param name="messageId">Unique identifier of the message to mark as read</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task ReadBusinessMessage(
+        string businessConnectionId,
+        long chatId,
+        int messageId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).ReadBusinessMessage(businessConnectionId, chatId, messageId).ThrowAsApi(this);
+
+    /// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
+    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteBusinessMessages(
+        string businessConnectionId,
+        IEnumerable<int> messageIds,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteBusinessMessages(businessConnectionId, messageIds).ThrowAsApi(this);
+
+    /// <summary>Changes the first and last name of a managed business account. Requires the <em>CanChangeName</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="firstName">The new value of the first name for the business account; 1-64 characters</param>
+    /// <param name="lastName">The new value of the last name for the business account; 0-64 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountName(
+        string businessConnectionId,
+        string firstName,
+        string? lastName = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountName(businessConnectionId, firstName, lastName).ThrowAsApi(this);
+
+    /// <summary>Changes the username of a managed business account. Requires the <em>CanChangeUsername</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="username">The new value of the username for the business account; 0-32 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountUsername(
+        string businessConnectionId,
+        string? username = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountUsername(businessConnectionId, username).ThrowAsApi(this);
+
+    /// <summary>Changes the bio of a managed business account. Requires the <em>CanChangeBio</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="bio">The new value of the bio for the business account; 0-140 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountBio(
+        string businessConnectionId,
+        string? bio = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountBio(businessConnectionId, bio).ThrowAsApi(this);
+
+    /// <summary>Changes the profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="photo">The new profile photo to set</param>
+    /// <param name="isPublic">Pass <see langword="true"/> to set the public photo, which will be visible even if the main photo is hidden by the business account's privacy settings. An account can have only one public photo.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountProfilePhoto(
+        string businessConnectionId,
+        InputProfilePhoto photo,
+        bool isPublic = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountProfilePhoto(businessConnectionId, photo, isPublic).ThrowAsApi(this);
+
+    /// <summary>Removes the current profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="isPublic">Pass <see langword="true"/> to remove the public photo, which is visible even if the main photo is hidden by the business account's privacy settings. After the main photo is removed, the previous profile photo (if present) becomes the main photo.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveBusinessAccountProfilePhoto(
+        string businessConnectionId,
+        bool isPublic = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveBusinessAccountProfilePhoto(businessConnectionId, isPublic).ThrowAsApi(this);
+
+    /// <summary>Changes the privacy settings pertaining to incoming gifts in a managed business account. Requires the <em>CanChangeGiftSettings</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="showGiftButton">Pass <see langword="true"/>, if a button for sending a gift to the user or by the business account must always be shown in the input field</param>
+    /// <param name="acceptedGiftTypes">Types of gifts accepted by the business account</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountGiftSettings(
+        string businessConnectionId,
+        bool showGiftButton,
+        AcceptedGiftTypes acceptedGiftTypes,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountGiftSettings(businessConnectionId, showGiftButton, acceptedGiftTypes).ThrowAsApi(this);
+
+    /// <summary>Returns the amount of Telegram Stars owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="StarAmount"/> on success.</returns>
+    public async Task<StarAmount> GetBusinessAccountStarBalance(
+        string businessConnectionId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountStarBalance(businessConnectionId).ThrowAsApi(this);
+
+    /// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task TransferBusinessAccountStars(
+        string businessConnectionId,
+        int starCount,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).TransferBusinessAccountStars(businessConnectionId, starCount).ThrowAsApi(this);
+
+    /// <summary>Returns the gifts received and owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the account's profile page</param>
+    /// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the account's profile page</param>
+    /// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
+    /// <param name="excludeLimited">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times</param>
+    /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
+    /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
+    /// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
+    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="OwnedGifts"/> on success.</returns>
+    public async Task<OwnedGifts> GetBusinessAccountGifts(
+        string businessConnectionId,
+        bool excludeUnsaved = default,
+        bool excludeSaved = default,
+        bool excludeUnlimited = default,
+        bool excludeLimited = default,
+        bool excludeUnique = default,
+        bool sortByPrice = default,
+        string? offset = default,
+        int? limit = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountGifts(businessConnectionId, excludeUnsaved, excludeSaved, excludeUnlimited, excludeLimited, excludeUnique, sortByPrice, offset, limit).ThrowAsApi(this);
+
+    /// <summary>Converts a given regular gift to Telegram Stars. Requires the <em>CanConvertGiftsToStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be converted to Telegram Stars</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task ConvertGiftToStars(
+        string businessConnectionId,
+        string ownedGiftId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).ConvertGiftToStars(businessConnectionId, ownedGiftId).ThrowAsApi(this);
+
+    /// <summary>Upgrades a given regular gift to a unique gift. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Additionally requires the <em>CanTransferStars</em> business bot right if the upgrade is paid.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be upgraded to a unique one</param>
+    /// <param name="keepOriginalDetails">Pass <see langword="true"/> to keep the original gift text, sender and receiver in the upgraded gift</param>
+    /// <param name="starCount">The amount of Telegram Stars that will be paid for the upgrade from the business account balance. If <c>gift.PrepaidUpgradeStarCount &gt; 0</c>, then pass 0, otherwise, the <em>CanTransferStars</em> business bot right is required and <c>gift.UpgradeStarCount</c> must be passed.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task UpgradeGift(
+        string businessConnectionId,
+        string ownedGiftId,
+        bool keepOriginalDetails = default,
+        int? starCount = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).UpgradeGift(businessConnectionId, ownedGiftId, keepOriginalDetails, starCount).ThrowAsApi(this);
+
+    /// <summary>Transfers an owned unique gift to another user. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Requires <em>CanTransferStars</em> business bot right if the transfer is paid.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be transferred</param>
+    /// <param name="newOwnerChatId">Unique identifier of the chat which will own the gift. The chat must be active in the last 24 hours.</param>
+    /// <param name="starCount">The amount of Telegram Stars that will be paid for the transfer from the business account balance. If positive, then the <em>CanTransferStars</em> business bot right is required.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task TransferGift(
+        string businessConnectionId,
+        string ownedGiftId,
+        long newOwnerChatId,
+        int? starCount = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).TransferGift(businessConnectionId, ownedGiftId, newOwnerChatId, starCount).ThrowAsApi(this);
+
+    /// <summary>Posts a story on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="content">Content of the story</param>
+    /// <param name="activePeriod">Period after which the story is moved to the archive, in seconds; must be one of <c>6 * 3600</c>, <c>12 * 3600</c>, <c>86400</c>, or <c>2 * 86400</c></param>
+    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="areas">A list of clickable areas to be shown on the story</param>
+    /// <param name="postToChatPage">Pass <see langword="true"/> to keep the story accessible after it expires</param>
+    /// <param name="protectContent">Pass <see langword="true"/> if the content of the story must be protected from forwarding and screenshotting</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="Story"/> on success.</returns>
+    public async Task<Story> PostStory(
+        string businessConnectionId,
+        InputStoryContent content,
+        int activePeriod,
+        string? caption = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        IEnumerable<StoryArea>? areas = default,
+        bool postToChatPage = default,
+        bool protectContent = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).PostStory(businessConnectionId, content, activePeriod, caption, parseMode, captionEntities, areas, postToChatPage, protectContent).ThrowAsApi(this);
+
+    /// <summary>Edits a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="storyId">Unique identifier of the story to edit</param>
+    /// <param name="content">Content of the story</param>
+    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="areas">A list of clickable areas to be shown on the story</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="Story"/> on success.</returns>
+    public async Task<Story> EditStory(
+        string businessConnectionId,
+        int storyId,
+        InputStoryContent content,
+        string? caption = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        IEnumerable<StoryArea>? areas = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).EditStory(businessConnectionId, storyId, content, caption, parseMode, captionEntities, areas).ThrowAsApi(this);
+
+    /// <summary>Deletes a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="storyId">Unique identifier of the story to delete</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteStory(
+        string businessConnectionId,
+        int storyId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteStory(businessConnectionId, storyId).ThrowAsApi(this);
 
     #endregion Updating messages
 
@@ -2183,7 +2427,7 @@ public partial class WTelegramBotClient
     /// <param name="sendPhoneNumberToProvider">Pass <see langword="true"/> if the user's phone number should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="sendEmailToProvider">Pass <see langword="true"/> if the user's email address should be sent to the provider. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
-    /// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. The currency must be set to “XTR” (Telegram Stars) if the parameter is used. Currently, it must always be 2592000 (30 days) if specified. Any number of subscriptions can be active for a given bot at the same time, including multiple concurrent subscriptions from the same user. Subscription price must no exceed 2500 Telegram Stars.</param>
+    /// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. The currency must be set to “XTR” (Telegram Stars) if the parameter is used. Currently, it must always be 2592000 (30 days) if specified. Any number of subscriptions can be active for a given bot at the same time, including multiple concurrent subscriptions from the same user. Subscription price must no exceed 10000 Telegram Stars.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the link will be created. For payments in <a href="https://t.me/BotNews/90">Telegram Stars</a> only.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The created invoice link as <em>String</em> on success.</returns>

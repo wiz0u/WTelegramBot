@@ -498,6 +498,7 @@ public partial class Bot
 					SenderBusinessBot = User(message.via_business_bot_id),
 					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
 					EffectId = message.flags2.HasFlag(TL.Message.Flags2.has_effect) ? message.effect.ToString() : null,
+					PaidStarCount = message.paid_message_stars.IntIfPositive()
 				};
 				if (message.fwd_from is { } fwd)
 				{
@@ -849,6 +850,27 @@ public partial class Bot
 				InvoicePayload = mapr.payload.NullOrUtf8() ?? "",
 				TelegramPaymentChargeId = mapr.charge.id, ProviderPaymentChargeId = mapr.charge.provider_charge_id
 			},
+			MessageActionStarGift masg => masg.gift is not StarGift gift ? null : msg.Gift = new GiftInfo
+			{
+				Gift = MakeGift(gift),
+				OwnedGiftId = masg.peer != null ? $"{masg.peer.ID}_{masg.saved_id}" : msgSvc.id.ToString(),
+				ConvertStarCount = masg.convert_stars.IntIfPositive(),
+				PrepaidUpgradeStarCount = masg.upgrade_stars.IntIfPositive(),
+				CanBeUpgraded = masg.flags.HasFlag(MessageActionStarGift.Flags.can_upgrade),
+				Text = masg.message?.text,
+				Entities = MakeEntities(masg.message?.entities),
+				IsPrivate = masg.flags.HasFlag(MessageActionStarGift.Flags.name_hidden)
+			},
+			MessageActionStarGiftUnique masgu => masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.refunded)
+			? masgu.gift is not StarGift gift ? null : msg.Gift = new GiftInfo { Gift = MakeGift(gift) }
+			: masgu.gift is not StarGiftUnique giftUnique ? null : msg.UniqueGift = new UniqueGiftInfo {
+				Gift = await MakeUniqueGift(giftUnique),
+				Origin = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
+				OwnedGiftId = masgu.peer != null ? $"{masgu.peer.ID}_{masgu.saved_id}" : msgSvc.id.ToString(),
+				TransferStarCount = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_transfer_stars) ? (int)masgu.transfer_stars : null
+			},
+			MessageActionPaidMessagesPrice mapmp => msg.PaidMessagePriceChanged = new PaidMessagePriceChanged {
+				PaidMessageStarCount = checked((int)mapmp.stars) },
 			_ => null,
 		};
 	}
