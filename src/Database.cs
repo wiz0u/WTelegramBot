@@ -217,7 +217,7 @@ internal partial class Database : IDisposable
 		param[3].Value = (chat.Type == ChatType.Private ? chat.FirstName : chat.Title) ?? "";
 		param[4].Value = chat.LastName ?? "";
 		param[5].Value = chat.Username ?? "";
-		param[6].Value = chat.Type;
+		param[6].Value = (int)chat.Type;
 		_cmd[SaveChat].ExecuteSave();
 	}
 
