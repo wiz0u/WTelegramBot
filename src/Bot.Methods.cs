@@ -1237,7 +1237,7 @@ public partial class Bot
 				AccessHash = user.access_hash,
 				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
 				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
-				AcceptedGiftTypes = full.disallowed_gifts.flags.AcceptedGiftTypes(),
+				AcceptedGiftTypes = (full.disallowed_gifts?.flags ?? 0).AcceptedGiftTypes(),
 				ActiveUsernames = user.username == null && user.usernames == null ? null : [.. user.ActiveUsernames],
 				Birthdate = full.birthday.Birthdate(),
 				BusinessIntro = await MakeBusinessIntro(full.business_intro),
