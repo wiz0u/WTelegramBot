@@ -112,13 +112,8 @@ public partial class Bot : IDisposable
 
 	private async Task InitLogin(string botToken)
 	{
-		if (Client.UserId != BotId)
-		{
-			var me = await Client.LoginBotIfNeeded(botToken);
-			_collector.Collect([me]);
-		}
-		else
-			await Client.ConnectAsync(true);
+		var me = await Client.LoginBotIfNeeded(botToken);
+		_collector.Collect([me]);
 		try
 		{
 			foreach (var (id, update) in _database.LoadTLUpdates().ToList())
@@ -193,6 +188,7 @@ public partial class Bot : IDisposable
 			var bitset = allowedUpdates.Aggregate(0, (bs, ut) => bs | (1 << (int)ut));
 			_state.AllowedUpdates = bitset == 0 ? DefaultAllowedUpdates : bitset < 0 ? -1 : bitset;
 		}
+		await InitComplete();
 		Update[] result;
 		limit = limit < 1 ? 1 : limit > 100 ? 100 : limit;
 		while (_httpClient != null && timeout > 25)
