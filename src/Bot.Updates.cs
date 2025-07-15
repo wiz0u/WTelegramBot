@@ -109,14 +109,14 @@ public partial class Bot
 					ViaChatFolderInviteLink = uchp.flags.HasFlag(UpdateChannelParticipant.Flags.via_chatlist)
 				}, update);
 			case UpdateChatParticipant ucp:
-				if (NotAllowed(ucp.new_participant.UserId == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
+				if (NotAllowed((ucp.new_participant ?? ucp.prev_participant)?.UserId == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
 				return MakeUpdate(new ChatMemberUpdated
 				{
 					Chat = await ChatOrResolve(ucp.chat_id),
 					From = await UserOrResolve(ucp.actor_id),
 					Date = ucp.date,
-					OldChatMember = ucp.prev_participant.ChatMember(await UserOrResolve(ucp.prev_participant.UserId)),
-					NewChatMember = ucp.new_participant.ChatMember(await UserOrResolve(ucp.new_participant.UserId)),
+					OldChatMember = ucp.prev_participant.ChatMember(await UserOrResolve((ucp.prev_participant ?? ucp.new_participant)!.UserId)),
+					NewChatMember = ucp.new_participant.ChatMember(await UserOrResolve((ucp.new_participant ?? ucp.prev_participant)!.UserId)),
 					InviteLink = await MakeChatInviteLink(ucp.invite)
 				}, update);
 			case UpdateBotStopped ubs:
@@ -785,8 +785,7 @@ public partial class Bot
 			MessageActionPinMessage macpm => msg.PinnedMessage = await GetMIMessage(
 				await ChatFromPeer(msgSvc.peer_id, allowUser: true), msgSvc.reply_to is MessageReplyHeader mrh ? mrh.reply_to_msg_id : 0),
 			MessageActionChatJoinedByLink or MessageActionChatJoinedByRequest => msg.NewChatMembers = [msg.From!],
-			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Telegram.Bot.Types.Payments.SuccessfulPayment
-			{
+			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Telegram.Bot.Types.Payments.SuccessfulPayment {
 				Currency = mapsm.currency,
 				TotalAmount = (int)mapsm.total_amount,
 				InvoicePayload = Encoding.UTF8.GetString(mapsm.payload),
@@ -814,8 +813,7 @@ public partial class Bot
 				_ => null
 			},
 			MessageActionSecureValuesSentMe masvsm => msg.PassportData = masvsm.PassportData(),
-			MessageActionGeoProximityReached magpr => msg.ProximityAlertTriggered = new ProximityAlertTriggered
-			{
+			MessageActionGeoProximityReached magpr => msg.ProximityAlertTriggered = new ProximityAlertTriggered {
 				Traveler = (await UserFromPeer(magpr.from_id))!,
 				Watcher = (await UserFromPeer(magpr.to_id))!,
 				Distance = magpr.distance
@@ -850,8 +848,7 @@ public partial class Bot
 				InvoicePayload = mapr.payload.NullOrUtf8() ?? "",
 				TelegramPaymentChargeId = mapr.charge.id, ProviderPaymentChargeId = mapr.charge.provider_charge_id
 			},
-			MessageActionStarGift masg => masg.gift is not StarGift gift ? null : msg.Gift = new GiftInfo
-			{
+			MessageActionStarGift masg => masg.gift is not StarGift gift ? null : msg.Gift = new GiftInfo {
 				Gift = MakeGift(gift),
 				OwnedGiftId = masg.peer != null ? $"{masg.peer.ID}_{masg.saved_id}" : msgSvc.id.ToString(),
 				ConvertStarCount = masg.convert_stars.IntIfPositive(),
