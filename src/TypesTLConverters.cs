@@ -51,20 +51,29 @@ public static class TypesTLConverters
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(chat))]
-	public static WTelegram.Types.Chat? Chat(this ChatBase? chat)
+	public static WTelegram.Types.Chat? Chat(this ChatBase? chat) => chat switch
 	{
-		var channel = chat as Channel;
-		return chat == null ? null : new()
+		null => null,
+		Channel channel => new()
 		{
 			TLInfo = chat,
-			Id = (channel == null ? 0 : ZERO_CHANNEL_ID) - chat.ID,
-			Type = channel == null ? ChatType.Group : channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
+			Id = ZERO_CHANNEL_ID - chat.ID,
+			Type = channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
 			Title = chat.Title,
-			Username = channel?.MainUsername,
-			IsForum = channel?.flags.HasFlag(Channel.Flags.forum) ?? false,
-			AccessHash = channel?.access_hash ?? 0
-		};
-	}
+			Username = channel.MainUsername,
+			IsForum = channel.flags.HasFlag(Channel.Flags.forum),
+			AccessHash = channel.access_hash
+		},
+		ChannelForbidden chForbidden => new()
+		{
+			TLInfo = chat,
+			Id = ZERO_CHANNEL_ID - chat.ID,
+			Type = chForbidden.IsChannel ? ChatType.Channel : ChatType.Supergroup,
+			Title = chat.Title,
+			AccessHash = chForbidden.access_hash
+		},
+		_ => new() { TLInfo = chat, Id = -chat.ID, Type = ChatType.Group, Title = chat.Title }
+	};
 
 	/// <summary>Convert TL.User to Bot Types.Chat</summary>
 	[return: NotNullIfNotNull(nameof(user))]
