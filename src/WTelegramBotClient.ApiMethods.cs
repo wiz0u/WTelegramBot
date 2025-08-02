@@ -699,7 +699,7 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to send a native poll.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="question">Poll question, 1-300 characters</param>
-    /// <param name="options">A list of 2-10 answer options</param>
+    /// <param name="options">A list of 2-12 answer options</param>
     /// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
     /// <param name="type">Poll type, <see cref="PollType.Quiz">Quiz</see> or <see cref="PollType.Regular">Regular</see>, defaults to <see cref="PollType.Regular">Regular</see></param>
     /// <param name="allowsMultipleAnswers"><see langword="true"/>, if the poll allows multiple answers, ignored for polls in quiz mode, defaults to <see langword="false"/></param>
@@ -748,6 +748,29 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+
+    /// <summary>Use this method to send a checklist on behalf of a connected business account.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+    /// <param name="chatId">Unique identifier for the target chat</param>
+    /// <param name="checklist">An object for the checklist to send</param>
+    /// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound.</param>
+    /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message</param>
+    /// <param name="replyParameters">An object for description of the message to reply to</param>
+    /// <param name="replyMarkup">An object for an inline keyboard</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The sent <see cref="Message"/> is returned.</returns>
+    public async Task<Message> SendChecklist(
+        string businessConnectionId,
+        long chatId,
+        InputChecklist checklist,
+        bool disableNotification = default,
+        bool protectContent = default,
+        string? messageEffectId = default,
+        ReplyParameters? replyParameters = default,
+        InlineKeyboardMarkup? replyMarkup = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SendChecklist(businessConnectionId, chatId, checklist, disableNotification, protectContent, messageEffectId.LongOrDefault(), replyParameters, replyMarkup).ThrowAsApi(this);
 
     /// <summary>Use this method to send an animated emoji that will display a random value.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -885,8 +908,8 @@ public partial class WTelegramBotClient
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="isAnonymous">Pass <see langword="true"/> if the administrator's presence in the chat is hidden</param>
-    /// <param name="canManageChat">Pass <see langword="true"/> if the administrator can access the chat event log, get boost list, see hidden supergroup and channel members, report spam messages and ignore slow mode. Implied by any other administrator privilege.</param>
-    /// <param name="canPostMessages">Pass <see langword="true"/> if the administrator can post messages in the channel, or access channel statistics; for channels only</param>
+    /// <param name="canManageChat">Pass <see langword="true"/> if the administrator can access the chat event log, get boost list, see hidden supergroup and channel members, report spam messages, ignore slow mode, and send messages to the chat without paying Telegram Stars. Implied by any other administrator privilege.</param>
+    /// <param name="canPostMessages">Pass <see langword="true"/> if the administrator can post messages in the channel, approve suggested posts, or access channel statistics; for channels only</param>
     /// <param name="canEditMessages">Pass <see langword="true"/> if the administrator can edit messages of other users and can pin messages; for channels only</param>
     /// <param name="canDeleteMessages">Pass <see langword="true"/> if the administrator can delete messages of other users</param>
     /// <param name="canPostStories">Pass <see langword="true"/> if the administrator can post stories to the chat</param>
@@ -1716,6 +1739,23 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
+    /// <summary>Use this method to edit a checklist on behalf of a connected business account.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+    /// <param name="chatId">Unique identifier for the target chat</param>
+    /// <param name="messageId">Unique identifier for the target message</param>
+    /// <param name="checklist">An object for the new checklist</param>
+    /// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The edited <see cref="Message"/> is returned.</returns>
+    public async Task<Message> EditMessageChecklist(
+        string businessConnectionId,
+        long chatId,
+        int messageId,
+        InputChecklist checklist,
+        InlineKeyboardMarkup? replyMarkup = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).EditMessageChecklist(businessConnectionId, chatId, messageId, checklist, replyMarkup).ThrowAsApi(this);
+
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message to edit</param>
@@ -2478,6 +2518,13 @@ public partial class WTelegramBotClient
         string? errorMessage = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).AnswerPreCheckoutQuery(preCheckoutQueryId, errorMessage).ThrowAsApi(this);
+
+    /// <summary>A method to get the current Telegram Stars balance of the bot.</summary>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="StarAmount"/> object.</returns>
+    public async Task<StarAmount> GetMyStarBalance(
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetMyStarBalance().ThrowAsApi(this);
 
     /// <summary>Returns the bot's Telegram Star transactions in chronological order.</summary>
     /// <param name="offset">Number of transactions to skip in the response</param>

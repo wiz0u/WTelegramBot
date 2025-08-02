@@ -753,7 +753,7 @@ public partial class Bot
 	/// <summary>Use this method to send a native poll.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="question">Poll question, 1-300 characters</param>
-	/// <param name="options">A list of 2-10 answer options</param>
+	/// <param name="options">A list of 2-12 answer options</param>
 	/// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
 	/// <param name="type">Poll type, <see cref="PollType.Quiz">Quiz</see> or <see cref="PollType.Regular">Regular</see>, defaults to <see cref="PollType.Regular">Regular</see></param>
 	/// <param name="allowsMultipleAnswers"><see langword="true"/>, if the poll allows multiple answers, ignored for polls in quiz mode, defaults to <see langword="false"/></param>
@@ -812,6 +812,29 @@ public partial class Bot
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			peer, null, replyToMessage, businessConnectionId);
+	}
+
+	/// <summary>Use this method to send a checklist on behalf of a connected business account.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="chatId">Unique identifier for the target chat</param>
+	/// <param name="checklist">An object for the checklist to send</param>
+	/// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound.</param>
+	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message</param>
+	/// <param name="replyParameters">An object for description of the message to reply to</param>
+	/// <param name="replyMarkup">An object for an inline keyboard</param>
+	/// <returns>The sent <see cref="Message"/> is returned.</returns>
+	public async Task<Message> SendChecklist(string businessConnectionId, long chatId, InputChecklist checklist,
+		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
+		ReplyParameters? replyParameters = default, InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
+		var reply_to = await MakeReplyTo(replyParameters, 0, peer);
+		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
+		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, false, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -1776,6 +1799,21 @@ public partial class Bot
 		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
 	}
 
+	/// <summary>Use this method to edit a checklist on behalf of a connected business account.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="chatId">Unique identifier for the target chat</param>
+	/// <param name="messageId">Unique identifier for the target message</param>
+	/// <param name="checklist">An object for the new checklist</param>
+	/// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
+	/// <returns>The edited <see cref="Message"/> is returned.</returns>
+	public async Task<Message> EditMessageChecklist(string businessConnectionId, long chatId, int messageId, InputChecklist checklist,
+		InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
+	}
+
 	/// <summary>Use this method to edit only the reply markup of messages.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="messageId">Identifier of the message to edit</param>
@@ -2034,7 +2072,7 @@ public partial class Bot
 		var peer = await GetBusinessPeer(businessConnectionId);
 		var pss = await Client.InvokeWithBusinessConnection(businessConnectionId,
 			new Payments_GetStarsStatus { peer = peer });
-		return new StarAmount { Amount = (int)pss.balance.amount, NanostarAmount = pss.balance.nanos };
+		return pss.balance.StarAmount();
 	}
 
 	/// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
@@ -2599,6 +2637,15 @@ public partial class Bot
 	{
 		await InitComplete();
 		await Client.Messages_SetBotPrecheckoutResults(long.Parse(preCheckoutQueryId), errorMessage, success: errorMessage == null);
+	}
+
+	/// <summary>A method to get the current Telegram Stars balance of the bot.</summary>
+	/// <returns>A <see cref="StarAmount"/> object.</returns>
+	public async Task<StarAmount> GetMyStarBalance()
+	{
+		await InitComplete();
+		var starStatus = await Client.Payments_GetStarsTransactions(InputPeer.Self, null, 0);
+		return starStatus.balance.StarAmount();
 	}
 
 	/// <summary>Returns the bot's Telegram Star transactions in chronological order.</summary>

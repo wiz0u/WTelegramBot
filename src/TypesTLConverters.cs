@@ -714,7 +714,12 @@ public static class TypesTLConverters
 		_ => throw new WTException("Unrecognized Paid MessageMedia")
 	};
 
-	internal static bool IsPositive(this StarsAmount amount) => amount.amount > 0 || (amount.amount == 0 && amount.nanos > 0);
+	internal static bool IsPositive(this StarsAmountBase amount)
+		=> amount.Amount > 0 || (amount.Amount == 0 && amount is StarsAmount { nanos: > 0 });
+
+	internal static StarAmount StarAmount(this TL.StarsAmountBase sab) => sab is TL.StarsAmount sa
+		? new StarAmount { Amount = (int)sa.amount, NanostarAmount = sa.nanos }
+		: throw new WTException($"Unsupported {sab}");
 
 	internal static long ToChatId(this Peer peer)
 		=> peer switch { PeerChat pc => -pc.chat_id, PeerChannel pch => ZERO_CHANNEL_ID - pch.channel_id, _ => peer.ID };

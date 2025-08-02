@@ -1006,7 +1006,7 @@ public partial class Bot
 	//https://github.com/tdlib/telegram-bot-api/blob/53e15345b04fcea73b415897f10d7543005044ce/telegram-bot-api/Client.cpp?plain=1#L4241
 	internal StarTransaction MakeStarTransaction(TL.StarsTransaction transaction)
 	{
-		var is_purchase = transaction.stars.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund);
+		var is_purchase = transaction.amount.IsPositive() == transaction.flags.HasFlag(StarsTransaction.Flags.refund);
 		TransactionPartner? partner = transaction.peer switch
 		{
 			StarsTransactionPeerFragment => transaction.flags.HasFlag(StarsTransaction.Flags.gift)
@@ -1061,11 +1061,11 @@ public partial class Bot
 		return new StarTransaction
 		{
 			Id = transaction.id,
-			Amount = checked((int)Math.Abs(transaction.stars.amount)),
-			NanostarAmount = Math.Abs(transaction.stars.nanos).NullIfZero(),
+			Amount = checked((int)Math.Abs(transaction.amount.Amount)),
+			NanostarAmount = Math.Abs((transaction.amount as StarsAmount)?.nanos ?? 0).NullIfZero(),
 			Date = transaction.date,
-			Source = transaction.stars.IsPositive() ? partner ?? new TransactionPartnerOther() : null,
-			Receiver = transaction.stars.IsPositive() ? null : partner ?? new TransactionPartnerOther(),
+			Source = transaction.amount.IsPositive() ? partner ?? new TransactionPartnerOther() : null,
+			Receiver = transaction.amount.IsPositive() ? null : partner ?? new TransactionPartnerOther(),
 		};
 
 		RevenueWithdrawalState? WithdrawalState()
@@ -1107,8 +1107,8 @@ public partial class Bot
 				AffiliateChat = transaction.starref_peer is PeerChannel pc ? Chat(pc.channel_id) : null,
 				AffiliateUser = transaction.starref_peer is PeerUser pu ? User(pu.user_id) : null,
 				CommissionPerMille = transaction.starref_commission_permille,
-				Amount = (int)transaction.starref_amount.amount,
-				NanostarAmount = transaction.starref_amount.nanos,
+				Amount = (int)transaction.starref_amount.Amount,
+				NanostarAmount = (transaction.starref_amount as StarsAmount)?.nanos,
 			} : null;
 
 	private async Task<InputPeer> GetBusinessPeer(string businessConnectionId)
@@ -1145,6 +1145,7 @@ public partial class Bot
 					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
 					CanBeTransferred = gift.flags.HasFlag(SavedStarGift.Flags.has_transfer_stars),
 					TransferStarCount = gift.transfer_stars.IntIfPositive(),
+					NextTransferDate = gift.can_transfer_at.NullIfDefault(),
 				};
 			case StarGift sg:
 				var doc = (TL.Document)sg.sticker;
@@ -1212,5 +1213,42 @@ public partial class Bot
 		}
 		else throw new RpcException(500, $"Unsupported {content}");
 		return tlMedia;
+	}
+
+	internal Checklist Checklist(TodoList list, TodoCompletion[]? completions) => new()
+	{
+		Title = list.title.text,
+		TitleEntities = MakeEntities(list.title.entities),
+		OthersCanAddTasks = list.flags.HasFlag(TodoList.Flags.others_can_append),
+		OthersCanMarkTasksAsDone = list.flags.HasFlag(TodoList.Flags.others_can_complete),
+		Tasks = ChecklistTasks(list.list, completions)
+	};
+
+	private ChecklistTask[] ChecklistTasks(TodoItem[] items, TodoCompletion[]? completions = null) => [.. items.Select(item => {
+		var completion = completions?.FirstOrDefault(compl => compl.id == item.id);
+		return new ChecklistTask
+		{
+			Id = item.id,
+			Text = item.title.text,
+			TextEntities = MakeEntities(item.title.entities),
+			CompletedByUser = User(completion?.completed_by ?? 0),
+			CompletionDate = completion?.date
+		};
+	})];
+
+	private TodoList MakeToDoList(InputChecklist list)
+	{
+		var text = ApplyParse(list.ParseMode, list.Title, list.TitleEntities, out var entities);
+		return new TodoList
+		{
+			flags = (list.OthersCanAddTasks == true ? TodoList.Flags.others_can_append : 0)
+				| (list.OthersCanMarkTasksAsDone == true ? TodoList.Flags.others_can_complete : 0),
+			title = new TextWithEntities { text = text, entities = entities },
+			list = [.. list.Tasks.Select(task => new TodoItem
+			{
+				id = task.Id,
+				title = new TextWithEntities { text = ApplyParse(task.ParseMode, task.Text, task.TextEntities, out var iEntities), entities = iEntities }
+			})],
+		};
 	}
 }

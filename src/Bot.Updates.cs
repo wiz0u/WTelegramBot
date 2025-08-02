@@ -454,7 +454,8 @@ public partial class Bot
 					Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
 					Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
 					Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
-					Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia
+					Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia,
+					Checklist = ext.Checklist
 				};
 			}
 			if (reply_to.quote_text != null)
@@ -758,6 +759,9 @@ public partial class Bot
 					PaidMedia = [.. mmpm.extended_media.Select(TypesTLConverters.PaidMedia)]
 				};
 				break;
+			case MessageMediaToDo mmtd:
+				msg.Checklist = Checklist(mmtd.todo, mmtd.completions);
+				break;
 			default:
 				break;
 		}
@@ -862,12 +866,24 @@ public partial class Bot
 			? masgu.gift is not StarGift gift ? null : msg.Gift = new GiftInfo { Gift = MakeGift(gift) }
 			: masgu.gift is not StarGiftUnique giftUnique ? null : msg.UniqueGift = new UniqueGiftInfo {
 				Gift = await MakeUniqueGift(giftUnique),
-				Origin = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
+				Origin = masgu.resale_stars > 0 ? "resale" : masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
 				OwnedGiftId = masgu.peer != null ? $"{masgu.peer.ID}_{masgu.saved_id}" : msgSvc.id.ToString(),
-				TransferStarCount = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_transfer_stars) ? (int)masgu.transfer_stars : null
+				TransferStarCount = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_transfer_stars) ? (int)masgu.transfer_stars : null,
+				NextTransferDate = masgu.can_transfer_at.NullIfDefault(),
+				LastResaleStarCount = masgu.resale_stars.IntIfPositive(),
 			},
-			MessageActionPaidMessagesPrice mapmp => msg.PaidMessagePriceChanged = new PaidMessagePriceChanged {
-				PaidMessageStarCount = checked((int)mapmp.stars) },
+			MessageActionPaidMessagesPrice mapmp => msg.Chat.Type == ChatType.Channel
+			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = checked((int)mapmp.stars), AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
+			: msg.PaidMessagePriceChanged = new PaidMessagePriceChanged { PaidMessageStarCount = checked((int)mapmp.stars) },
+			MessageActionTodoCompletions matc => msg.ChecklistTasksDone = new ChecklistTasksDone {
+				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				MarkedAsDoneTaskIds = matc.completed,
+				MarkedAsNotDoneTaskIds = matc.incompleted,
+			},
+			MessageActionTodoAppendTasks matat => msg.ChecklistTasksAdded = new ChecklistTasksAdded {
+				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				Tasks = ChecklistTasks(matat.list)
+			},
 			_ => null,
 		};
 	}

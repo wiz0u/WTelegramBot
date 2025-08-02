@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
     <!--<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />-->
     <!--<PackageReference Include="MySql.Data" Version="8.3.0" />-->
-    <!--<PackageReference Include="Npgsql" Version="8.0.2" />-->
+    <!--<PackageReference Include="Npgsql" Version="8.0.7" />-->
   </ItemGroup>
 
   <ItemGroup>
