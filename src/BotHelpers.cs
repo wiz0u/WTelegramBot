@@ -59,9 +59,9 @@ public static class BotHelpers
 			Helpers.Log(retrying ? 3 : 4, $"{ex.GetType().Name} while saving to DB{(retrying ? " (will retry)" : "")}: {ex.Message}");
 			if (retrying)
 			{
-				cmd.Connection.Open();
 				try
 				{
+					cmd.Connection.Open();
 					cmd.ExecuteNonQuery();
 				}
 				catch (Exception)
