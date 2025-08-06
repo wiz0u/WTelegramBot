@@ -112,7 +112,7 @@ internal partial class Database : IDisposable
 
 	internal void SaveTLUpdates(IEnumerable<Update> updates)
 	{
-		_cmd[DelUpdates].ExecuteNonQuery();
+		_cmd[DelUpdates].ExecuteSave();
 		var cmd = _cmd[SaveUpdates];
 		using var memStream = new MemoryStream(1024);
 		foreach (var botUpdate in updates)
@@ -123,7 +123,7 @@ internal partial class Database : IDisposable
 				botUpdate.TLUpdate.WriteTL(writer);
 			cmd.Parameters[0].Value = botUpdate.Id;
 			cmd.Parameters[1].Value = memStream.ToArray();
-			cmd.ExecuteNonQuery();
+			cmd.ExecuteSave();
 		}
 	}
 
@@ -144,7 +144,7 @@ internal partial class Database : IDisposable
 			cmd.Parameters[0].Value = mboxState.Key;
 			cmd.Parameters[1].Value = mboxState.Value.pts;
 			cmd.Parameters[2].Value = mboxState.Value.access_hash;
-			cmd.ExecuteNonQuery();
+			cmd.ExecuteSave();
 		}
 	}
 	

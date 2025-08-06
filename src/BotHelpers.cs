@@ -55,7 +55,20 @@ public static class BotHelpers
 		}
 		catch (Exception ex)
 		{
-			Helpers.Log(4, $"{ex.GetType().Name} while saving to DB: {ex.Message} ");
+			bool retrying = cmd.Connection!.State == System.Data.ConnectionState.Closed;
+			Helpers.Log(retrying ? 3 : 4, $"{ex.GetType().Name} while saving to DB{(retrying ? " (will retry)" : "")}: {ex.Message}");
+			if (retrying)
+			{
+				cmd.Connection.Open();
+				try
+				{
+					cmd.ExecuteNonQuery();
+				}
+				catch (Exception)
+				{
+					Helpers.Log(4, $"{ex.GetType().Name} while saving to DB again: {ex.Message}");
+				}
+			}
 		}
 	}
 }
