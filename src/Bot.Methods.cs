@@ -1401,10 +1401,17 @@ public partial class Bot
 		var chat = await InputPeerChat(chatId);
 		if (chat is InputPeerChannel channel)
 		{
-			var user = InputPeerUser(userId);
-			var part = await Client.Channels_GetParticipant(channel, user);
-			part.UserOrChat(_collector);
-			return part.participant.ChatMember(await UserOrResolve(userId));
+			var peer = InputPeerUser(userId);
+			try
+			{
+				var part = await Client.Channels_GetParticipant(channel, peer);
+				part.UserOrChat(_collector);
+				return part.participant.ChatMember(await UserOrResolve(userId));
+			}
+			catch (RpcException ex) when (ex.Message == "USER_NOT_PARTICIPANT" && peer.access_hash != 0)
+			{
+				return new ChatMemberLeft { User = User(userId)! };
+			}
 		}
 		else
 		{
