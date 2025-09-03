@@ -142,7 +142,7 @@ public partial class Bot
 	}
 
 	/// <summary>Build the eventual InputReplyTo structure for sending a reply message</summary>
-	protected async Task<InputReplyTo?> MakeReplyTo(ReplyParameters? replied, int messageThreadId, InputPeer? replyToPeer)
+	protected async Task<InputReplyTo?> MakeReplyTo(ReplyParameters? replied, InputPeer? replyToPeer, int messageThreadId, long directMessagesTopicId = 0)
 	{
 		if (replied?.MessageId > 0)
 		{
@@ -154,6 +154,7 @@ public partial class Bot
 				replyToPeer = await InputPeerChat(replied.ChatId);
 				if (replyToPeer.ID == targetPeerId) replyToPeer = null;
 			}
+			var monoforum_peer_id = directMessagesTopicId != 0 ? InputPeerUser(directMessagesTopicId) : null;
 
 			var quote = replied.Quote;
 			var quoteEntities = ApplyParse(replied.QuoteParseMode, ref quote, replied.QuoteEntities);
@@ -165,15 +166,21 @@ public partial class Bot
 				quote_text = quote,
 				quote_entities = quoteEntities,
 				quote_offset = replied.QuotePosition ?? 0,
+				todo_item_id = replied.ChecklistTaskId ?? 0,
+				monoforum_peer_id = monoforum_peer_id,
 				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (replyToPeer is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (quote != null ? InputReplyToMessage.Flags.has_quote_text : 0)
 					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
 					| (replied.QuotePosition.HasValue ? InputReplyToMessage.Flags.has_quote_offset : 0)
+					| (replied.ChecklistTaskId.HasValue ? InputReplyToMessage.Flags.has_todo_item_id : 0)
+					| (monoforum_peer_id != null ? InputReplyToMessage.Flags.has_monoforum_peer_id : 0)
 			};
 		}
 		else if (messageThreadId != 0)
 			return new InputReplyToMessage { reply_to_msg_id = messageThreadId };
+		else if (directMessagesTopicId != 0)
+			return new InputReplyToMonoForum { monoforum_peer_id = InputPeerUser(directMessagesTopicId) };
 		return null;
 	}
 
@@ -904,30 +911,31 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
-		bool allow_paid_floodskip, bool invert_media, bool no_webpage)
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post, 
+		bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		var query = new TL.Methods.Messages_SendMessage
 		{
-			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0)),
+			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			message = message,
 			random_id = random_id,
 			reply_markup = reply_markup,
 			entities = entities,
-			effect = effect
+			effect = effect,
+			suggested_post = suggested_post.SuggestedPost(),
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
-		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, bool silent, bool noforwards,
-		bool allow_paid_floodskip, bool invert_media)
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post, 
+		bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media)
 	{
 		var query = new TL.Methods.Messages_SendMedia
 		{
-			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0)),
+			flags = (TL.Methods.Messages_SendMedia.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			media = media,
@@ -935,7 +943,8 @@ public partial class Bot
 			random_id = random_id,
 			reply_markup = reply_markup,
 			entities = entities,
-			effect = effect
+			effect = effect,
+			suggested_post = suggested_post.SuggestedPost(),
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
@@ -1061,7 +1070,7 @@ public partial class Bot
 		return new StarTransaction
 		{
 			Id = transaction.id,
-			Amount = checked((int)Math.Abs(transaction.amount.Amount)),
+			Amount = Math.Abs(transaction.amount.Amount),
 			NanostarAmount = Math.Abs((transaction.amount as StarsAmount)?.nanos ?? 0).NullIfZero(),
 			Date = transaction.date,
 			Source = transaction.amount.IsPositive() ? partner ?? new TransactionPartnerOther() : null,
@@ -1084,10 +1093,11 @@ public partial class Bot
 	{
 		Id = gift.id.ToString(),
 		Sticker = gift.sticker is TL.Document doc ? MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>(), sync: true).Result : null!,
-		StarCount = checked((int)gift.stars),
-		UpgradeStarCount = gift.upgrade_stars.IntIfPositive(),
+		StarCount = gift.stars,
+		UpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
 		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
 		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
+		PublisherChat = gift.released_by == null ? null : Chat(gift.released_by),
 	};
 
 	internal async Task<UniqueGift> MakeUniqueGift(TL.StarGiftUnique sgu) => new UniqueGift
@@ -1097,7 +1107,8 @@ public partial class Bot
 		Number = sgu.num,
 		Model = await UniqueGiftModel(sgu.attributes.OfType<StarGiftAttributeModel>().First()),
 		Symbol = await UniqueGiftSymbol(sgu.attributes.OfType<StarGiftAttributePattern>().First()),
-		Backdrop = UniqueGiftBackdrop(sgu.attributes.OfType<StarGiftAttributeBackdrop>().First())
+		Backdrop = UniqueGiftBackdrop(sgu.attributes.OfType<StarGiftAttributeBackdrop>().First()),
+		PublisherChat = sgu.released_by == null ? null : Chat(sgu.released_by),
 	};
 
 	internal AffiliateInfo? Affiliate(TL.StarsTransaction transaction)
@@ -1144,7 +1155,7 @@ public partial class Bot
 					SendDate = gift.date,
 					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
 					CanBeTransferred = gift.flags.HasFlag(SavedStarGift.Flags.has_transfer_stars),
-					TransferStarCount = gift.transfer_stars.IntIfPositive(),
+					TransferStarCount = gift.transfer_stars.NullIfNegative(),
 					NextTransferDate = gift.can_transfer_at.NullIfDefault(),
 				};
 			case StarGift sg:
@@ -1162,8 +1173,8 @@ public partial class Bot
 					IsPrivate = gift.flags.HasFlag(SavedStarGift.Flags.name_hidden),
 					CanBeUpgraded = gift.flags.HasFlag(SavedStarGift.Flags.can_upgrade),
 					WasRefunded = gift.flags.HasFlag(SavedStarGift.Flags.refunded),
-					ConvertStarCount = gift.convert_stars.IntIfPositive(),
-					PrepaidUpgradeStarCount = gift.upgrade_stars.IntIfPositive(),
+					ConvertStarCount = gift.convert_stars.NullIfNegative(),
+					PrepaidUpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
 				};
 			default:
 				return null!;

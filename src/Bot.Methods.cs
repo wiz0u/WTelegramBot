@@ -111,26 +111,28 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId,
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true, linkPreviewOptions?.IsDisabled == true),
 				peer, text, replyToMessage, businessConnectionId);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId,
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true),
 				peer, text, replyToMessage, businessConnectionId);
 	}
@@ -143,13 +145,18 @@ public partial class Bot
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded message from forwarding and saving</param>
 	/// <param name="videoStartTimestamp">New start timestamp for the forwarded video in the message</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be forwarded; required if the message is forwarded to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> ForwardMessage(ChatId chatId, ChatId fromChatId, int messageId, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default, int? videoStartTimestamp = default)
+		bool disableNotification = default, bool protectContent = default, int? videoStartTimestamp = default, long directMessagesTopicId = 0,
+		SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), [messageId], [Helpers.RandomLong()], peer,
-			top_msg_id: messageThreadId, silent: disableNotification, noforwards: protectContent, video_timestamp: videoStartTimestamp), peer);
+			top_msg_id: messageThreadId, reply_to: directMessagesTopicId == 0 ? null : await MakeReplyTo(null, null, 0, directMessagesTopicId),
+			suggested_post: suggestedPostParameters.SuggestedPost(),
+			silent: disableNotification, noforwards: protectContent, video_timestamp: videoStartTimestamp), peer);
 	}
 
 	/// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
@@ -159,9 +166,10 @@ public partial class Bot
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded messages from forwarding and saving</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be forwarded; required if the messages are forwarded to a direct messages chat</param>
 	/// <returns>An array of sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message[]> ForwardMessages(ChatId chatId, ChatId fromChatId, IEnumerable<int> messageIds, int messageThreadId = 0,
-		bool disableNotification = default, bool protectContent = default)
+		bool disableNotification = default, bool protectContent = default, long directMessagesTopicId = 0)
 	{
 		var peer = await InputPeerChat(chatId);
 		var random_id = Helpers.RandomLong();
@@ -169,7 +177,8 @@ public partial class Bot
 		var random_ids = new long[ids.Length];
 		for (int i = 0; i < ids.Length; i++) random_ids[i] = random_id + i;
 		return await PostedMsgs(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), ids, random_ids, peer,
-			top_msg_id: messageThreadId, silent: disableNotification, noforwards: protectContent),
+			top_msg_id: messageThreadId, reply_to: directMessagesTopicId == 0 ? null : await MakeReplyTo(null, null, 0, directMessagesTopicId),
+			silent: disableNotification, noforwards: protectContent),
 			ids.Length, random_id, null);
 	}
 
@@ -188,11 +197,14 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <param name="videoStartTimestamp">New start timestamp for the copied video in the message</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> CopyMessage(ChatId chatId, ChatId fromChatId, int messageId, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
-		bool disableNotification = default, bool protectContent = default, bool allowPaidBroadcast = default, int? videoStartTimestamp = default)
+		bool disableNotification = default, bool protectContent = default, bool allowPaidBroadcast = default, int? videoStartTimestamp = default,
+		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
@@ -200,17 +212,17 @@ public partial class Bot
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var text = caption ?? msg.message;
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var inputMedia = msg.media?.ToInputMedia();
 		if (videoStartTimestamp.HasValue && inputMedia is TL.InputMediaDocument imd)
 		{ imd.video_timestamp = videoStartTimestamp.Value; imd.flags |= TL.InputMediaDocument.Flags.has_video_timestamp; }
 		var task = inputMedia == null
 			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
+				0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
 			: Messages_SendMedia(null, peer, inputMedia, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
+				0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text);
 		return postedMsg;
 	}
@@ -223,14 +235,15 @@ public partial class Bot
 	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
 	/// <returns>A list of sent <see cref="Message"/> is returned.</returns>
 	public async Task<List<Message>> CopyMessages(ChatId chatId, ChatId fromChatId, int[] messageIds, bool removeCaption = default,
-		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default)
+		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long directMessagesTopicId = 0)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), [.. messageIds.Select(id => (InputMessageID)id)]);
 		msgs.UserOrChat(_collector);
 		var peer = await InputPeerChat(chatId);
-		var reply_to = await MakeReplyTo(null, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(null, peer, messageThreadId, directMessagesTopicId);
 		var sentMsgs = new List<Message>();
 		long cur_grouped_id = 0;
 		long start_random_id = Helpers.RandomLong(), random_id = start_random_id;
@@ -258,9 +271,9 @@ public partial class Bot
 			cur_grouped_id = 0;
 			var task = msg.media == null
 				? Messages_SendMessage(null, peer, msg.message, random_id++, reply_to,
-					null, msg.entities, 0, disableNotification, protectContent, false, false, true)
+					null, msg.entities, 0, null, disableNotification, protectContent, false, false, true)
 				: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to,
-					null, msg.entities, 0, disableNotification, protectContent, false, msg.flags.HasFlag(TL.Message.Flags.invert_media));
+					null, msg.entities, 0, null, disableNotification, protectContent, false, msg.flags.HasFlag(TL.Message.Flags.invert_media));
 			var postedMsg = await PostedMsg(task, peer);
 			sentMsgs.Add(postedMsg);
 		}
@@ -294,34 +307,37 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPhoto(ChatId chatId, InputFile photo, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
 	private async Task<Message> SendDoc(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
 		ReplyParameters? replyParameters, ReplyMarkup? replyMarkup, InputFile? thumbnail,
 		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, bool disableNotification,
-		bool protectContent, long messageEffectId, bool allowPaidBroadcast, string? businessConnectionId,
-		Action<InputMediaUploadedDocument>? prepareDoc, string? defaultFilename = null, bool showCaptionAboveMedia = false, 
+		bool protectContent, long messageEffectId, string? businessConnectionId, bool allowPaidBroadcast,
+		long directMessagesTopicId, SuggestedPostParameters? suggestedPostParameters,
+		Action<InputMediaUploadedDocument>? prepareDoc, string? defaultFilename = null, bool showCaptionAboveMedia = false,
 		bool hasSpoiler = false, InputFile? cover = default, int? startTimestamp = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var video_cover = await UploadMediaPhoto(peer, cover);
 		var media = await InputMediaDocument(file, video_cover, startTimestamp, hasSpoiler, defaultFilename: defaultFilename);
 		if (media is TL.InputMediaUploadedDocument doc)
@@ -330,7 +346,7 @@ public partial class Bot
 			await SetDocThumb(doc, thumbnail);
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
@@ -353,16 +369,19 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAudio(ChatId chatId, InputFile audio, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, string? performer = default, string? title = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, 
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 				duration = duration, performer = performer, title = title,
 				flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }]);
@@ -385,15 +404,18 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDocument(ChatId chatId, InputFile document, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, 
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			{ if (disableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file; }, "document");
 	}
 
@@ -421,16 +443,20 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
 	/// <param name="cover">Cover for the video in the message. Pass a FileId to send a file that exists on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a file from the Internet, or use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
 	/// <param name="startTimestamp">Start timestamp for the video in the message</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideo(ChatId chatId, InputFile video, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool supportsStreaming = default, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default, bool allowPaidBroadcast = default, InputFile? cover = default, int? startTimestamp = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default, InputFile? cover = default, int? startTimestamp = default,
+		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 				duration = duration, h = height, w = width,
 				flags = supportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }],
@@ -458,16 +484,19 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAnimation(ChatId chatId, InputFile animation, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int width = 0, int height = 0, InputFile? thumbnail = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			{
 				doc.attributes ??= [];
 				if (doc.mime_type == "video/mp4")
@@ -496,15 +525,18 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVoice(ChatId chatId, InputFile voice, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
-			captionEntities, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			{
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 					duration = duration, flags = DocumentAttributeAudio.Flags.voice }];
@@ -526,15 +558,18 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideoNote(ChatId chatId, InputFile videoNote,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int? length = default, InputFile? thumbnail = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		return await SendDoc(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
-			default, disableNotification, protectContent, messageEffectId, allowPaidBroadcast, businessConnectionId, doc =>
+			default, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
+			directMessagesTopicId, suggestedPostParameters, doc =>
 			{
 				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
@@ -551,23 +586,27 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
-		string? payload = default, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
-		bool disableNotification = default, bool protectContent = default, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		string? payload = default, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
+		bool showCaptionAboveMedia = default, bool disableNotification = default, bool protectContent = default,
+		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
+		SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, 0, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		List<TL.InputMedia> multimedia = [];
 		foreach (var ipm in media)
 		{
@@ -590,7 +629,7 @@ public partial class Bot
 			payload = payload
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, 0, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, 0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, businessConnectionId);
 	}
 
@@ -604,15 +643,16 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
-	/// <returns>An array of <see cref="Message">Messages</see> that were sent is returned.</returns>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
+	/// <returns>An array of <see cref="Message"/> objects that were sent is returned.</returns>
 	public async Task<Message[]> SendMediaGroup(ChatId chatId, IEnumerable<IAlbumInputMedia> media,
 		ReplyParameters? replyParameters = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		List<InputSingleMedia> multimedia = [];
 		var random_id = Helpers.RandomLong();
 		bool invert_media = false;
@@ -647,20 +687,22 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLocation(ChatId chatId, double latitude, double longitude,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int horizontalAccuracy = 0,
 		int livePeriod = 0, int heading = 0, int proximityAlertRadius = 0, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod)
 			: new TL.InputMediaGeoPoint { geo_point = new InputGeoPoint { lat = latitude, lon = longitude } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -682,16 +724,18 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVenue(ChatId chatId, double latitude, double longitude, string title, string address,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, string? foursquareId = default,
 		string? foursquareType = default, string? googlePlaceId = default, string? googlePlaceType = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = new InputMediaVenue
 		{
 			geo_point = new InputGeoPoint { lat = latitude, lon = longitude },
@@ -711,7 +755,7 @@ public partial class Bot
 			media.venue_type = foursquareType;
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -729,15 +773,18 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default,
 		string? vcard = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default, bool allowPaidBroadcast = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
+		SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = new InputMediaContact
 		{
 			phone_number = phoneNumber,
@@ -746,12 +793,12 @@ public partial class Bot
 			vcard = vcard
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send a native poll.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). Polls can't be sent to channel direct messages chats.</param>
 	/// <param name="question">Poll question, 1-300 characters</param>
 	/// <param name="options">A list of 2-12 answer options</param>
 	/// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
@@ -788,7 +835,7 @@ public partial class Bot
 		var quEntities = ApplyParse(questionParseMode, ref question!, questionEntities);
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId);
 		var media = new InputMediaPoll
 		{
 			poll = new TL.Poll
@@ -811,7 +858,7 @@ public partial class Bot
 				| (correctOptionId >= 0 ? InputMediaPoll.Flags.has_correct_answers : 0)
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -831,10 +878,10 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, 0, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, 0);
 		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, false, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, false, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -849,24 +896,26 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDice(ChatId chatId, string emoji = DiceEmoji.Dice,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = new InputMediaDice { emoticon = emoji };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
 	/// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
 	/// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>). Channel chats and channel direct messages chats aren't supported.</param>
 	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <see cref="WTelegram.Bot.SendMessage">text messages</see>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread; for supergroups only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
@@ -1023,7 +1072,9 @@ public partial class Bot
 	/// <param name="userId">Unique identifier of the target user</param>
 	/// <param name="rights">An object describing new administrator rights.</param>
 	/// <param name="customTitle">Give an admin title to the user (exclusive!)</param>
-	public async Task PromoteChatMember(ChatId chatId, long userId, ChatAdministratorRights? rights, string? customTitle = null)
+	/// <param name="canManageDirectMessages">Pass <see langword="true"/> if the administrator can manage direct messages within the channel and decline suggested posts; for channels only</param>
+	public async Task PromoteChatMember(ChatId chatId, long userId, ChatAdministratorRights? rights, string? customTitle = null,
+		bool canManageDirectMessages = default)
 	{
 		var channel = await InputChannel(chatId);
 		var user = InputPeerUser(userId);
@@ -1229,7 +1280,7 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method for your bot to leave a group, supergroup or channel.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>). Channel direct messages chats aren't supported; leave the corresponding channel instead.</param>
 	public async Task LeaveChat(ChatId chatId)
 	{
 		var peer = await InputPeerChat(chatId);
@@ -1317,6 +1368,7 @@ public partial class Bot
 				chat.Type = channel.IsChannel ? ChatType.Channel : ChatType.Supergroup;
 				chat.Username = channel.MainUsername;
 				chat.IsForum = channel.flags.HasFlag(Channel.Flags.forum);
+				chat.IsDirectMessages = channel.flags2.HasFlag(Channel.Flags2.monoforum);
 				chat.AccessHash = channel.access_hash;
 				var channelFull = (ChannelFull)full;
 				if (channelFull.flags2.HasFlag(ChannelFull.Flags2.has_reactions_limit)) chat.MaxReactionCount = channelFull.reactions_limit;
@@ -1343,6 +1395,7 @@ public partial class Bot
 				chat.CanSetStickerSet = channelFull.flags.HasFlag(ChannelFull.Flags.can_set_stickers);
 				chat.CustomEmojiStickerSetName = channelFull.emojiset?.short_name;
 				chat.LinkedChatId = channelFull.linked_chat_id == 0 ? null : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
+				chat.ParentChat = channel.linked_monoforum_id != 0 && chat.IsDirectMessages ? Chat(channel.linked_monoforum_id) : null;
 				chat.Location = channelFull.location.ChatLocation();
 			}
 			else if (tlChat is TL.Chat basicChat)
@@ -1631,244 +1684,7 @@ public partial class Bot
 		var full = await Client.Users_GetFullUser(Client.User);
 		return (forChannels ? full.full_user.bot_broadcast_admin_rights : full.full_user.bot_group_admin_rights).ChatAdministratorRights();
 	}
-	#endregion Available methods
-
-	#region Updating messages
-
-	/// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
-	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> EditMessageText(ChatId chatId, int messageId, string text, ParseMode parseMode = default,
-		IEnumerable<MessageEntity>? entities = default, LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var tlEntities = ApplyParse(parseMode, ref text!, entities);
-		var peer = await InputPeerChat(chatId);
-		var media = linkPreviewOptions.InputMediaWebPage();
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, text, media,
-			await MakeReplyMarkup(replyMarkup), tlEntities, no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true), peer, text, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
-	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task EditMessageText(string inlineMessageId, string text, ParseMode parseMode = default, IEnumerable<MessageEntity>? entities = default,
-		LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
-	{
-		var tlEntities = ApplyParse(parseMode, ref text!, entities);
-		var id = await ParseInlineMsgID(inlineMessageId);
-		var media = linkPreviewOptions.InputMediaWebPage();
-		await Messages_EditInlineBotMessage(businessConnectionId, id, text, media,
-			await MakeReplyMarkup(replyMarkup), tlEntities, linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
-	}
-
-	/// <summary>Use this method to edit captions of messages.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
-	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> EditMessageCaption(ChatId chatId, int messageId, string? caption, ParseMode parseMode = default,
-		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
-		var peer = await InputPeerChat(chatId);
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, caption, null,
-			await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia), peer, caption, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit captions of messages.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
-	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
-		bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
-	{
-		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
-		var id = await ParseInlineMsgID(inlineMessageId);
-		await Messages_EditInlineBotMessage(businessConnectionId, id, caption, null, await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia);
-	}
-
-	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="media">An object for a new media content of the message</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> EditMessageMedia(ChatId chatId, int messageId, InputMedia media, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var ism = await InputSingleMedia(peer, media);
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, ism.message ?? "", ism.media,
-			await MakeReplyMarkup(replyMarkup), ism.entities), peer, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="media">An object for a new media content of the message</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task EditMessageMedia(string inlineMessageId, InputMedia media, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var id = await ParseInlineMsgID(inlineMessageId);
-		var ism = await InputSingleMedia(InputPeer.Self, media);
-		await Messages_EditInlineBotMessage(businessConnectionId, id, ism.message ?? "", ism.media,
-			await MakeReplyMarkup(replyMarkup), ism.entities);
-	}
-
-	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="latitude">Latitude of new location</param>
-	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
-	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
-	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
-	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude,
-		int livePeriod = 0, int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="latitude">Latitude of new location</param>
-	/// <param name="longitude">Longitude of new location</param>
-	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
-	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
-	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
-	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = 0,
-		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var id = await ParseInlineMsgID(inlineMessageId);
-		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
-		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
-	}
-
-	/// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message with live location to stop</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> StopMessageLiveLocation(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task StopMessageLiveLocation(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var id = await ParseInlineMsgID(inlineMessageId);
-		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
-		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
-	}
-
-	/// <summary>Use this method to edit a checklist on behalf of a connected business account.</summary>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-	/// <param name="chatId">Unique identifier for the target chat</param>
-	/// <param name="messageId">Unique identifier for the target message</param>
-	/// <param name="checklist">An object for the new checklist</param>
-	/// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
-	/// <returns>The edited <see cref="Message"/> is returned.</returns>
-	public async Task<Message> EditMessageChecklist(string businessConnectionId, long chatId, int messageId, InputChecklist checklist,
-		InlineKeyboardMarkup? replyMarkup = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit only the reply markup of messages.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the message to edit</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The edited <see cref="Message"/> is returned</returns>
-	public async Task<Message> EditMessageReplyMarkup(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, null, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
-	}
-
-	/// <summary>Use this method to edit only the reply markup of messages.</summary>
-	/// <param name="inlineMessageId">Identifier of the inline message</param>
-	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	public async Task EditMessageReplyMarkup(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
-	{
-		var id = await ParseInlineMsgID(inlineMessageId);
-		await Messages_EditInlineBotMessage(businessConnectionId, id, reply_markup: await MakeReplyMarkup(replyMarkup));
-	}
-
-	/// <summary>Use this method to stop a poll which was sent by the bot.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageId">Identifier of the original message with the poll</param>
-	/// <param name="replyMarkup">An object for a new message <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
-	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
-	/// <returns>The stopped <see cref="Poll"/> is returned.</returns>
-	public async Task<Telegram.Bot.Types.Poll> StopPoll(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
-		string? businessConnectionId = default)
-	{
-		var peer = await InputPeerChat(chatId);
-		var closedPoll = new InputMediaPoll { poll = new() { flags = TL.Poll.Flags.closed } };
-		var updates = await Messages_EditMessage(businessConnectionId, peer, messageId, null, closedPoll, await MakeReplyMarkup(replyMarkup));
-		updates.UserOrChat(_collector);
-		var ump = updates.UpdateList.OfType<UpdateMessagePoll>().First();
-		return MakePoll(ump.poll, ump.results);
-	}
-
-	/// <summary>Use this method to delete multiple messages simultaneously. If some of the specified messages can't be found, they are skipped.</summary>
-	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-	/// <param name="messageIds">A list of 1-100 identifiers of messages to delete. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
-	public async Task DeleteMessages(ChatId chatId, params int[] messageIds)
-	{
-		await Client.DeleteMessages(await InputPeerChat(chatId), messageIds);
-	}
-
+	
 	/// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
 	/// <returns>A <see cref="GiftList"/> object.</returns>
 	public async Task<GiftList> GetAvailableGifts()
@@ -2264,6 +2080,265 @@ public partial class Bot
 		await Client.InvokeWithBusinessConnection(businessConnectionId,
 			new Stories_DeleteStories { peer = peer, id = [storyId] });
 	}
+	#endregion Available methods
+
+	#region Updating messages
+
+	/// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> EditMessageText(ChatId chatId, int messageId, string text, ParseMode parseMode = default,
+		IEnumerable<MessageEntity>? entities = default, LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
+		var peer = await InputPeerChat(chatId);
+		var media = linkPreviewOptions.InputMediaWebPage();
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, text, media,
+			await MakeReplyMarkup(replyMarkup), tlEntities, no_webpage: linkPreviewOptions?.IsDisabled == true, invert_media: linkPreviewOptions?.ShowAboveText == true), peer, text, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task EditMessageText(string inlineMessageId, string text, ParseMode parseMode = default, IEnumerable<MessageEntity>? entities = default,
+		LinkPreviewOptions? linkPreviewOptions = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
+	{
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
+		var id = await ParseInlineMsgID(inlineMessageId);
+		var media = linkPreviewOptions.InputMediaWebPage();
+		await Messages_EditInlineBotMessage(businessConnectionId, id, text, media,
+			await MakeReplyMarkup(replyMarkup), tlEntities, linkPreviewOptions?.IsDisabled == true, linkPreviewOptions?.ShowAboveText == true);
+	}
+
+	/// <summary>Use this method to edit captions of messages.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> EditMessageCaption(ChatId chatId, int messageId, string? caption, ParseMode parseMode = default,
+		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
+		var peer = await InputPeerChat(chatId);
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, caption, null,
+			await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia), peer, caption, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit captions of messages.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
+	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task EditMessageCaption(string inlineMessageId, string? caption, ParseMode parseMode = default, IEnumerable<MessageEntity>? captionEntities = default,
+		bool showCaptionAboveMedia = default, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
+	{
+		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
+		var id = await ParseInlineMsgID(inlineMessageId);
+		await Messages_EditInlineBotMessage(businessConnectionId, id, caption, null, await MakeReplyMarkup(replyMarkup), entities, invert_media: showCaptionAboveMedia);
+	}
+
+	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="media">An object for a new media content of the message</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> EditMessageMedia(ChatId chatId, int messageId, InputMedia media, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var ism = await InputSingleMedia(peer, media);
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, ism.message ?? "", ism.media,
+			await MakeReplyMarkup(replyMarkup), ism.entities), peer, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="media">An object for a new media content of the message</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task EditMessageMedia(string inlineMessageId, InputMedia media, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var id = await ParseInlineMsgID(inlineMessageId);
+		var ism = await InputSingleMedia(InputPeer.Self, media);
+		await Messages_EditInlineBotMessage(businessConnectionId, id, ism.message ?? "", ism.media,
+			await MakeReplyMarkup(replyMarkup), ism.entities);
+	}
+
+	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="latitude">Latitude of new location</param>
+	/// <param name="longitude">Longitude of new location</param>
+	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
+	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
+	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
+	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> EditMessageLiveLocation(ChatId chatId, int messageId, double latitude, double longitude,
+		int livePeriod = 0, int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="latitude">Latitude of new location</param>
+	/// <param name="longitude">Longitude of new location</param>
+	/// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
+	/// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
+	/// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
+	/// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task EditMessageLiveLocation(string inlineMessageId, double latitude, double longitude, int livePeriod = 0,
+		int horizontalAccuracy = 0, int heading = 0, int proximityAlertRadius = 0, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var id = await ParseInlineMsgID(inlineMessageId);
+		var media = MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod);
+		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
+	}
+
+	/// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message with live location to stop</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> StopMessageLiveLocation(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task StopMessageLiveLocation(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var id = await ParseInlineMsgID(inlineMessageId);
+		var media = new InputMediaGeoLive { flags = InputMediaGeoLive.Flags.stopped };
+		await Messages_EditInlineBotMessage(businessConnectionId, id, null, media, await MakeReplyMarkup(replyMarkup));
+	}
+
+	/// <summary>Use this method to edit a checklist on behalf of a connected business account.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+	/// <param name="chatId">Unique identifier for the target chat</param>
+	/// <param name="messageId">Unique identifier for the target message</param>
+	/// <param name="checklist">An object for the new checklist</param>
+	/// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
+	/// <returns>The edited <see cref="Message"/> is returned.</returns>
+	public async Task<Message> EditMessageChecklist(string businessConnectionId, long chatId, int messageId, InputChecklist checklist,
+		InlineKeyboardMarkup? replyMarkup = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, media, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit only the reply markup of messages.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the message to edit</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The edited <see cref="Message"/> is returned</returns>
+	public async Task<Message> EditMessageReplyMarkup(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		return await PostedMsg(Messages_EditMessage(businessConnectionId, peer, messageId, null, null, await MakeReplyMarkup(replyMarkup)), peer, bConnId: businessConnectionId);
+	}
+
+	/// <summary>Use this method to edit only the reply markup of messages.</summary>
+	/// <param name="inlineMessageId">Identifier of the inline message</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	public async Task EditMessageReplyMarkup(string inlineMessageId, InlineKeyboardMarkup? replyMarkup = default, string? businessConnectionId = default)
+	{
+		var id = await ParseInlineMsgID(inlineMessageId);
+		await Messages_EditInlineBotMessage(businessConnectionId, id, reply_markup: await MakeReplyMarkup(replyMarkup));
+	}
+
+	/// <summary>Use this method to stop a poll which was sent by the bot.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageId">Identifier of the original message with the poll</param>
+	/// <param name="replyMarkup">An object for a new message <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
+	/// <returns>The stopped <see cref="Poll"/> is returned.</returns>
+	public async Task<Telegram.Bot.Types.Poll> StopPoll(ChatId chatId, int messageId, InlineKeyboardMarkup? replyMarkup = default,
+		string? businessConnectionId = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var closedPoll = new InputMediaPoll { poll = new() { flags = TL.Poll.Flags.closed } };
+		var updates = await Messages_EditMessage(businessConnectionId, peer, messageId, null, closedPoll, await MakeReplyMarkup(replyMarkup));
+		updates.UserOrChat(_collector);
+		var ump = updates.UpdateList.OfType<UpdateMessagePoll>().First();
+		return MakePoll(ump.poll, ump.results);
+	}
+
+	/// <summary>Use this method to approve a suggested post in a direct messages chat. The bot must have the 'CanPostMessages' administrator right in the corresponding channel chat.</summary>
+	/// <param name="chatId">Unique identifier for the target direct messages chat</param>
+	/// <param name="messageId">Identifier of a suggested post message to approve</param>
+	/// <param name="sendDate">Point in time when the post is expected to be published; omit if the date has already been specified when the suggested post was created. If specified, then the date must be not more than 2678400 seconds (30 days) in the future</param>
+	public async Task ApproveSuggestedPost(long chatId, int messageId, DateTime? sendDate = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var updates = await Client.Messages_ToggleSuggestedPostApproval(peer, messageId, sendDate);
+		updates.UserOrChat(_collector);
+	}
+
+	/// <summary>Use this method to decline a suggested post in a direct messages chat. The bot must have the 'CanManageDirectMessages' administrator right in the corresponding channel chat.</summary>
+	/// <param name="chatId">Unique identifier for the target direct messages chat</param>
+	/// <param name="messageId">Identifier of a suggested post message to decline</param>
+	/// <param name="comment">Comment for the creator of the suggested post; 0-128 characters</param>
+	public async Task DeclineSuggestedPost(long chatId, int messageId, string? comment = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var updates = await Client.Messages_ToggleSuggestedPostApproval(peer, messageId, reject_comment: comment, reject: true);
+		updates.UserOrChat(_collector);
+	}
+
+	/// <summary>Use this method to delete multiple messages simultaneously. If some of the specified messages can't be found, they are skipped.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="messageIds">A list of 1-100 identifiers of messages to delete. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+	public async Task DeleteMessages(ChatId chatId, params int[] messageIds)
+	{
+		await Client.DeleteMessages(await InputPeerChat(chatId), messageIds);
+	}
 	#endregion Updating messages
 
 	#region Stickers
@@ -2280,20 +2355,23 @@ public partial class Bot
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendSticker(ChatId chatId, InputFile sticker,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, string? emoji = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
-		string? businessConnectionId = default, bool allowPaidBroadcast = default)
+		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
+		SuggestedPostParameters? suggestedPostParameters = default)
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = await InputMediaDocument(sticker);
 		if (media is TL.InputMediaUploadedDocument doc)
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
@@ -2572,12 +2650,12 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId);
 		var media = InputMediaInvoice(title, description, payload, providerToken, currency, prices, maxTipAmount, suggestedTipAmounts, startParameter,
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, null);
 		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage);
 	}
 
@@ -2720,10 +2798,10 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
-		var reply_to = await MakeReplyTo(replyParameters, messageThreadId, peer);
+		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId);
 		var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, businessConnectionId);
 	}
 

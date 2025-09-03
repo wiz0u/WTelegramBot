@@ -118,6 +118,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendMessage(
@@ -134,8 +136,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -145,6 +149,8 @@ public partial class WTelegramBotClient
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the forwarded message from forwarding and saving</param>
     /// <param name="videoStartTimestamp">New start timestamp for the forwarded video in the message</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be forwarded; required if the message is forwarded to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> ForwardMessage(
@@ -155,8 +161,10 @@ public partial class WTelegramBotClient
         bool disableNotification = default,
         bool protectContent = default,
         int? videoStartTimestamp = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent, videoStartTimestamp).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent, videoStartTimestamp, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -165,6 +173,7 @@ public partial class WTelegramBotClient
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
     /// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the forwarded messages from forwarding and saving</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be forwarded; required if the messages are forwarded to a direct messages chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An array of <see cref="MessageId"/> of the sent messages is returned.</returns>
     public async Task<MessageId[]> ForwardMessages(
@@ -174,6 +183,7 @@ public partial class WTelegramBotClient
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
+        long? directMessagesTopicId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -196,6 +206,8 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
     /// <param name="videoStartTimestamp">New start timestamp for the copied video in the message</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The <see cref="MessageId"/> of the sent message on success.</returns>
     public async Task<MessageId> CopyMessage(
@@ -213,8 +225,10 @@ public partial class WTelegramBotClient
         bool protectContent = default,
         bool allowPaidBroadcast = default,
         int? videoStartTimestamp = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, videoStartTimestamp).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, videoStartTimestamp, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -224,6 +238,7 @@ public partial class WTelegramBotClient
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
     /// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An array of <see cref="MessageId"/> of the sent messages is returned.</returns>
     public async Task<MessageId[]> CopyMessages(
@@ -234,6 +249,7 @@ public partial class WTelegramBotClient
         int? messageThreadId = default,
         bool disableNotification = default,
         bool protectContent = default,
+        long? directMessagesTopicId = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -257,6 +273,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendPhoto(
@@ -275,8 +293,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format.</summary>
     /// <remarks>Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future.<br/>For sending voice messages, use the <see cref="WTelegram.Bot.SendVoice">SendVoice</see> method instead.</remarks>
@@ -297,6 +317,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendAudio(
@@ -317,8 +339,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendAudio(chatId, audio, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, performer, title, thumbnail, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send general files.</summary>
     /// <remarks>Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -337,6 +361,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendDocument(
@@ -355,8 +381,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendDocument(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId ?? 0, captionEntities, disableContentTypeDetection, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send video files, Telegram clients support MPEG4 videos (other formats may be sent as <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -382,6 +410,8 @@ public partial class WTelegramBotClient
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
     /// <param name="cover">Cover for the video in the message. Pass a FileId to send a file that exists on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a file from the Internet, or use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="startTimestamp">Start timestamp for the video in the message</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVideo(
@@ -407,8 +437,10 @@ public partial class WTelegramBotClient
         bool allowPaidBroadcast = default,
         InputFile? cover = default,
         int? startTimestamp = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, cover, startTimestamp).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendVideo(chatId, video, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, supportsStreaming, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, cover, startTimestamp, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound).</summary>
     /// <remarks>Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -431,6 +463,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendAnimation(
@@ -453,8 +487,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendAnimation(chatId, animation, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, width ?? 0, height ?? 0, thumbnail, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .OGG file encoded with OPUS, or in .MP3 format, or in .M4A format (other formats may be sent as <see cref="Audio"/> or <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future.</remarks>
@@ -472,6 +508,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVoice(
@@ -489,8 +527,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients support rounded square MPEG4 videos of up to 1 minute long. Use this method to send video messages.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -506,6 +546,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVideoNote(
@@ -522,8 +564,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send paid media.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
@@ -540,11 +584,14 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendPaidMedia(
         ChatId chatId,
-        int starCount,
+        long starCount,
         IEnumerable<InputPaidMedia> media,
         string? caption = default,
         ParseMode parseMode = default,
@@ -557,8 +604,11 @@ public partial class WTelegramBotClient
         bool protectContent = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        int? messageThreadId = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, starCount, media, caption, parseMode, replyParameters, replyMarkup, payload, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, (int)(starCount), media, caption, parseMode, replyParameters, replyMarkup, payload, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -570,8 +620,9 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns>An array of <see cref="Message">Messages</see> that were sent is returned.</returns>
+    /// <returns>An array of <see cref="Message"/> objects that were sent is returned.</returns>
     public async Task<Message[]> SendMediaGroup(
         ChatId chatId,
         IEnumerable<IAlbumInputMedia> media,
@@ -582,8 +633,9 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0).ThrowAsApi(this);
 
     /// <summary>Use this method to send point on the map.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -601,6 +653,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendLocation(
@@ -619,8 +673,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send information about a venue.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -640,6 +696,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendVenue(
@@ -660,8 +718,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send phone contacts.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
@@ -677,6 +737,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendContact(
@@ -693,11 +755,13 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send a native poll.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). Polls can't be sent to channel direct messages chats.</param>
     /// <param name="question">Poll question, 1-300 characters</param>
     /// <param name="options">A list of 2-12 answer options</param>
     /// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
@@ -783,6 +847,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendDice(
@@ -796,12 +862,14 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? DiceEmoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? DiceEmoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
     /// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>). Channel chats and channel direct messages chats aren't supported.</param>
     /// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <see cref="WTelegram.Bot.SendMessage">text messages</see>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread; for supergroups only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
@@ -922,6 +990,7 @@ public partial class WTelegramBotClient
     /// <param name="canInviteUsers">Pass <see langword="true"/> if the administrator can invite new users to the chat</param>
     /// <param name="canPinMessages">Pass <see langword="true"/> if the administrator can pin messages; for supergroups only</param>
     /// <param name="canManageTopics">Pass <see langword="true"/> if the user is allowed to create, rename, close, and reopen forum topics; for supergroups only</param>
+    /// <param name="canManageDirectMessages">Pass <see langword="true"/> if the administrator can manage direct messages within the channel and decline suggested posts; for channels only</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task PromoteChatMember(
         ChatId chatId,
@@ -941,6 +1010,7 @@ public partial class WTelegramBotClient
         bool canInviteUsers = default,
         bool canPinMessages = default,
         bool canManageTopics = default,
+        bool canManageDirectMessages = default,
         CancellationToken cancellationToken = default
     )
     {
@@ -961,6 +1031,7 @@ public partial class WTelegramBotClient
 			CanPostStories = canPostStories,
 			CanEditStories = canEditStories,
 			CanDeleteStories = canDeleteStories,
+            CanManageDirectMessages = canManageDirectMessages,
 		}).ThrowAsApi(this);
     }
 
@@ -1151,7 +1222,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SetChatDescription(chatId, description).ThrowAsApi(this);
 
-    /// <summary>Use this method to add a message to the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
+    /// <summary>Use this method to add a message to the list of pinned messages in a chat. In private chats and channel direct messages chats, all non-service messages can be pinned. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to pin messages in groups and channels respectively.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of a message to pin</param>
     /// <param name="disableNotification">Pass <see langword="true"/> if it is not necessary to send a notification to all chat members about the new pinned message. Notifications are always disabled in channels and private chats.</param>
@@ -1165,7 +1236,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId, true, disableNotification, businessConnectionId).ThrowAsApi(this);
 
-    /// <summary>Use this method to remove a message from the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
+    /// <summary>Use this method to remove a message from the list of pinned messages in a chat. In private chats and channel direct messages chats, all messages can be unpinned. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to unpin messages in groups and channels respectively.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message to unpin. Required if <paramref name="businessConnectionId"/> is specified. If not specified, the most recent pinned message (by sending date) will be unpinned.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be unpinned</param>
@@ -1177,7 +1248,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, default, businessConnectionId).ThrowAsApi(this);
 
-    /// <summary>Use this method to clear the list of pinned messages in a chat. If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have the 'CanPinMessages' administrator right in a supergroup or 'CanEditMessages' administrator right in a channel.</summary>
+    /// <summary>Use this method to clear the list of pinned messages in a chat. In private chats and channel direct messages chats, no additional rights are required to unpin all pinned messages. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to unpin all pinned messages in groups and channels respectively.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnpinAllChatMessages(
@@ -1186,7 +1257,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method for your bot to leave a group, supergroup or channel.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>). Channel direct messages chats aren't supported; leave the corresponding channel instead.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task LeaveChat(
         ChatId chatId,
@@ -1540,6 +1611,311 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetMyDefaultAdministratorRights(forChannels).ThrowAsApi(this);
 
+    /// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="GiftList"/> object.</returns>
+    public async Task<GiftList> GetAvailableGifts(
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetAvailableGifts().ThrowAsApi(this);
+
+    /// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
+    /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
+    /// <param name="giftId">Identifier of the gift</param>
+    /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SendGift(
+        ChatId chatId,
+        string giftId,
+        string? text = default,
+        ParseMode textParseMode = default,
+        IEnumerable<MessageEntity>? textEntities = default,
+        bool payForUpgrade = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
+
+    /// <summary>Gifts a Telegram Premium subscription to the given user.</summary>
+    /// <param name="userId">Unique identifier of the target user who will receive a Telegram Premium subscription</param>
+    /// <param name="monthCount">Number of months the Telegram Premium subscription will be active for the user; must be one of 3, 6, or 12</param>
+    /// <param name="starCount">Number of Telegram Stars to pay for the Telegram Premium subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months</param>
+    /// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, and “CustomEmoji” are ignored.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task GiftPremiumSubscription(
+        long userId,
+        int monthCount,
+        long starCount,
+        string? text = default,
+        ParseMode textParseMode = default,
+        IEnumerable<MessageEntity>? textEntities = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GiftPremiumSubscription(userId, monthCount, (int)(starCount), text, textParseMode, textEntities).ThrowAsApi(this);
+
+    /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task VerifyUser(
+        long userId,
+        string? customDescription = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).VerifyUser(userId, customDescription).ThrowAsApi(this);
+
+    /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). Channel direct messages chats can't be verified.</param>
+    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task VerifyChat(
+        ChatId chatId,
+        string? customDescription = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).VerifyChat(chatId, customDescription).ThrowAsApi(this);
+
+    /// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveUserVerification(
+        long userId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveUserVerification(userId).ThrowAsApi(this);
+
+    /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveChatVerification(
+        ChatId chatId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveChatVerification(chatId).ThrowAsApi(this);
+
+    /// <summary>Marks incoming message as read on behalf of a business account. Requires the <em>CanReadMessages</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to read the message</param>
+    /// <param name="chatId">Unique identifier of the chat in which the message was received. The chat must have been active in the last 24 hours.</param>
+    /// <param name="messageId">Unique identifier of the message to mark as read</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task ReadBusinessMessage(
+        string businessConnectionId,
+        long chatId,
+        int messageId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).ReadBusinessMessage(businessConnectionId, chatId, messageId).ThrowAsApi(this);
+
+    /// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
+    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteBusinessMessages(
+        string businessConnectionId,
+        IEnumerable<int> messageIds,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteBusinessMessages(businessConnectionId, messageIds).ThrowAsApi(this);
+
+    /// <summary>Changes the first and last name of a managed business account. Requires the <em>CanChangeName</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="firstName">The new value of the first name for the business account; 1-64 characters</param>
+    /// <param name="lastName">The new value of the last name for the business account; 0-64 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountName(
+        string businessConnectionId,
+        string firstName,
+        string? lastName = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountName(businessConnectionId, firstName, lastName).ThrowAsApi(this);
+
+    /// <summary>Changes the username of a managed business account. Requires the <em>CanChangeUsername</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="username">The new value of the username for the business account; 0-32 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountUsername(
+        string businessConnectionId,
+        string? username = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountUsername(businessConnectionId, username).ThrowAsApi(this);
+
+    /// <summary>Changes the bio of a managed business account. Requires the <em>CanChangeBio</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="bio">The new value of the bio for the business account; 0-140 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountBio(
+        string businessConnectionId,
+        string? bio = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountBio(businessConnectionId, bio).ThrowAsApi(this);
+
+    /// <summary>Changes the profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="photo">The new profile photo to set</param>
+    /// <param name="isPublic">Pass <see langword="true"/> to set the public photo, which will be visible even if the main photo is hidden by the business account's privacy settings. An account can have only one public photo.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountProfilePhoto(
+        string businessConnectionId,
+        InputProfilePhoto photo,
+        bool isPublic = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountProfilePhoto(businessConnectionId, photo, isPublic).ThrowAsApi(this);
+
+    /// <summary>Removes the current profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="isPublic">Pass <see langword="true"/> to remove the public photo, which is visible even if the main photo is hidden by the business account's privacy settings. After the main photo is removed, the previous profile photo (if present) becomes the main photo.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveBusinessAccountProfilePhoto(
+        string businessConnectionId,
+        bool isPublic = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveBusinessAccountProfilePhoto(businessConnectionId, isPublic).ThrowAsApi(this);
+
+    /// <summary>Changes the privacy settings pertaining to incoming gifts in a managed business account. Requires the <em>CanChangeGiftSettings</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="showGiftButton">Pass <see langword="true"/>, if a button for sending a gift to the user or by the business account must always be shown in the input field</param>
+    /// <param name="acceptedGiftTypes">Types of gifts accepted by the business account</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetBusinessAccountGiftSettings(
+        string businessConnectionId,
+        bool showGiftButton,
+        AcceptedGiftTypes acceptedGiftTypes,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountGiftSettings(businessConnectionId, showGiftButton, acceptedGiftTypes).ThrowAsApi(this);
+
+    /// <summary>Returns the amount of Telegram Stars owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="StarAmount"/> on success.</returns>
+    public async Task<StarAmount> GetBusinessAccountStarBalance(
+        string businessConnectionId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountStarBalance(businessConnectionId).ThrowAsApi(this);
+
+    /// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task TransferBusinessAccountStars(
+        string businessConnectionId,
+        long starCount,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).TransferBusinessAccountStars(businessConnectionId, (int)(starCount)).ThrowAsApi(this);
+
+    /// <summary>Returns the gifts received and owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the account's profile page</param>
+    /// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the account's profile page</param>
+    /// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
+    /// <param name="excludeLimited">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times</param>
+    /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
+    /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
+    /// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
+    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="OwnedGifts"/> on success.</returns>
+    public async Task<OwnedGifts> GetBusinessAccountGifts(
+        string businessConnectionId,
+        bool excludeUnsaved = default,
+        bool excludeSaved = default,
+        bool excludeUnlimited = default,
+        bool excludeLimited = default,
+        bool excludeUnique = default,
+        bool sortByPrice = default,
+        string? offset = default,
+        int? limit = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountGifts(businessConnectionId, excludeUnsaved, excludeSaved, excludeUnlimited, excludeLimited, excludeUnique, sortByPrice, offset, limit).ThrowAsApi(this);
+
+    /// <summary>Converts a given regular gift to Telegram Stars. Requires the <em>CanConvertGiftsToStars</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be converted to Telegram Stars</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task ConvertGiftToStars(
+        string businessConnectionId,
+        string ownedGiftId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).ConvertGiftToStars(businessConnectionId, ownedGiftId).ThrowAsApi(this);
+
+    /// <summary>Upgrades a given regular gift to a unique gift. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Additionally requires the <em>CanTransferStars</em> business bot right if the upgrade is paid.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be upgraded to a unique one</param>
+    /// <param name="keepOriginalDetails">Pass <see langword="true"/> to keep the original gift text, sender and receiver in the upgraded gift</param>
+    /// <param name="starCount">The amount of Telegram Stars that will be paid for the upgrade from the business account balance. If <c>gift.PrepaidUpgradeStarCount &gt; 0</c>, then pass 0, otherwise, the <em>CanTransferStars</em> business bot right is required and <c>gift.UpgradeStarCount</c> must be passed.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task UpgradeGift(
+        string businessConnectionId,
+        string ownedGiftId,
+        bool keepOriginalDetails = default,
+        long? starCount = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).UpgradeGift(businessConnectionId, ownedGiftId, keepOriginalDetails, (int?)(starCount)).ThrowAsApi(this);
+
+    /// <summary>Transfers an owned unique gift to another user. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Requires <em>CanTransferStars</em> business bot right if the transfer is paid.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be transferred</param>
+    /// <param name="newOwnerChatId">Unique identifier of the chat which will own the gift. The chat must be active in the last 24 hours.</param>
+    /// <param name="starCount">The amount of Telegram Stars that will be paid for the transfer from the business account balance. If positive, then the <em>CanTransferStars</em> business bot right is required.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task TransferGift(
+        string businessConnectionId,
+        string ownedGiftId,
+        long newOwnerChatId,
+        long? starCount = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).TransferGift(businessConnectionId, ownedGiftId, newOwnerChatId, (int?)(starCount)).ThrowAsApi(this);
+
+    /// <summary>Posts a story on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="content">Content of the story</param>
+    /// <param name="activePeriod">Period after which the story is moved to the archive, in seconds; must be one of <c>6 * 3600</c>, <c>12 * 3600</c>, <c>86400</c>, or <c>2 * 86400</c></param>
+    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="areas">A list of clickable areas to be shown on the story</param>
+    /// <param name="postToChatPage">Pass <see langword="true"/> to keep the story accessible after it expires</param>
+    /// <param name="protectContent">Pass <see langword="true"/> if the content of the story must be protected from forwarding and screenshotting</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="Story"/> on success.</returns>
+    public async Task<Story> PostStory(
+        string businessConnectionId,
+        InputStoryContent content,
+        int activePeriod,
+        string? caption = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        IEnumerable<StoryArea>? areas = default,
+        bool postToChatPage = default,
+        bool protectContent = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).PostStory(businessConnectionId, content, activePeriod, caption, parseMode, captionEntities, areas, postToChatPage, protectContent).ThrowAsApi(this);
+
+    /// <summary>Edits a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="storyId">Unique identifier of the story to edit</param>
+    /// <param name="content">Content of the story</param>
+    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="areas">A list of clickable areas to be shown on the story</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns><see cref="Story"/> on success.</returns>
+    public async Task<Story> EditStory(
+        string businessConnectionId,
+        int storyId,
+        InputStoryContent content,
+        string? caption = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        IEnumerable<StoryArea>? areas = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).EditStory(businessConnectionId, storyId, content, caption, parseMode, captionEntities, areas).ThrowAsApi(this);
+
+    /// <summary>Deletes a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
+    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
+    /// <param name="storyId">Unique identifier of the story to delete</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteStory(
+        string businessConnectionId,
+        int storyId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteStory(businessConnectionId, storyId).ThrowAsApi(this);
+
     #endregion Available methods
 
     #region Updating messages
@@ -1798,7 +2174,31 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).StopPoll(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
-    /// <summary>Use this method to delete a message, including service messages, with the following limitations:<br/>- A message can only be deleted if it was sent less than 48 hours ago.<br/>- Service messages about a supergroup, channel, or forum topic creation can't be deleted.<br/>- A dice message in a private chat can only be deleted if it was sent more than 24 hours ago.<br/>- Bots can delete outgoing messages in private chats, groups, and supergroups.<br/>- Bots can delete incoming messages in private chats.<br/>- Bots granted <em>CanPostMessages</em> permissions can delete outgoing messages in channels.<br/>- If the bot is an administrator of a group, it can delete any message there.<br/>- If the bot has <em>CanDeleteMessages</em> permission in a supergroup or a channel, it can delete any message there.<br/>Returns <em>True</em> on success.</summary>
+    /// <summary>Use this method to approve a suggested post in a direct messages chat. The bot must have the 'CanPostMessages' administrator right in the corresponding channel chat.</summary>
+    /// <param name="chatId">Unique identifier for the target direct messages chat</param>
+    /// <param name="messageId">Identifier of a suggested post message to approve</param>
+    /// <param name="sendDate">Point in time when the post is expected to be published; omit if the date has already been specified when the suggested post was created. If specified, then the date must be not more than 2678400 seconds (30 days) in the future</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task ApproveSuggestedPost(
+        long chatId,
+        int messageId,
+        DateTime? sendDate = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).ApproveSuggestedPost(chatId, messageId, sendDate).ThrowAsApi(this);
+
+    /// <summary>Use this method to decline a suggested post in a direct messages chat. The bot must have the 'CanManageDirectMessages' administrator right in the corresponding channel chat.</summary>
+    /// <param name="chatId">Unique identifier for the target direct messages chat</param>
+    /// <param name="messageId">Identifier of a suggested post message to decline</param>
+    /// <param name="comment">Comment for the creator of the suggested post; 0-128 characters</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeclineSuggestedPost(
+        long chatId,
+        int messageId,
+        string? comment = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeclineSuggestedPost(chatId, messageId, comment).ThrowAsApi(this);
+
+    /// <summary>Use this method to delete a message, including service messages, with the following limitations:<br/>- A message can only be deleted if it was sent less than 48 hours ago.<br/>- Service messages about a supergroup, channel, or forum topic creation can't be deleted.<br/>- A dice message in a private chat can only be deleted if it was sent more than 24 hours ago.<br/>- Bots can delete outgoing messages in private chats, groups, and supergroups.<br/>- Bots can delete incoming messages in private chats.<br/>- Bots granted <em>CanPostMessages</em> permissions can delete outgoing messages in channels.<br/>- If the bot is an administrator of a group, it can delete any message there.<br/>- If the bot has <em>CanDeleteMessages</em> administrator right in a supergroup or a channel, it can delete any message there.<br/>- If the bot has <em>CanManageDirectMessages</em> administrator right in a channel, it can delete any message in the corresponding direct messages chat.<br/>Returns <em>True</em> on success.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
     /// <param name="messageId">Identifier of the message to delete</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1818,311 +2218,6 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi(this);
 
-    /// <summary>Returns the list of gifts that can be sent by the bot to users and channel chats.</summary>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns>A <see cref="GiftList"/> object.</returns>
-    public async Task<GiftList> GetAvailableGifts(
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GetAvailableGifts().ThrowAsApi(this);
-
-    /// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
-    /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
-    /// <param name="giftId">Identifier of the gift</param>
-    /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
-    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SendGift(
-        ChatId chatId,
-        string giftId,
-        string? text = default,
-        ParseMode textParseMode = default,
-        IEnumerable<MessageEntity>? textEntities = default,
-        bool payForUpgrade = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendGift(chatId, giftId, text, textParseMode, textEntities, payForUpgrade).ThrowAsApi(this);
-
-    /// <summary>Gifts a Telegram Premium subscription to the given user.</summary>
-    /// <param name="userId">Unique identifier of the target user who will receive a Telegram Premium subscription</param>
-    /// <param name="monthCount">Number of months the Telegram Premium subscription will be active for the user; must be one of 3, 6, or 12</param>
-    /// <param name="starCount">Number of Telegram Stars to pay for the Telegram Premium subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months</param>
-    /// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
-    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, and “CustomEmoji” are ignored.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task GiftPremiumSubscription(
-        long userId,
-        int monthCount,
-        int starCount,
-        string? text = default,
-        ParseMode textParseMode = default,
-        IEnumerable<MessageEntity>? textEntities = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GiftPremiumSubscription(userId, monthCount, starCount, text, textParseMode, textEntities).ThrowAsApi(this);
-
-    /// <summary>Verifies a user <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-    /// <param name="userId">Unique identifier of the target user</param>
-    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task VerifyUser(
-        long userId,
-        string? customDescription = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).VerifyUser(userId, customDescription).ThrowAsApi(this);
-
-    /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task VerifyChat(
-        ChatId chatId,
-        string? customDescription = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).VerifyChat(chatId, customDescription).ThrowAsApi(this);
-
-    /// <summary>Removes verification from a user who is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-    /// <param name="userId">Unique identifier of the target user</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task RemoveUserVerification(
-        long userId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).RemoveUserVerification(userId).ThrowAsApi(this);
-
-    /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task RemoveChatVerification(
-        ChatId chatId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).RemoveChatVerification(chatId).ThrowAsApi(this);
-
-    /// <summary>Marks incoming message as read on behalf of a business account. Requires the <em>CanReadMessages</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to read the message</param>
-    /// <param name="chatId">Unique identifier of the chat in which the message was received. The chat must have been active in the last 24 hours.</param>
-    /// <param name="messageId">Unique identifier of the message to mark as read</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task ReadBusinessMessage(
-        string businessConnectionId,
-        long chatId,
-        int messageId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).ReadBusinessMessage(businessConnectionId, chatId, messageId).ThrowAsApi(this);
-
-    /// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
-    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task DeleteBusinessMessages(
-        string businessConnectionId,
-        IEnumerable<int> messageIds,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).DeleteBusinessMessages(businessConnectionId, messageIds).ThrowAsApi(this);
-
-    /// <summary>Changes the first and last name of a managed business account. Requires the <em>CanChangeName</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="firstName">The new value of the first name for the business account; 1-64 characters</param>
-    /// <param name="lastName">The new value of the last name for the business account; 0-64 characters</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SetBusinessAccountName(
-        string businessConnectionId,
-        string firstName,
-        string? lastName = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountName(businessConnectionId, firstName, lastName).ThrowAsApi(this);
-
-    /// <summary>Changes the username of a managed business account. Requires the <em>CanChangeUsername</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="username">The new value of the username for the business account; 0-32 characters</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SetBusinessAccountUsername(
-        string businessConnectionId,
-        string? username = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountUsername(businessConnectionId, username).ThrowAsApi(this);
-
-    /// <summary>Changes the bio of a managed business account. Requires the <em>CanChangeBio</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="bio">The new value of the bio for the business account; 0-140 characters</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SetBusinessAccountBio(
-        string businessConnectionId,
-        string? bio = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountBio(businessConnectionId, bio).ThrowAsApi(this);
-
-    /// <summary>Changes the profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="photo">The new profile photo to set</param>
-    /// <param name="isPublic">Pass <see langword="true"/> to set the public photo, which will be visible even if the main photo is hidden by the business account's privacy settings. An account can have only one public photo.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SetBusinessAccountProfilePhoto(
-        string businessConnectionId,
-        InputProfilePhoto photo,
-        bool isPublic = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountProfilePhoto(businessConnectionId, photo, isPublic).ThrowAsApi(this);
-
-    /// <summary>Removes the current profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="isPublic">Pass <see langword="true"/> to remove the public photo, which is visible even if the main photo is hidden by the business account's privacy settings. After the main photo is removed, the previous profile photo (if present) becomes the main photo.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task RemoveBusinessAccountProfilePhoto(
-        string businessConnectionId,
-        bool isPublic = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).RemoveBusinessAccountProfilePhoto(businessConnectionId, isPublic).ThrowAsApi(this);
-
-    /// <summary>Changes the privacy settings pertaining to incoming gifts in a managed business account. Requires the <em>CanChangeGiftSettings</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="showGiftButton">Pass <see langword="true"/>, if a button for sending a gift to the user or by the business account must always be shown in the input field</param>
-    /// <param name="acceptedGiftTypes">Types of gifts accepted by the business account</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task SetBusinessAccountGiftSettings(
-        string businessConnectionId,
-        bool showGiftButton,
-        AcceptedGiftTypes acceptedGiftTypes,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SetBusinessAccountGiftSettings(businessConnectionId, showGiftButton, acceptedGiftTypes).ThrowAsApi(this);
-
-    /// <summary>Returns the amount of Telegram Stars owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns><see cref="StarAmount"/> on success.</returns>
-    public async Task<StarAmount> GetBusinessAccountStarBalance(
-        string businessConnectionId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountStarBalance(businessConnectionId).ThrowAsApi(this);
-
-    /// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task TransferBusinessAccountStars(
-        string businessConnectionId,
-        int starCount,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).TransferBusinessAccountStars(businessConnectionId, starCount).ThrowAsApi(this);
-
-    /// <summary>Returns the gifts received and owned by a managed business account. Requires the <em>CanViewGiftsAndStars</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the account's profile page</param>
-    /// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the account's profile page</param>
-    /// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
-    /// <param name="excludeLimited">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times</param>
-    /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
-    /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
-    /// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
-    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns><see cref="OwnedGifts"/> on success.</returns>
-    public async Task<OwnedGifts> GetBusinessAccountGifts(
-        string businessConnectionId,
-        bool excludeUnsaved = default,
-        bool excludeSaved = default,
-        bool excludeUnlimited = default,
-        bool excludeLimited = default,
-        bool excludeUnique = default,
-        bool sortByPrice = default,
-        string? offset = default,
-        int? limit = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GetBusinessAccountGifts(businessConnectionId, excludeUnsaved, excludeSaved, excludeUnlimited, excludeLimited, excludeUnique, sortByPrice, offset, limit).ThrowAsApi(this);
-
-    /// <summary>Converts a given regular gift to Telegram Stars. Requires the <em>CanConvertGiftsToStars</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be converted to Telegram Stars</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task ConvertGiftToStars(
-        string businessConnectionId,
-        string ownedGiftId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).ConvertGiftToStars(businessConnectionId, ownedGiftId).ThrowAsApi(this);
-
-    /// <summary>Upgrades a given regular gift to a unique gift. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Additionally requires the <em>CanTransferStars</em> business bot right if the upgrade is paid.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be upgraded to a unique one</param>
-    /// <param name="keepOriginalDetails">Pass <see langword="true"/> to keep the original gift text, sender and receiver in the upgraded gift</param>
-    /// <param name="starCount">The amount of Telegram Stars that will be paid for the upgrade from the business account balance. If <c>gift.PrepaidUpgradeStarCount &gt; 0</c>, then pass 0, otherwise, the <em>CanTransferStars</em> business bot right is required and <c>gift.UpgradeStarCount</c> must be passed.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task UpgradeGift(
-        string businessConnectionId,
-        string ownedGiftId,
-        bool keepOriginalDetails = default,
-        int? starCount = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).UpgradeGift(businessConnectionId, ownedGiftId, keepOriginalDetails, starCount).ThrowAsApi(this);
-
-    /// <summary>Transfers an owned unique gift to another user. Requires the <em>CanTransferAndUpgradeGifts</em> business bot right. Requires <em>CanTransferStars</em> business bot right if the transfer is paid.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="ownedGiftId">Unique identifier of the regular gift that should be transferred</param>
-    /// <param name="newOwnerChatId">Unique identifier of the chat which will own the gift. The chat must be active in the last 24 hours.</param>
-    /// <param name="starCount">The amount of Telegram Stars that will be paid for the transfer from the business account balance. If positive, then the <em>CanTransferStars</em> business bot right is required.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task TransferGift(
-        string businessConnectionId,
-        string ownedGiftId,
-        long newOwnerChatId,
-        int? starCount = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).TransferGift(businessConnectionId, ownedGiftId, newOwnerChatId, starCount).ThrowAsApi(this);
-
-    /// <summary>Posts a story on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="content">Content of the story</param>
-    /// <param name="activePeriod">Period after which the story is moved to the archive, in seconds; must be one of <c>6 * 3600</c>, <c>12 * 3600</c>, <c>86400</c>, or <c>2 * 86400</c></param>
-    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
-    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
-    /// <param name="areas">A list of clickable areas to be shown on the story</param>
-    /// <param name="postToChatPage">Pass <see langword="true"/> to keep the story accessible after it expires</param>
-    /// <param name="protectContent">Pass <see langword="true"/> if the content of the story must be protected from forwarding and screenshotting</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns><see cref="Story"/> on success.</returns>
-    public async Task<Story> PostStory(
-        string businessConnectionId,
-        InputStoryContent content,
-        int activePeriod,
-        string? caption = default,
-        ParseMode parseMode = default,
-        IEnumerable<MessageEntity>? captionEntities = default,
-        IEnumerable<StoryArea>? areas = default,
-        bool postToChatPage = default,
-        bool protectContent = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).PostStory(businessConnectionId, content, activePeriod, caption, parseMode, captionEntities, areas, postToChatPage, protectContent).ThrowAsApi(this);
-
-    /// <summary>Edits a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="storyId">Unique identifier of the story to edit</param>
-    /// <param name="content">Content of the story</param>
-    /// <param name="caption">Caption of the story, 0-2048 characters after entities parsing</param>
-    /// <param name="parseMode">Mode for parsing entities in the story caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
-    /// <param name="areas">A list of clickable areas to be shown on the story</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns><see cref="Story"/> on success.</returns>
-    public async Task<Story> EditStory(
-        string businessConnectionId,
-        int storyId,
-        InputStoryContent content,
-        string? caption = default,
-        ParseMode parseMode = default,
-        IEnumerable<MessageEntity>? captionEntities = default,
-        IEnumerable<StoryArea>? areas = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).EditStory(businessConnectionId, storyId, content, caption, parseMode, captionEntities, areas).ThrowAsApi(this);
-
-    /// <summary>Deletes a story previously posted by the bot on behalf of a managed business account. Requires the <em>CanManageStories</em> business bot right.</summary>
-    /// <param name="businessConnectionId">Unique identifier of the business connection</param>
-    /// <param name="storyId">Unique identifier of the story to delete</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    public async Task DeleteStory(
-        string businessConnectionId,
-        int storyId,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).DeleteStory(businessConnectionId, storyId).ThrowAsApi(this);
-
     #endregion Updating messages
 
     #region Stickers
@@ -2139,6 +2234,8 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendSticker(
@@ -2153,8 +2250,10 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendSticker(chatId, sticker, replyParameters, replyMarkup, emoji, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to get a sticker set.</summary>
     /// <param name="name">Name of the sticker set</param>
@@ -2411,6 +2510,8 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendInvoice(
@@ -2443,6 +2544,8 @@ public partial class WTelegramBotClient
         bool protectContent = default,
         string? messageEffectId = default,
         bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendInvoice(chatId, title, description, payload, currency, prices, providerToken, providerData, maxTipAmount, suggestedTipAmounts, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress, sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, replyParameters, replyMarkup, startParameter, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), allowPaidBroadcast).ThrowAsApi(this);
 
@@ -2578,7 +2681,7 @@ public partial class WTelegramBotClient
     #region Games
 
     /// <summary>Use this method to send a game.</summary>
-    /// <param name="chatId">Unique identifier for the target chat</param>
+    /// <param name="chatId">Unique identifier for the target chat. Games can't be sent to channel direct messages chats and channel chats.</param>
     /// <param name="gameShortName">Short name of the game, serves as the unique identifier for the game. Set up your games via <a href="https://t.me/botfather">@BotFather</a>.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Play GameTitle' button will be shown. If not empty, the first button must launch the game.</param>

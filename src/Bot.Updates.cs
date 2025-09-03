@@ -441,6 +441,8 @@ public partial class Bot
 			}
 			else if (reply_to.reply_to_top_id > 0)
 				msg.ReplyToMessage = await GetMessage(await ChatFromPeer(msgBase.Peer, true), reply_to.reply_to_top_id);
+			if (reply_to.todo_item_id != 0)
+				msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
 			if (reply_to.reply_from?.date > default(DateTime))
 			{
 				var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
@@ -499,7 +501,10 @@ public partial class Bot
 					SenderBusinessBot = User(message.via_business_bot_id),
 					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
 					EffectId = message.flags2.HasFlag(TL.Message.Flags2.has_effect) ? message.effect.ToString() : null,
-					PaidStarCount = message.paid_message_stars.IntIfPositive()
+					PaidStarCount = message.paid_message_stars.NullIfNegative(),
+					DirectMessagesTopic = message.saved_peer_id is PeerUser pu ? new DirectMessagesTopic { TopicId = pu.user_id, User = User(pu.user_id) } : null,
+					IsPaidPost = (message.flags2 & (TL.Message.Flags2.paid_suggested_post_stars | TL.Message.Flags2.paid_suggested_post_ton)) != 0,
+					SuggestedPostInfo = message.suggested_post.SuggestedPostInfo()
 				};
 				if (message.fwd_from is { } fwd)
 				{
@@ -802,10 +807,10 @@ public partial class Bot
 				IsFirstRecurring = mapsm.flags.HasFlag(MessageActionPaymentSentMe.Flags.recurring_init),
 			},
 			MessageActionRequestedPeer { peers.Length: > 0 } marp => marp.peers[0] is PeerUser
-				? msg.UsersShared = new UsersShared { RequestId = marp.button_id, Users = marp.peers.Select(p => new SharedUser { UserId = p.ID }).ToArray() }
+				? msg.UsersShared = new UsersShared { RequestId = marp.button_id, Users = [.. marp.peers.Select(p => new SharedUser { UserId = p.ID })] }
 				: msg.ChatShared = new ChatShared { RequestId = marp.button_id, ChatId = marp.peers[0].ToChatId() },
 			MessageActionRequestedPeerSentMe { peers.Length: > 0 } marpsm => marpsm.peers[0] is RequestedPeerUser
-				? msg.UsersShared = new UsersShared { RequestId = marpsm.button_id, Users = marpsm.peers.Select(p => p.ToSharedUser()).ToArray() }
+				? msg.UsersShared = new UsersShared { RequestId = marpsm.button_id, Users = [.. marpsm.peers.Select(p => p.ToSharedUser())] }
 				: msg.ChatShared = marpsm.peers[0].ToSharedChat(marpsm.button_id),
 			MessageActionBotAllowed maba => maba switch
 			{
@@ -855,8 +860,8 @@ public partial class Bot
 			MessageActionStarGift masg => masg.gift is not StarGift gift ? null : msg.Gift = new GiftInfo {
 				Gift = MakeGift(gift),
 				OwnedGiftId = masg.peer != null ? $"{masg.peer.ID}_{masg.saved_id}" : msgSvc.id.ToString(),
-				ConvertStarCount = masg.convert_stars.IntIfPositive(),
-				PrepaidUpgradeStarCount = masg.upgrade_stars.IntIfPositive(),
+				ConvertStarCount = masg.convert_stars.NullIfNegative(),
+				PrepaidUpgradeStarCount = masg.upgrade_stars.NullIfNegative(),
 				CanBeUpgraded = masg.flags.HasFlag(MessageActionStarGift.Flags.can_upgrade),
 				Text = masg.message?.text,
 				Entities = MakeEntities(masg.message?.entities),
@@ -866,15 +871,15 @@ public partial class Bot
 			? masgu.gift is not StarGift gift ? null : msg.Gift = new GiftInfo { Gift = MakeGift(gift) }
 			: masgu.gift is not StarGiftUnique giftUnique ? null : msg.UniqueGift = new UniqueGiftInfo {
 				Gift = await MakeUniqueGift(giftUnique),
-				Origin = masgu.resale_stars > 0 ? "resale" : masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
+				Origin = masgu.resale_amount.Amount > 0 ? "resale" : masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
 				OwnedGiftId = masgu.peer != null ? $"{masgu.peer.ID}_{masgu.saved_id}" : msgSvc.id.ToString(),
 				TransferStarCount = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_transfer_stars) ? (int)masgu.transfer_stars : null,
 				NextTransferDate = masgu.can_transfer_at.NullIfDefault(),
-				LastResaleStarCount = masgu.resale_stars.IntIfPositive(),
+				LastResaleStarCount = masgu.resale_amount.Amount.NullIfNegative(),
 			},
 			MessageActionPaidMessagesPrice mapmp => msg.Chat.Type == ChatType.Channel
-			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = checked((int)mapmp.stars), AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
-			: msg.PaidMessagePriceChanged = new PaidMessagePriceChanged { PaidMessageStarCount = checked((int)mapmp.stars) },
+			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = mapmp.stars, AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
+			: msg.PaidMessagePriceChanged = new PaidMessagePriceChanged { PaidMessageStarCount = mapmp.stars },
 			MessageActionTodoCompletions matc => msg.ChecklistTasksDone = new ChecklistTasksDone {
 				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
 				MarkedAsDoneTaskIds = matc.completed,
@@ -883,6 +888,24 @@ public partial class Bot
 			MessageActionTodoAppendTasks matat => msg.ChecklistTasksAdded = new ChecklistTasksAdded {
 				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
 				Tasks = ChecklistTasks(matat.list)
+			},
+			MessageActionSuggestedPostApproval maspa => (msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null) is var spm ?
+				maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.balance_too_low)
+				?	msg.SuggestedPostApprovalFailed = new SuggestedPostApprovalFailed { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), }
+				: maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.rejected)
+				?	msg.SuggestedPostDeclined = new SuggestedPostDeclined { SuggestedPostMessage = spm, Comment = maspa.reject_comment }
+				:	msg.SuggestedPostApproved = new SuggestedPostApproved { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), SendDate = maspa.schedule_date }
+				: null,
+			MessageActionSuggestedPostSuccess masps => (msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null) is var spm ?
+				msg.SuggestedPostPaid = masps.price switch
+				{
+					TL.StarsAmount sa => new SuggestedPostPaid { Currency = "XTR", StarAmount = sa.StarAmount(), SuggestedPostMessage = spm },
+					TL.StarsTonAmount sta => new SuggestedPostPaid { Currency = "TON", Amount = sta.amount, SuggestedPostMessage = spm },
+					_ => new() { SuggestedPostMessage = spm }
+				} : null,
+			MessageActionSuggestedPostRefund maspr => msg.SuggestedPostRefunded = new SuggestedPostRefunded {
+				SuggestedPostMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				Reason = maspr.flags.HasFlag(MessageActionSuggestedPostRefund.Flags.payer_initiated) ? SuggestedPostRefundedReason.PaymentRefunded : SuggestedPostRefundedReason.PostDeleted
 			},
 			_ => null,
 		};

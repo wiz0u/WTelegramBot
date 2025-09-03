@@ -62,6 +62,7 @@ public static class TypesTLConverters
 			Title = chat.Title,
 			Username = channel.MainUsername,
 			IsForum = channel.flags.HasFlag(Channel.Flags.forum),
+			IsDirectMessages = channel.flags2.HasFlag(Channel.Flags2.monoforum),
 			AccessHash = channel.access_hash
 		},
 		ChannelForbidden chForbidden => new()
@@ -120,7 +121,7 @@ public static class TypesTLConverters
 				//CanManageTopics: set only for supergroups
 				CanPromoteMembers = false,
 				CanManageVideoChats = true,
-				//CanPostStories, CanEditStories, CanDeleteStories: set only for channels
+				//CanPostStories, CanEditStories, CanDeleteStories, CanManageDirectMessages: set only for channels
 				IsAnonymous = false,
 			},
 			ChatParticipant => new ChatMemberMember { User = user },
@@ -153,6 +154,7 @@ public static class TypesTLConverters
 				CanPostStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_stories),
 				CanEditStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
 				CanDeleteStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
+				CanManageDirectMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
 			},
 			ChannelParticipantBanned cpb =>
 				cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.view_messages)
@@ -446,6 +448,7 @@ public static class TypesTLConverters
 			| (rights.CanPostStories == true ? TL.ChatAdminRights.Flags.post_stories : 0)
 			| (rights.CanEditStories == true ? TL.ChatAdminRights.Flags.edit_stories : 0)
 			| (rights.CanDeleteStories == true ? TL.ChatAdminRights.Flags.delete_stories : 0)
+			| (rights.CanManageDirectMessages == true ? TL.ChatAdminRights.Flags.manage_direct_messages : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
@@ -466,6 +469,7 @@ public static class TypesTLConverters
 			CanPostStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.post_stories),
 			CanEditStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
 			CanDeleteStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
+			CanManageDirectMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
 		};
 
 	[return: NotNullIfNotNull(nameof(maskPosition))]
@@ -721,6 +725,21 @@ public static class TypesTLConverters
 		? new StarAmount { Amount = (int)sa.amount, NanostarAmount = sa.nanos }
 		: throw new WTException($"Unsupported {sab}");
 
+	internal static TL.StarsAmountBase? StarAmount(this SuggestedPostPrice spp) => spp.Currency switch
+	{
+		"XTR" => new TL.StarsAmount { amount = spp.Amount },
+		"TON" => new TL.StarsTonAmount { amount = spp.Amount }, // must be a multiple of 10000000
+		_ => throw new WTException("Invalid SuggestedPostPrice currency")
+	};
+	[return: NotNullIfNotNull(nameof(sab))]
+	internal static SuggestedPostPrice? SuggestedPostPrice(this TL.StarsAmountBase? sab) => sab switch
+	{
+		null => null,
+		TL.StarsAmount sa => new SuggestedPostPrice() { Currency = "XTR", Amount = sa.amount },
+		TL.StarsTonAmount sta => new SuggestedPostPrice() { Currency = "TON", Amount = sta.amount },
+		_ => throw new WTException("Invalid SuggestedPostPrice currency")
+	};
+
 	internal static long ToChatId(this Peer peer)
 		=> peer switch { PeerChat pc => -pc.chat_id, PeerChannel pch => ZERO_CHANNEL_ID - pch.channel_id, _ => peer.ID };
 
@@ -809,5 +828,21 @@ public static class TypesTLConverters
 		flags = (addr.State != null ? TL.GeoPointAddress.Flags.has_state : 0) |
 				(addr.City != null ? TL.GeoPointAddress.Flags.has_city : 0) |
 				(addr.Street != null ? TL.GeoPointAddress.Flags.has_street : 0)
+	};
+
+	internal static TL.SuggestedPost? SuggestedPost(this SuggestedPostParameters? spp) => spp == null ? null : new()
+	{
+		schedule_date = spp.SendDate ?? default,
+		price = spp.Price?.StarAmount(),
+		flags = (spp.SendDate != null ? TL.SuggestedPost.Flags.has_schedule_date : 0) |
+				(spp.Price != null ? TL.SuggestedPost.Flags.has_price : 0)
+	};
+
+	internal static SuggestedPostInfo? SuggestedPostInfo(this TL.SuggestedPost? sp) => sp == null ? null : new()
+	{
+		SendDate = sp.schedule_date,
+		Price = sp.price.SuggestedPostPrice(),
+		State = sp.flags.HasFlag(TL.SuggestedPost.Flags.accepted) ? "approved" :
+				sp.flags.HasFlag(TL.SuggestedPost.Flags.rejected) ? "declined" : "pending"
 	};
 }
