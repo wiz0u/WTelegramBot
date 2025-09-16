@@ -70,7 +70,7 @@ foreach (var m in messages)
 //---------------------------------------------------------------------------------------
 // show some message info not accessible in Bot API
 var msg = messages[0];
-var tlMsg = msg.TLMessage() as TL.Message;
+var tlMsg = (TL.Message)msg.TLMessage()!;
 Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}  Pinned = {tlMsg.flags.HasFlag(TL.Message.Flags.pinned)}");
 
 Console.WriteLine("___________________________________________________\n");
