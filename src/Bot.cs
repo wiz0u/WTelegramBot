@@ -348,7 +348,7 @@ public partial class Bot : IDisposable
 	}
 
 	/// <summary>Obtain a InputPeerChat for this chat (useful with Client API calls)</summary><remarks>May throw exception if chat is unknown</remarks>
-	public async Task<InputPeer> InputPeerChat(ChatId chatId)
+	public async Task<InputPeer> InputPeerChat(ChatId chatId, bool allowUsersName = false)
 	{
 		await InitComplete();
 		if (chatId.Identifier is long id)
@@ -375,10 +375,17 @@ public partial class Bot : IDisposable
 			lock (_chats)
 				if (_chats.SearchCache(chat => chat.Username?.Equals(username, StringComparison.OrdinalIgnoreCase) == true) is Chat chat)
 					return chat;
+			if (allowUsersName)
+				lock (_users)
+					if (_users.SearchCache(user => user.Username?.Equals(username, StringComparison.OrdinalIgnoreCase) == true) is User user)
+						return user;
 			var resolved = await Client.Contacts_ResolveUsername(username);
 			if (resolved.Chat is { } chatBase)
 				lock (_chats)
 					return _chats[chatBase.ID] = chatBase.Chat();
+			if (allowUsersName && resolved.User is { } resolvedUser)
+				lock (_users)
+					return _users[resolvedUser.id] = resolvedUser.User();
 			throw new WTException($"Bad Request: Chat not found {chatId}");
 		}
 	}

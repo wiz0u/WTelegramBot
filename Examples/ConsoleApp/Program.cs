@@ -19,37 +19,34 @@ WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yy
 using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
 //SQL Server:	using var connection = new Microsoft.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=PATH_TO.mdf;Integrated Security=True;Connect Timeout=60");
 //MySQL:    	using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
-//PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Data Source=...");
+//PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Host=...");
 
-using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
+using var bot = new WTelegramBotClient(botToken, apiId, apiHash, connection);
 //          use new WTelegramBotClient(...) instead, if you want the power of WTelegram with Telegram.Bot compatibility for existing code
 //          use new TelegramBotClient(...)  instead, if you just want Telegram.Bot classic code
 var my = await bot.GetMe();
 Console.WriteLine($"I am @{my.Username}");
 
 // get details about a user via the public username (even if not in discussion with bot)
-if (await bot.InputUser("@spotifysavebot") is { user_id: var userId })
+var userDetails = await bot.GetChat("@spotifysavebot");
+var full = (TL.Users_UserFull)userDetails.TLInfo()!;
+var tlUser = full.users[userDetails.Id];
+var fullUser = full.full_user;
+if (tlUser.flags.HasFlag(TL.User.Flags.bot)) Console.WriteLine($"{tlUser} is a bot");
+if (tlUser.flags.HasFlag(TL.User.Flags.scam)) Console.WriteLine($"{tlUser} is reported as scam");
+if (tlUser.flags.HasFlag(TL.User.Flags.verified)) Console.WriteLine($"{tlUser} is verified");
+if (tlUser.flags.HasFlag(TL.User.Flags.restricted)) Console.WriteLine($"{tlUser} is restricted: {tlUser.restriction_reason?[0].reason}");
+if (fullUser.bot_info is { commands: { } botCommands })
 {
-	var userDetails = await bot.GetChat(userId);
-	var full = (TL.Users_UserFull)userDetails.TLInfo!;
-	var tlUser = full.users[userId];
-	var fullUser = full.full_user;
-	if (tlUser.flags.HasFlag(TL.User.Flags.bot)) Console.WriteLine($"{tlUser} is a bot");
-	if (tlUser.flags.HasFlag(TL.User.Flags.scam)) Console.WriteLine($"{tlUser} is reported as scam");
-	if (tlUser.flags.HasFlag(TL.User.Flags.verified)) Console.WriteLine($"{tlUser} is verified");
-	if (tlUser.flags.HasFlag(TL.User.Flags.restricted)) Console.WriteLine($"{tlUser} is restricted: {tlUser.restriction_reason?[0].reason}");
-	if (fullUser.bot_info is { commands: { } botCommands })
-	{
-		Console.WriteLine($"{tlUser} has {botCommands.Length} bot commands:");
-		foreach (var command in botCommands)
-			Console.WriteLine($"  /{command.command,-20} {command.description}");
-	}
+	Console.WriteLine($"{tlUser} has {botCommands.Length} bot commands:");
+	foreach (var command in botCommands)
+		Console.WriteLine($"  /{command.command,-20} {command.description}");
 }
 
 //---------------------------------------------------------------------------------------
 // get details about a public chat (even if bot is not a member of that chat)
 var chatDetails = await bot.GetChat("@tdlibchat");
-if (chatDetails.TLInfo is TL.Messages_ChatFull { full_chat: TL.ChannelFull channelFull })
+if (chatDetails.TLInfo() is TL.Messages_ChatFull { full_chat: TL.ChannelFull channelFull })
 {
 	Console.WriteLine($"@{chatDetails.Username} has {channelFull.participants_count} members, {channelFull.online_count} online");
 	if (channelFull.slowmode_seconds > 0)
@@ -91,20 +88,17 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 {
 	if (msg.Text == null) return;
 	var text = msg.Text.ToLower();
-	// commands accepted:
+	// commands accepted by this example program:
 	if (text == "/start")
 	{
-		//---> It's easy to reply to a message by giving its id to replyParameters: (was broken in Telegram.Bot v20.0.0)
 		await bot.SendMessage(msg.Chat, $"Hello, {msg.From}!\nTry commands /pic /react /lastseen /getchat /setphoto", replyParameters: msg);
 	}
 	else if (text == "/pic")
 	{
-		//---> It's easy to send a file by id or by url by just passing the string: (was broken in Telegram.Bot v19.0.0)
-		await bot.SendPhoto(msg.Chat, "https://picsum.photos/310/200.jpg"); // easily send file by URL or FileID
+		await bot.SendPhoto(msg.Chat, "https://picsum.photos/310/200.jpg");
 	}
 	else if (text == "/react")
 	{
-		//---> It's easy to send reaction emojis by just giving the emoji string or id
 		await bot.SetMessageReaction(msg.Chat, msg.MessageId, ["👍"]);
 	}
 	else if (text == "/lastseen")

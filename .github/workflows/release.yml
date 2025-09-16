@@ -25,11 +25,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 100
+        fetch-depth: 30
     - name: Determine version
       if: ${{ env.VERSION == '' }}
       run: |
-        git fetch --depth=100 --tags
+        git fetch --depth=30 --tags
         DESCR_TAG=$(git describe --tags)
         LAST_TAG=${DESCR_TAG%%-*}
         NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))

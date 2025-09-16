@@ -1292,6 +1292,13 @@ public partial class Bot
 	/// <returns>A <see cref="ChatFullInfo"/> object on success.</returns>
 	public async Task<ChatFullInfo> GetChat(ChatId chatId)
 	{
+		InputPeer inputPeer = null!;
+		if (chatId.Username != null)
+		{
+			inputPeer = await InputPeerChat(chatId, allowUsersName: true);
+			if (inputPeer is InputPeerUser user)
+				chatId = user.ID;
+		}
 		if (chatId.Identifier is long userId && userId >= 0)
 		{
 			await InitComplete();
@@ -1334,7 +1341,6 @@ public partial class Bot
 		}
 		else
 		{
-			var inputPeer = await InputPeerChat(chatId);
 			var mcf = await Client.GetFullChat(inputPeer);
 			mcf.UserOrChat(_collector);
 			var full = mcf.full_chat;
