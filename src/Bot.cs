@@ -27,6 +27,8 @@ public partial class Bot : IDisposable
 	public event Func<Message, UpdateType, Task>? OnMessage { add { _onMessage += value; StartEventReceiving(); } remove { _onMessage -= value; StopEventReceiving(); } }
 	/// <summary>Handler to be called when there was a polling error or an exception in your handlers</summary>
 	public event Func<Exception, Telegram.Bot.Polling.HandleErrorSource, Task>? OnError;
+	/// <summary>Progress notifications for file tranfers (upload/download)</summary>
+	public event Action<InputFile, long, long>? OnFileProgress;
 
 	/// <summary>Generate Unknown Updates for all raw TL Updates that usually would have been silently ignored by Bot API (see <see cref="Update.TLUpdate"/>)</summary>
 	public bool WantUnknownTLUpdates { get; set; }

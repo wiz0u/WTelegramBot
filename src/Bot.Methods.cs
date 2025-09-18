@@ -1001,9 +1001,14 @@ public partial class Bot
 	/// <returns>On success, a <see cref="File"/> object is returned.</returns>
 	public async Task<TGFile> GetInfoAndDownloadFile(string fileId, Stream destination, CancellationToken cancellationToken = default)
 	{
+		var ifs = new InputFileStream(destination, fileId); // just for use in OnFileProgress event
 		var (file, location, dc_id) = fileId.ParseFileId(true);
 		await InitComplete();
-		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) => cancellationToken.ThrowIfCancellationRequested());
+		await Client.DownloadFileAsync(location, destination, dc_id, file.FileSize ?? 0, (t, s) =>
+		{
+			OnFileProgress?.Invoke(fileId, t, s);
+			cancellationToken.ThrowIfCancellationRequested();
+		});
 		return file;
 	}
 
@@ -2435,7 +2440,7 @@ public partial class Bot
 		await InitComplete();
 		var mimeType = MimeType(stickerFormat);
 		var peer = InputPeerUser(userId);
-		var uploadedFile = await Client.UploadFileAsync(sticker.Content, sticker.FileName);
+		var uploadedFile = await Client.UploadFileAsync(sticker.Content, sticker.FileName, ProgressCallback(sticker));
 		DocumentAttribute[] attribs = stickerFormat == StickerFormat.Animated ? [new DocumentAttributeSticker { }] : [];
 		var media = new TL.InputMediaUploadedDocument(uploadedFile, mimeType, attribs);
 		var messageMedia = await Client.Messages_UploadMedia(peer, media);

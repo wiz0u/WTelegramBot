@@ -299,7 +299,7 @@ public partial class Bot
 			//		return new InputChatPhoto { id = new InputPhoto { id = ipfl.id, access_hash = ipfl.access_hash, file_reference = ipfl.file_reference } };
 			//	break;
 			case FileType.Stream:
-				var inputFile = await Client.UploadFileAsync(photo.Content, photo.FileName);
+				var inputFile = await Client.UploadFileAsync(photo.Content, photo.FileName, ProgressCallback(photo));
 				return new InputChatUploadedPhoto { file = inputFile, flags = InputChatUploadedPhoto.Flags.has_file };
 		}
 		throw new WTException("Unrecognized InputFileStream type");
@@ -318,6 +318,9 @@ public partial class Bot
 		return new InputPhoto { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
+	private Client.ProgressCallback? ProgressCallback(InputFileStream stream) => OnFileProgress == null ? null
+		: (progress, total) => OnFileProgress?.Invoke(stream, progress, total);
+
 	/// <summary>Return TL structure for the photo InputFile. Upload the file for InputFileStream</summary>
 	public async Task<TL.InputMedia> InputMediaPhoto(InputFile file, bool hasSpoiler = false)
 	{
@@ -329,7 +332,7 @@ public partial class Bot
 				return new InputMediaPhotoExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaPhotoExternal.Flags.spoiler : 0 };
 			default: //case FileType.Stream:
 				var stream = (InputFileStream)file;
-				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName);
+				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName, ProgressCallback(stream));
 				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler == true ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
 		}
 	}
@@ -381,7 +384,7 @@ public partial class Bot
 				};
 			default: //case FileType.Stream:
 				var stream = (InputFileStream)file;
-				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName ?? defaultFilename);
+				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName ?? defaultFilename, ProgressCallback(stream));
 				if (mimeType == null)
 				{
 					string? fileExt = Path.GetExtension(stream.FileName); // ?? defaultFilename (if we want to behave exactly like Telegram.Bot)
@@ -538,7 +541,7 @@ public partial class Bot
 		{
 			case null: break;
 			case InputFileStream stream:
-				doc.thumb = await Client.UploadFileAsync(stream.Content, stream.FileName);
+				doc.thumb = await Client.UploadFileAsync(stream.Content, stream.FileName, ProgressCallback(stream));
 				doc.flags |= InputMediaUploadedDocument.Flags.has_thumb;
 				break;
 			default: throw new WTException("Only InputFileStream is not supported for thumbnails");

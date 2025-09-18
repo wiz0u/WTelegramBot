@@ -22,6 +22,7 @@ Some examples:
 - Send/receive big files
 - Connect using a MTProxy
 - Change the bot's profile picture
+- Monitor progress of file uploads/downloads
 
 You also get access to raw Updates information from Client API, in addition to the usual Bot API updates.
 They contain more information than the limited set of Bot API updates!
@@ -61,8 +62,7 @@ You can also enable property `WantUnknownTLUpdates` to receive updates that usua
 Some extended API calls can be made via `WTelegram.Bot` special methods:
 - `GetChatMemberList`: fetch a list of chat members
 - `GetMessagesById`: fetch posted messages (or range of messages) based on their message IDs
-- `InputUser`: can resolve a username into a user ID that you can then use with GetChat
-- `GetChat`: can obtain details about any group/channel based on their public name, or a user ID resolved by InputUser
+- `GetChat`: can obtain details about any user/group/channel based on their public name
 - `SetMyPhoto`: change the bot's profile picture
 
 Other extended API calls not usually accessible to Bot API can be made via the `Bot.Client` property which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
