@@ -21,7 +21,7 @@ using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=
 //MySQL:    	using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
 //PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Host=...");
 
-using var bot = new WTelegramBotClient(botToken, apiId, apiHash, connection);
+using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
 //          use new WTelegramBotClient(...) instead, if you want the power of WTelegram with Telegram.Bot compatibility for existing code
 //          use new TelegramBotClient(...)  instead, if you just want Telegram.Bot classic code
 var my = await bot.GetMe();

@@ -1297,21 +1297,13 @@ public partial class Bot
 	/// <returns>A <see cref="ChatFullInfo"/> object on success.</returns>
 	public async Task<ChatFullInfo> GetChat(ChatId chatId)
 	{
-		InputPeer inputPeer = null!;
-		if (chatId.Username != null)
+		var inputPeer = await InputPeerChat(chatId, allowUsersName: true);
+		if (inputPeer is InputPeerUser ipu)
 		{
-			inputPeer = await InputPeerChat(chatId, allowUsersName: true);
-			if (inputPeer is InputPeerUser user)
-				chatId = user.ID;
-		}
-		if (chatId.Identifier is long userId && userId >= 0)
-		{
-			await InitComplete();
-			var inputUser = InputUser(userId);
-			var userFull = await Client.Users_GetFullUser(inputUser);
+			var userFull = await Client.Users_GetFullUser(ipu);
 			userFull.UserOrChat(_collector);
 			var full = userFull.full_user;
-			var user = userFull.users[userId];
+			var user = userFull.users[ipu.user_id];
 			var chat = new WTelegram.Types.ChatFullInfo
 			{
 				TLInfo = userFull,
@@ -1341,7 +1333,7 @@ public partial class Bot
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
 			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = user.profile_color.background_emoji_id.ToString();
 			if (full.pinned_msg_id > 0)
-				chat.PinnedMessage = await GetMessage(inputUser, full.pinned_msg_id);
+				chat.PinnedMessage = await GetMessage(inputPeer, full.pinned_msg_id);
 			return chat;
 		}
 		else
