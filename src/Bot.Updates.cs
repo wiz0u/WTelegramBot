@@ -434,13 +434,8 @@ public partial class Bot
 		{
 			if (replyToMessage != null)
 				msg.ReplyToMessage = replyToMessage;
-			else if (reply_to.reply_to_msg_id > 0 && reply_to.reply_from == null)
-			{
-				var replyToPeer = reply_to.reply_to_peer_id ?? msgBase.Peer;
-				msg.ReplyToMessage = await GetMessage(await ChatFromPeer(replyToPeer, true), reply_to.reply_to_msg_id);
-			}
-			else if (reply_to.reply_to_top_id > 0)
-				msg.ReplyToMessage = await GetMessage(await ChatFromPeer(msgBase.Peer, true), reply_to.reply_to_top_id);
+			else if (reply_to.reply_from == null)
+				msg.ReplyToMessage = await GetRepliedMessage(msgBase);
 			if (reply_to.todo_item_id != 0)
 				msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
 			if (reply_to.reply_from?.date > default(DateTime))
@@ -848,7 +843,7 @@ public partial class Bot
 			},
 			MessageActionGiveawayResults magr => msg.GiveawayCompleted = new GiveawayCompleted {
 				WinnerCount = magr.winners_count, UnclaimedPrizeCount = magr.unclaimed_count,
-				GiveawayMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				GiveawayMessage = await GetRepliedMessage(msgSvc),
 				IsStarGiveaway = magr.flags.HasFlag(MessageActionGiveawayResults.Flags.stars)
 			},
 			MessageActionSetChatWallPaper mascwp => msg.ChatBackgroundSet = new ChatBackground { Type = mascwp.wallpaper.BackgroundType() },
@@ -881,22 +876,22 @@ public partial class Bot
 			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = mapmp.stars, AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
 			: msg.PaidMessagePriceChanged = new PaidMessagePriceChanged { PaidMessageStarCount = mapmp.stars },
 			MessageActionTodoCompletions matc => msg.ChecklistTasksDone = new ChecklistTasksDone {
-				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				ChecklistMessage = await GetRepliedMessage(msgSvc),
 				MarkedAsDoneTaskIds = matc.completed,
 				MarkedAsNotDoneTaskIds = matc.incompleted,
 			},
 			MessageActionTodoAppendTasks matat => msg.ChecklistTasksAdded = new ChecklistTasksAdded {
-				ChecklistMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				ChecklistMessage = await GetRepliedMessage(msgSvc),
 				Tasks = ChecklistTasks(matat.list)
 			},
-			MessageActionSuggestedPostApproval maspa => (msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null) is var spm ?
+			MessageActionSuggestedPostApproval maspa => await GetRepliedMessage(msgSvc) is var spm ?
 				maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.balance_too_low)
 				?	msg.SuggestedPostApprovalFailed = new SuggestedPostApprovalFailed { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), }
 				: maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.rejected)
 				?	msg.SuggestedPostDeclined = new SuggestedPostDeclined { SuggestedPostMessage = spm, Comment = maspa.reject_comment }
 				:	msg.SuggestedPostApproved = new SuggestedPostApproved { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), SendDate = maspa.schedule_date }
 				: null,
-			MessageActionSuggestedPostSuccess masps => (msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null) is var spm ?
+			MessageActionSuggestedPostSuccess masps => await GetRepliedMessage(msgSvc) is var spm ?
 				msg.SuggestedPostPaid = masps.price switch
 				{
 					TL.StarsAmount sa => new SuggestedPostPaid { Currency = "XTR", StarAmount = sa.StarAmount(), SuggestedPostMessage = spm },
@@ -904,7 +899,7 @@ public partial class Bot
 					_ => new() { SuggestedPostMessage = spm }
 				} : null,
 			MessageActionSuggestedPostRefund maspr => msg.SuggestedPostRefunded = new SuggestedPostRefunded {
-				SuggestedPostMessage = msgSvc.reply_to is MessageReplyHeader mrh ? await GetMessage(await ChatFromPeer(msgSvc.peer_id, true), mrh.reply_to_msg_id) : null,
+				SuggestedPostMessage = await GetRepliedMessage(msgSvc),
 				Reason = maspr.flags.HasFlag(MessageActionSuggestedPostRefund.Flags.payer_initiated) ? SuggestedPostRefundedReason.PaymentRefunded : SuggestedPostRefundedReason.PostDeleted
 			},
 			_ => null,

@@ -186,9 +186,27 @@ public partial class Bot
 
 	private async Task<Message?> GetMIMessage(InputPeer peer, int messageId, bool replyToo = false)
 	{
-		var msg = await GetMessage(peer, messageId, replyToo);
+		var msg = await GetMessage(peer, messageId, replyToo: replyToo);
 		if (msg != null && msg.Date != default) return msg;
 		return new Message { Chat = await ChatFromPeer(peer), Id = messageId };
+	}
+
+	private async Task<Message?> GetRepliedMessage(MessageBase msg)
+	{
+		if (msg is not { ReplyHeader: { } mrh, Peer: var peer }) return null;
+		var repliedPeer = mrh.reply_to_peer_id ?? peer;
+		var repliedMsgId = Math.Max(mrh.reply_to_msg_id, mrh.reply_to_top_id);
+		if (repliedPeer == null || repliedMsgId == 0) return null;
+		if (repliedPeer != peer)
+			return await GetMessage(await ChatFromPeer(repliedPeer, true), repliedMsgId);
+		lock (CachedMessages)
+			if (CachedMessages.TryGetValue((repliedPeer.ID, repliedMsgId), out var cachedMsg))
+				return cachedMsg;
+		var chat = await ChatFromPeer(peer, true);
+		var msgs = await Client.GetMessages(chat, new InputMessageReplyTo { id = msg.ID });
+		msgs.UserOrChat(_collector);
+		var msgBase = msgs.Messages.FirstOrDefault();
+		return await MakeMessage(msgBase);
 	}
 
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
