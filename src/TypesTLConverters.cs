@@ -306,7 +306,7 @@ public static class TypesTLConverters
 		{
 			writer.WriteTLObject(location);
 			writer.Write((byte)dc_id);
-			writer.Write((int)(file.FileSize ?? 0));
+			writer.Write((uint)(file.FileSize ?? 0));
 			writer.Write((byte)42);
 		}
 		var bytes = memStream.ToArray();
@@ -325,7 +325,7 @@ public static class TypesTLConverters
 		using var reader = new BinaryReader(memStream);
 		var location = (InputFileLocationBase)reader.ReadTLObject();
 		byte dc_id = reader.ReadByte();
-		int fileSize = reader.ReadInt32();
+		long fileSize = reader.ReadUInt32();
 		if (!generateFile) return (null!, location, dc_id);
 
 		idBytes[12] = idBytes[^8]; // patch byte following id with InputPhotoFileLocation.thumb_size
@@ -355,7 +355,7 @@ public static class TypesTLConverters
 		using var writer = new BinaryWriter(memStream);
 		writer.WriteTLObject(photo.ToFileLocation(big));
 		writer.Write((byte)photo.dc_id);
-		writer.Write(big.FileSize);
+		writer.Write((uint)big.FileSize);
 		writer.Write((byte)42);
 		var bytes = memStream.ToArray();
 		var chatPhoto = new ChatPhoto()
@@ -365,7 +365,7 @@ public static class TypesTLConverters
 		memStream.SetLength(0);
 		writer.WriteTLObject(photo.ToFileLocation(small));
 		writer.Write((byte)photo.dc_id);
-		writer.Write(small.FileSize);
+		writer.Write((uint)small.FileSize);
 		writer.Write((byte)42);
 		bytes = memStream.ToArray();
 		chatPhoto.SmallFileId = ToBase64(bytes);

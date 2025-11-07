@@ -1938,7 +1938,7 @@ public partial class Bot
 				flags = (excludeUnsaved ? Payments_GetSavedStarGifts.Flags.exclude_unsaved : 0)
 					| (excludeSaved ? Payments_GetSavedStarGifts.Flags.exclude_saved : 0)
 					| (excludeUnlimited ? Payments_GetSavedStarGifts.Flags.exclude_unlimited : 0)
-					| (excludeLimited ? Payments_GetSavedStarGifts.Flags.exclude_limited : 0)
+					| (excludeLimited ? Payments_GetSavedStarGifts.Flags.exclude_upgradable | Payments_GetSavedStarGifts.Flags.exclude_unupgradable : 0)
 					| (excludeUnique ? Payments_GetSavedStarGifts.Flags.exclude_unique : 0)
 					| (sortByPrice ? Payments_GetSavedStarGifts.Flags.sort_by_value : 0),
 				peer = peer,

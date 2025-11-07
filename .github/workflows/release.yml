@@ -14,6 +14,7 @@ run-name: '📌 Release build ${{ inputs.version }}'
 env:
   PROJECT_PATH: src/WTelegramBot.csproj
   CONFIGURATION: Release
+  PACKAGES_PATH: src/bin/Release
   RELEASE_NOTES: ${{ inputs.release_notes }}
   VERSION: ${{ inputs.version }}
 
@@ -21,15 +22,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write               # For git tag
+      contents: write  # For git tag
+      id-token: write  # enable GitHub OIDC token issuance for this job
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 30
+        fetch-depth: 100
     - name: Determine version
       if: ${{ env.VERSION == '' }}
       run: |
-        git fetch --depth=30 --tags
+        git fetch --depth=100 --tags
         DESCR_TAG=$(git describe --tags)
         LAST_TAG=${DESCR_TAG%%-*}
         NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))
@@ -37,19 +39,35 @@ jobs:
         if [[ "$RELEASE_VERSION" > "$NEXT_VERSION" ]] then VERSION=$RELEASE_VERSION; else VERSION=$NEXT_VERSION; fi
         echo Last tag: $LAST_TAG · Next version: $NEXT_VERSION · Release version: $RELEASE_VERSION · Build version: $VERSION
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
-    - name: Pack
-      run: dotnet pack $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION "-p:ReleaseNotes=\"$RELEASE_NOTES\"" --output packages
+        dotnet-version: 9.0.x
+    - name: Build
+      run: |
+        RELEASE_NOTES=${RELEASE_NOTES//|/%0A}
+        RELEASE_NOTES=${RELEASE_NOTES// - /%0A- }
+        RELEASE_NOTES=${RELEASE_NOTES//  /%0A%0A}
+        RELEASE_NOTES=${RELEASE_NOTES//$'\n'/%0A}
+        RELEASE_NOTES=${RELEASE_NOTES//\"/%22}
+        RELEASE_NOTES=${RELEASE_NOTES//,/%2C}
+        RELEASE_NOTES=${RELEASE_NOTES//;/%3B}
+        dotnet build $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION -p:ReleaseNotes="$RELEASE_NOTES"
     # - name: Upload artifact
     #   uses: actions/upload-artifact@v4
     #   with:
     #     name: packages
-    #     path: packages/*.nupkg
+    #     path: $PACKAGES_PATH/*.nupkg
+
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: ${{ secrets.NUGET_USER }}
     - name: Nuget push
-      run: dotnet nuget push packages/*.nupkg --api-key ${{secrets.NUGETAPIKEY}} --skip-duplicate --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push $PACKAGES_PATH/*.nupkg --api-key ${{steps.login.outputs.NUGET_API_KEY}} --skip-duplicate --source https://api.nuget.org/v3/index.json
+
     - name: Git tag
       run: |
         git tag $VERSION

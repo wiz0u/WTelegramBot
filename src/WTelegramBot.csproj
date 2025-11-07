@@ -7,6 +7,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>Telegram.Bot</RootNamespace>
     <Deterministic>true</Deterministic>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -17,7 +18,7 @@
     <Description>Telegram Bot API (local server) library providing more extended features
 
 Release Notes:
-$(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</Description>
+$(ReleaseNotes)</Description>
     <Copyright>Copyright © Olivier Marcoux 2024-2025</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/wiz0u/WTelegramBot</PackageProjectUrl>
@@ -27,7 +28,7 @@ $(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%
     <RepositoryType>git</RepositoryType>
     <PackageTags>Telegram;Bot;Api;Client</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>$(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</PackageReleaseNotes>
+    <PackageReleaseNotes>$(ReleaseNotes)</PackageReleaseNotes>
     <NoWarn>NETSDK1138;CS1574;CS0419;CA1510</NoWarn>
   </PropertyGroup>
 
