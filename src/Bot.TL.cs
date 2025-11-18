@@ -1118,7 +1118,7 @@ public partial class Bot
 		UpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
 		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
 		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
-		PublisherChat = gift.released_by == null ? null : Chat(gift.released_by),
+		PublisherChat = gift.released_by is PeerChannel pch ? Chat(pch.channel_id) : null,
 	};
 
 	internal async Task<UniqueGift> MakeUniqueGift(TL.StarGiftUnique sgu) => new UniqueGift
@@ -1129,7 +1129,7 @@ public partial class Bot
 		Model = await UniqueGiftModel(sgu.attributes.OfType<StarGiftAttributeModel>().First()),
 		Symbol = await UniqueGiftSymbol(sgu.attributes.OfType<StarGiftAttributePattern>().First()),
 		Backdrop = UniqueGiftBackdrop(sgu.attributes.OfType<StarGiftAttributeBackdrop>().First()),
-		PublisherChat = sgu.released_by == null ? null : Chat(sgu.released_by),
+		PublisherChat = sgu.released_by is PeerChannel pch ? Chat(pch.channel_id) : null,
 	};
 
 	internal AffiliateInfo? Affiliate(TL.StarsTransaction transaction)

@@ -19,7 +19,7 @@ Some examples:
 - Get group/channel members list
 - Resolve user/chat usernames
 - Get full details of users/chats
-- Send/receive big files
+- Send/receive big files _(and track download progress)_
 - Connect using a MTProxy
 - Change the bot's profile picture
 - Monitor progress of file uploads/downloads
