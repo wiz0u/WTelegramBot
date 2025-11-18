@@ -2851,7 +2851,8 @@ public partial class Bot
 	public async Task SetGameScore(long userId, int score, string inlineMessageId, bool force = default, bool disableEditMessage = default)
 	{
 		var id = await ParseInlineMsgID(inlineMessageId);
-		await Client.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force);
+		var dcClient = await Client.GetClientForDC(id.DcId);
+		await dcClient.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force);
 	}
 
 	/// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>
@@ -2877,7 +2878,8 @@ public partial class Bot
 	public async Task<GameHighScore[]> GetGameHighScores(long userId, string inlineMessageId)
 	{
 		var id = await ParseInlineMsgID(inlineMessageId);
-		var highScore = await Client.Messages_GetInlineGameHighScores(id, InputUser(userId));
+		var dcClient = await Client.GetClientForDC(id.DcId);
+		var highScore = await dcClient.Messages_GetInlineGameHighScores(id, InputUser(userId));
 		_collector.Collect(highScore.users.Values);
 		return await Task.WhenAll(highScore.scores.Select(async hs => new GameHighScore
 		{ Position = hs.pos, User = await UserOrResolve(hs.user_id), Score = hs.score }));

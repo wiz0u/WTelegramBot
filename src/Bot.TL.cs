@@ -1001,7 +1001,7 @@ public partial class Bot
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	Task<bool> Messages_EditInlineBotMessage(string? bConnId, InputBotInlineMessageIDBase id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, bool no_webpage = false, bool invert_media = false)
+	async Task<bool> Messages_EditInlineBotMessage(string? bConnId, InputBotInlineMessageIDBase id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, bool no_webpage = false, bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_EditInlineBotMessage
 		{
@@ -1012,7 +1012,8 @@ public partial class Bot
 			reply_markup = reply_markup,
 			entities = entities,
 		};
-		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
+		var dcClient = await Client.GetClientForDC(id.DcId);
+		return bConnId is null ? await dcClient.Invoke(query) : await dcClient.InvokeWithBusinessConnection(bConnId, query);
 	}
 
 	internal async Task<Telegram.Bot.Types.BusinessIntro?> MakeBusinessIntro(TL.BusinessIntro? intro) => intro == null ? null : new()
