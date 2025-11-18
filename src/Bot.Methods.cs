@@ -1313,8 +1313,8 @@ public partial class Bot
 				FirstName = user.first_name,
 				LastName = user.last_name,
 				AccessHash = user.access_hash,
-				AccentColorId = user.color?.flags.HasFlag(PeerColor.Flags.has_color) == true ? user.color.color : (int)(user.id % 7),
-				Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
+                AccentColorId = user.color is PeerColor userColor && userColor.flags.HasFlag(PeerColor.Flags.has_color) ? userColor.color : (int)(user.id % 7),
+                Photo = (full.personal_photo ?? full.profile_photo ?? full.fallback_photo).ChatPhoto(),
 				AcceptedGiftTypes = (full.disallowed_gifts?.flags ?? 0).AcceptedGiftTypes(),
 				ActiveUsernames = user.username == null && user.usernames == null ? null : [.. user.ActiveUsernames],
 				Birthdate = full.birthday.Birthdate(),
@@ -1329,10 +1329,10 @@ public partial class Bot
 				HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden),
 				MessageAutoDeleteTime = full.ttl_period.NullIfZero(),
 			};
-			if (user.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = user.color.background_emoji_id.ToString();
-			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = user.profile_color.color;
-			if (user.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = user.profile_color.background_emoji_id.ToString();
-			if (full.pinned_msg_id > 0)
+            if (user.color is PeerColor userColor2 && userColor2.flags.HasFlag(PeerColor.Flags.has_background_emoji_id)) chat.BackgroundCustomEmojiId = userColor2.background_emoji_id.ToString();
+            if (user.profile_color is PeerColor userProfileColor && userProfileColor.flags.HasFlag(PeerColor.Flags.has_color)) chat.ProfileAccentColorId = userProfileColor.color;
+            if (user.profile_color is PeerColor userProfileColor2 && userProfileColor2.flags.HasFlag(PeerColor.Flags.has_background_emoji_id)) chat.ProfileBackgroundCustomEmojiId = userProfileColor2.background_emoji_id.ToString();
+            if (full.pinned_msg_id > 0)
 				chat.PinnedMessage = await GetMessage(inputPeer, full.pinned_msg_id);
 			return chat;
 		}
@@ -1376,11 +1376,11 @@ public partial class Bot
 				var channelFull = (ChannelFull)full;
 				if (channelFull.flags2.HasFlag(ChannelFull.Flags2.has_reactions_limit)) chat.MaxReactionCount = channelFull.reactions_limit;
 				chat.ActiveUsernames = channel.username == null && channel.usernames == null ? null : [.. channel.ActiveUsernames];
-				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.AccentColorId = channel.color.color;
-				if (channel.color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.BackgroundCustomEmojiId = channel.color.background_emoji_id.ToString();
-				if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_color) == true) chat.ProfileAccentColorId = channel.profile_color.color;
-				if (channel.profile_color?.flags.HasFlag(PeerColor.Flags.has_background_emoji_id) == true) chat.ProfileBackgroundCustomEmojiId = channel.profile_color.background_emoji_id.ToString();
-				chat.EmojiStatusCustomEmojiId = channel.emoji_status?.DocumentId.ToString();
+                if (channel.color is PeerColor channelColor && channelColor.flags.HasFlag(PeerColor.Flags.has_color)) chat.AccentColorId = channelColor.color;
+                if (channel.color is PeerColor channelColor2 && channelColor2.flags.HasFlag(PeerColor.Flags.has_background_emoji_id)) chat.BackgroundCustomEmojiId = channelColor2.background_emoji_id.ToString();
+                if (channel.profile_color is PeerColor channelProfileColor && channelProfileColor.flags.HasFlag(PeerColor.Flags.has_color)) chat.ProfileAccentColorId = channelProfileColor.color;
+                if (channel.profile_color is PeerColor channelProfileColor2 && channelProfileColor2.flags.HasFlag(PeerColor.Flags.has_background_emoji_id)) chat.ProfileBackgroundCustomEmojiId = channelProfileColor2.background_emoji_id.ToString();
+                chat.EmojiStatusCustomEmojiId = channel.emoji_status?.DocumentId.ToString();
 				chat.EmojiStatusExpirationDate = channel.emoji_status?.Until;
 				chat.JoinToSendMessages = channel.flags.HasFlag(Channel.Flags.join_to_send) || !channel.flags.HasFlag(Channel.Flags.megagroup) || channelFull.linked_chat_id == 0;
 				chat.JoinByRequest = channel.flags.HasFlag(Channel.Flags.join_request);
@@ -1510,7 +1510,7 @@ public partial class Bot
 	public async Task<ForumTopic> CreateForumTopic(ChatId chatId, string name, int? iconColor = default, string? iconCustomEmojiId = default)
 	{
 		var channel = await InputChannel(chatId);
-		var msg = await PostedMsg(Client.Channels_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor,
+		var msg = await PostedMsg(Client.Messages_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor,
 			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
 		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
 		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId };
@@ -1525,7 +1525,7 @@ public partial class Bot
 	public async Task EditForumTopic(ChatId chatId, int messageThreadId, string? name = default, string? iconCustomEmojiId = default)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null :
+		await Client.Messages_EditForumTopic(channel, messageThreadId, name, iconCustomEmojiId == null ? null :
 			iconCustomEmojiId == "" ? 0 : long.Parse(iconCustomEmojiId));
 	}
 
@@ -1537,7 +1537,7 @@ public partial class Bot
 	public async Task CloseReopenForumTopic(ChatId chatId, int messageThreadId, bool closed = true)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, messageThreadId, closed: closed);
+		await Client.Messages_EditForumTopic(channel, messageThreadId, closed: closed);
 	}
 
 	/// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanDeleteMessages</em> administrator rights.</summary>
@@ -1546,7 +1546,7 @@ public partial class Bot
 	public async Task DeleteForumTopic(ChatId chatId, int messageThreadId)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_DeleteTopicHistory(channel, messageThreadId);
+		await Client.Messages_DeleteTopicHistory(channel, messageThreadId);
 	}
 
 	/// <summary>Use this method to hide or unhide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights. The topic will be automatically closed if it was open.</summary>
@@ -1555,7 +1555,7 @@ public partial class Bot
 	public async Task HideGeneralForumTopic(ChatId chatId, bool hidden = true)
 	{
 		var channel = await InputChannel(chatId);
-		await Client.Channels_EditForumTopic(channel, 1, hidden: hidden);
+		await Client.Messages_EditForumTopic(channel, 1, hidden: hidden);
 	}
 
 	/// <summary>Use this method to send answers to callback queries sent from <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboards</a>. The answer will be displayed to the user as a notification at the top of the chat screen or as an alert</summary>
