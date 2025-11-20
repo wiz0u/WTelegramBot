@@ -463,8 +463,6 @@ public partial class Bot
 					Position = reply_to.quote_offset,
 					IsManual = reply_to.flags.HasFlag(MessageReplyHeader.Flags.quote)
 				};
-			if (msg.IsTopicMessage |= reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic))
-				msg.MessageThreadId = reply_to.reply_to_top_id > 0 ? reply_to.reply_to_top_id : reply_to.reply_to_msg_id;
 		}
 		else if (msgBase.ReplyTo is MessageReplyStoryHeader mrsh)
 			msg.ReplyToStory = new Story
@@ -505,6 +503,15 @@ public partial class Bot
 				{
 					msg.ForwardOrigin = await MakeOrigin(fwd);
 					msg.IsAutomaticForward = msg.Chat.Type == ChatType.Supergroup && await ChatFromPeer(fwd.saved_from_peer) is Chat { Type: ChatType.Channel } && fwd.saved_from_msg_id != 0;
+				}
+				if (msg.Chat.Type == ChatType.Supergroup && message.reply_to is MessageReplyHeader reply_to)
+				{
+					msg.IsTopicMessage = reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic);
+					if (reply_to.reply_to_top_id > 0)
+						msg.MessageThreadId = reply_to.reply_to_top_id;
+					else if (reply_to.reply_to_msg_id > 0 // reply to same-chat?
+						&& (reply_to.reply_to_peer_id == null || reply_to.reply_to_peer_id.ID == message.Peer.ID))
+						msg.MessageThreadId = reply_to.reply_to_msg_id;
 				}
 				await FixMsgFrom(msg, message.from_id, message.peer_id);
 				if (message.via_bot_id != 0) msg.ViaBot = await UserOrResolve(message.via_bot_id);
