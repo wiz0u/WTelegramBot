@@ -280,8 +280,8 @@ public partial class Bot
 			return null;
 		return parseMode switch
 		{
-			ParseMode.Markdown or ParseMode.MarkdownV2 => Client.MarkdownToEntities(ref text, false, _collector),
-			ParseMode.Html => Client.HtmlToEntities(ref text, false, _collector),
+			ParseMode.Markdown or ParseMode.MarkdownV2 => Client.MarkdownToEntities(ref text, true, _collector),
+			ParseMode.Html => Client.HtmlToEntities(ref text, true, _collector),
 			_ => null,
 		};
 	}
