@@ -1264,7 +1264,7 @@ public partial class Bot
 			Id = item.id,
 			Text = item.title.text,
 			TextEntities = MakeEntities(item.title.entities),
-			CompletedByUser = User(completion?.completed_by ?? 0),
+			CompletedByUser = User(completion?.completed_by is PeerUser pu ? pu.user_id : 0),
 			CompletionDate = completion?.date
 		};
 	})];

@@ -12,8 +12,7 @@ int apiId = int.Parse(Environment.GetEnvironmentVariable("ApiId")!);
 string apiHash = Environment.GetEnvironmentVariable("ApiHash")!;
 string botToken = Environment.GetEnvironmentVariable("BotToken")!;
 
-StreamWriter WTelegramLogs = new StreamWriter("WTelegramBot.log", true, Encoding.UTF8) { AutoFlush = true };
-WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{"TDIWE!"[lvl]}] {str}");
+WTelegram.Helpers.Log = (lvl, str) => System.Diagnostics.Debug.WriteLine(str);
 
 // Using SQLite DB for storage. Other DBs below (remember to add/uncomment the adequate PackageReference in .csproj)
 using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
@@ -27,53 +26,61 @@ using var bot = new WTelegram.Bot(botToken, apiId, apiHash, connection);
 var my = await bot.GetMe();
 Console.WriteLine($"I am @{my.Username}");
 
-// get details about a user via the public username (even if not in discussion with bot)
-var userDetails = await bot.GetChat("@spotifysavebot");
-var full = (TL.Users_UserFull)userDetails.TLInfo()!;
-var tlUser = full.users[userDetails.Id];
-var fullUser = full.full_user;
-if (tlUser.flags.HasFlag(TL.User.Flags.bot)) Console.WriteLine($"{tlUser} is a bot");
-if (tlUser.flags.HasFlag(TL.User.Flags.scam)) Console.WriteLine($"{tlUser} is reported as scam");
-if (tlUser.flags.HasFlag(TL.User.Flags.verified)) Console.WriteLine($"{tlUser} is verified");
-if (tlUser.flags.HasFlag(TL.User.Flags.restricted)) Console.WriteLine($"{tlUser} is restricted: {tlUser.restriction_reason?[0].reason}");
-if (fullUser.bot_info is { commands: { } botCommands })
+Console.Write("Demo power features? (Y/N) ");
+if (Console.ReadKey(true).Key == ConsoleKey.Y)
 {
-	Console.WriteLine($"{tlUser} has {botCommands.Length} bot commands:");
-	foreach (var command in botCommands)
-		Console.WriteLine($"  /{command.command,-20} {command.description}");
+	Console.WriteLine();
+	// get details about a user via the public username (even if not in discussion with bot)
+	var userDetails = await bot.GetChat("@spotifysavebot");
+	var full = (TL.Users_UserFull)userDetails.TLInfo()!;
+	var tlUser = full.users[userDetails.Id];
+	var fullUser = full.full_user;
+	if (tlUser.flags.HasFlag(TL.User.Flags.bot)) Console.WriteLine($"{tlUser} is a bot");
+	if (tlUser.flags.HasFlag(TL.User.Flags.scam)) Console.WriteLine($"{tlUser} is reported as scam");
+	if (tlUser.flags.HasFlag(TL.User.Flags.verified)) Console.WriteLine($"{tlUser} is verified");
+	if (tlUser.flags.HasFlag(TL.User.Flags.restricted)) Console.WriteLine($"{tlUser} is restricted: {tlUser.restriction_reason?[0].reason}");
+	if (fullUser.bot_info is { commands: { } botCommands })
+	{
+		Console.WriteLine($"{tlUser} has {botCommands.Length} bot commands:");
+		foreach (var command in botCommands)
+			Console.WriteLine($"  /{command.command,-20} {command.description}");
+	}
+
+	//---------------------------------------------------------------------------------------
+	// get details about a public chat (even if bot is not a member of that chat)
+	var chat = await bot.GetChat("@tdlibchat");
+	if (chat.TLInfo() is TL.Messages_ChatFull { full_chat: TL.ChannelFull channelFull })
+	{
+		Console.WriteLine($"@{chat.Username} has {channelFull.participants_count} members, {channelFull.online_count} online");
+		if (channelFull.slowmode_seconds > 0)
+			Console.WriteLine($"@{chat.Username} has slowmode enabled: {channelFull.slowmode_seconds} seconds");
+		if (channelFull.available_reactions is TL.ChatReactionsAll { flags: TL.ChatReactionsAll.Flags.allow_custom })
+			Console.WriteLine($"@{chat.Username} allows custom emojis as reactions");
+	}
+
+	//---------------------------------------------------------------------------------------
+	// get list of members (you can increase the limit but Telegram might also impose a limit anyway)
+	var members = await bot.GetChatMemberList(chat.Id, limit: 1000);
+	Console.WriteLine($"I fetched the info of {members.Length} members");
+
+	//---------------------------------------------------------------------------------------
+	// get a range of posted messages
+	var messages = await bot.GetMessagesById("@tginfoen", Enumerable.Range(1904, 5));
+	Console.WriteLine($"I fetched {messages.Count} messages from @tginfoen:");
+	foreach (var m in messages)
+		Console.WriteLine($"  {m.MessageId}: {m.Type}");
+
+	//---------------------------------------------------------------------------------------
+	// show some message info not accessible in Bot API
+	var msg = messages[0];
+	var tlMsg = (TL.Message)msg.TLMessage()!;
+	Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}  Pinned = {tlMsg.flags.HasFlag(TL.Message.Flags.pinned)}");
+
+	chat = await bot.GetChat("@DevTopic");
+	var topic = await bot.GetForumTopicExtended(chat, 4);
+	Console.WriteLine($"Topic t.me/DevTopic/4 is \"{topic!.title}\", created on {topic.date} by {topic.from_id})");
 }
-
-//---------------------------------------------------------------------------------------
-// get details about a public chat (even if bot is not a member of that chat)
-var chatDetails = await bot.GetChat("@tdlibchat");
-if (chatDetails.TLInfo() is TL.Messages_ChatFull { full_chat: TL.ChannelFull channelFull })
-{
-	Console.WriteLine($"@{chatDetails.Username} has {channelFull.participants_count} members, {channelFull.online_count} online");
-	if (channelFull.slowmode_seconds > 0)
-		Console.WriteLine($"@{chatDetails.Username} has slowmode enabled: {channelFull.slowmode_seconds} seconds");
-	if (channelFull.available_reactions is TL.ChatReactionsAll { flags: TL.ChatReactionsAll.Flags.allow_custom })
-		Console.WriteLine($"@{chatDetails.Username} allows custom emojis as reactions");
-}
-
-//---------------------------------------------------------------------------------------
-// get list of members (you can increase the limit but Telegram might also impose a limit anyway)
-var members = await bot.GetChatMemberList(chatDetails.Id, limit: 1000);
-Console.WriteLine($"I fetched the info of {members.Length} members");
-
-//---------------------------------------------------------------------------------------
-// get a range of posted messages
-var messages = await bot.GetMessagesById("@tginfoen", Enumerable.Range(1904, 5));
-Console.WriteLine($"I fetched {messages.Count} messages from @tginfoen:");
-foreach (var m in messages)
-	Console.WriteLine($"  {m.MessageId}: {m.Type}");
-
-//---------------------------------------------------------------------------------------
-// show some message info not accessible in Bot API
-var msg = messages[0];
-var tlMsg = (TL.Message)msg.TLMessage()!;
-Console.WriteLine($"Info for message {tlMsg.id}: Views = {tlMsg.views}  Shares = {tlMsg.forwards}  Pinned = {tlMsg.flags.HasFlag(TL.Message.Flags.pinned)}");
-
-Console.WriteLine("___________________________________________________\n");
+Console.WriteLine("\n___________________________________________________\n");
 Console.WriteLine("I'm listening now. Send me a command in private or in a group where I am... Or press Escape to exit");
 await bot.DropPendingUpdates();
 bot.WantUnknownTLUpdates = true;
@@ -86,6 +93,7 @@ Console.WriteLine("Exiting...");
 
 async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 {
+	Console.WriteLine($"{type} {msg.Type}: {msg.Text ?? msg.Caption}");
 	if (msg.Text == null) return;
 	var text = msg.Text.ToLower();
 	// commands accepted by this example program:
@@ -132,6 +140,7 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 
 Task OnUpdate(WTelegram.Types.Update update)
 {
+	Console.WriteLine($"{update.Type} {update.TLUpdate}");
 	if (update.Type == UpdateType.Unknown)
 	{
 		//---> Show some update types that are unsupported by Bot API but can be handled via TLUpdate

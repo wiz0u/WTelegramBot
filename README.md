@@ -17,6 +17,7 @@ You can also call Client API methods that are possible for bots but not accessib
 Some examples:
 - Fetch past messages of group/channel
 - Get group/channel members list
+- Get existing forum topic details
 - Resolve user/chat usernames
 - Get full details of users/chats
 - Send/receive big files _(and track download progress)_
@@ -43,8 +44,6 @@ The library contains a compatibility layer as `Telegram.Bot.WTelegramBotClient` 
 
 If you're not migrating an existing codebase, it is recommended that you use `WTelegram.Bot` class directly.
 Here are the main differences:
-* The method names don't have the *Async suffix (even though they should still be invoked with `await`) so they are more close to official [Bot API method names](https://core.telegram.org/bots/api#available-methods).
-* The optional parameters follow a more logical order for developers, with the more rarely used optional parameters near the end.
 * There is no CancellationToken parameter because it doesn't make sense to abort an immediate TCP request to Client API.  
 _(Even with HTTP Bot API, it didn't make much sense: You can use cancellationToken.ThrowIfCancellationRequested() at various points of your own code if you want it to be cancellable)_
 * In case of an error, WTelegram.Bot will throw `WTelegram.WTException` like `TL.RpcException` showing the raw Telegram error, instead of an ApiRequestException

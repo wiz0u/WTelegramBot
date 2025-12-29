@@ -12,7 +12,7 @@ public partial class Bot
 {
 	const int Reactions_uniq_max = 11;
 
-	#region Power-up methods
+	#region Power methods
 	/// <summary>Use this method to get a list of members in a chat (can be incomplete).</summary>
 	/// <remarks>⚠️ For big chats, Telegram will likely limit the total number of members you can obtain with this method</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
@@ -76,7 +76,30 @@ public partial class Bot
 		};
 		return pp.photo.PhotoSizes()!;
 	}
-	#endregion Power-up methods
+
+	/// <summary>Use this method to fetch Client API info about a specific forum topic </summary>
+	/// <param name="chatId">The group chat with topics enabled</param>
+	/// <param name="topicId">Topic ID</param>
+	/// <returns>Details about the topic in Client API format</returns>
+	public async Task<TL.ForumTopic?> GetForumTopicExtended(ChatId chatId, int topicId)
+	{
+		var peer = await InputPeerChat(chatId);
+		var topics = await Client.Messages_GetForumTopicsByID(peer, [topicId]);
+		topics.UserOrChat(_collector);
+		return topics.topics.FirstOrDefault() is TL.ForumTopic tlTopic ? tlTopic : null;
+	}
+
+	/// <summary>Use this method to fetch Bot API info about a specific forum topic</summary>
+	/// <param name="chatId">The group chat with topics enabled</param>
+	/// <param name="topicId">Topic ID</param>
+	/// <returns>Details about the topic in Bot API format</returns>
+	public async Task<ForumTopic?> GetForumTopic(ChatId chatId, int topicId)
+	{
+		var topic = await GetForumTopicExtended(chatId, topicId);
+		return topic == null ? null : new ForumTopic { MessageThreadId = topic.id, Name = topic.title,
+			IconColor = topic.icon_color, IconCustomEmojiId = topic.flags.HasFlag(TL.ForumTopic.Flags.has_icon_emoji_id) ? topic.icon_emoji_id.ToString() : null };
+	}
+	#endregion Power methods
 
 	#region Available methods
 

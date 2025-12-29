@@ -51,16 +51,6 @@ public partial class WTelegramBotClient(WTelegramBotClientOptions options, HttpC
     { }
 
     /// <inheritdoc/>
-    [Obsolete("Method MakeRequestAsync was renamed as SendRequest")]
-    public Task<TResponse> MakeRequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
-        => SendRequest(request, cancellationToken);
-
-    /// <inheritdoc/>
-    [Obsolete("Method MakeRequest was renamed as SendRequest")]
-    public Task<TResponse> MakeRequest<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
-        => SendRequest(request, cancellationToken);
-
-    /// <inheritdoc/>
     public async Task<bool> TestApi(CancellationToken cancellationToken = default)
     {
         try
