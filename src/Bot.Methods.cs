@@ -639,7 +639,7 @@ public partial class Bot
 			else if ((tlMedia = await InputMediaDocument(ipm.Media, await UploadMediaPhoto(peer, ipmv.Cover), ipmv.StartTimestamp)) is TL.InputMediaUploadedDocument doc)
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 					duration = ipmv.Duration, h = ipmv.Height, w = ipmv.Width,
-					flags = ipmv.SupportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
+					flags = ipmv.SupportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
 			if (ipm.Media.FileType != FileType.Id) // External or Uploaded
 				tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 			multimedia.Add(tlMedia);
@@ -864,7 +864,7 @@ public partial class Bot
 			poll = new TL.Poll
 			{
 				flags = (isClosed ? TL.Poll.Flags.closed : 0)
-					| (isAnonymous == false ? TL.Poll.Flags.public_voters : 0)
+					| (!isAnonymous ? TL.Poll.Flags.public_voters : 0)
 					| (allowsMultipleAnswers ? TL.Poll.Flags.multiple_choice : 0)
 					| (type == PollType.Quiz ? TL.Poll.Flags.quiz : 0)
 					| (openPeriod.HasValue ? TL.Poll.Flags.has_close_period : 0)
@@ -2857,7 +2857,7 @@ public partial class Bot
 		bool disableEditMessage = default)
 	{
 		var peer = await InputPeerChat(chatId);
-		var updates = await Client.Messages_SetGameScore(peer, messageId, InputUser(userId), score, disableEditMessage != true, force);
+		var updates = await Client.Messages_SetGameScore(peer, messageId, InputUser(userId), score, !disableEditMessage, force);
 		updates.UserOrChat(_collector);
 		var editUpdate = updates.UpdateList.OfType<UpdateEditMessage>().FirstOrDefault(uem => uem.message.Peer.ID == peer.ID && uem.message.ID == messageId);
 		if (editUpdate != null) return (await MakeMessage(editUpdate.message))!;
@@ -2875,7 +2875,7 @@ public partial class Bot
 	{
 		var id = await ParseInlineMsgID(inlineMessageId);
 		var dcClient = await Client.GetClientForDC(id.DcId);
-		await dcClient.Messages_SetInlineGameScore(id, InputUser(userId), score, disableEditMessage != true, force);
+		await dcClient.Messages_SetInlineGameScore(id, InputUser(userId), score, !disableEditMessage, force);
 	}
 
 	/// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>

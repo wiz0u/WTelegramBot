@@ -207,8 +207,8 @@ public static class TypesTLConverters
 	{
 		if (useIndependentChatPermissions != true)
 		{
-			if (permissions.CanSendPolls == true) permissions.CanSendMessages = true;
-			if (permissions.CanSendOtherMessages == true || permissions.CanAddWebPagePreviews == true)
+			if (permissions.CanSendPolls) permissions.CanSendMessages = true;
+			if (permissions.CanSendOtherMessages || permissions.CanAddWebPagePreviews)
 				permissions.CanSendAudios = permissions.CanSendDocuments = permissions.CanSendPhotos = permissions.CanSendVideos =
 					permissions.CanSendVideoNotes = permissions.CanSendVoiceNotes = permissions.CanSendMessages = true;
 		}
@@ -218,20 +218,20 @@ public static class TypesTLConverters
 	internal static ChatBannedRights ToChatBannedRights(this ChatPermissions permissions, DateTime? untilDate = default) => new()
 	{
 		until_date = untilDate ?? default,
-		flags = (permissions.CanSendMessages == true ? 0 : ChatBannedRights.Flags.send_messages)
-			| (permissions.CanSendAudios == true ? 0 : ChatBannedRights.Flags.send_audios)
-			| (permissions.CanSendDocuments == true ? 0 : ChatBannedRights.Flags.send_docs)
-			| (permissions.CanSendPhotos == true ? 0 : ChatBannedRights.Flags.send_photos)
-			| (permissions.CanSendVideos == true ? 0 : ChatBannedRights.Flags.send_videos)
-			| (permissions.CanSendVideoNotes == true ? 0 : ChatBannedRights.Flags.send_roundvideos)
-			| (permissions.CanSendVoiceNotes == true ? 0 : ChatBannedRights.Flags.send_voices)
-			| (permissions.CanSendPolls == true ? 0 : ChatBannedRights.Flags.send_polls)
-			| (permissions.CanSendOtherMessages == true ? 0 : ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games | ChatBannedRights.Flags.send_inline)
-			| (permissions.CanAddWebPagePreviews == true ? 0 : ChatBannedRights.Flags.embed_links)
-			| (permissions.CanChangeInfo == true ? 0 : ChatBannedRights.Flags.change_info)
-			| (permissions.CanInviteUsers == true ? 0 : ChatBannedRights.Flags.invite_users)
-			| (permissions.CanPinMessages == true ? 0 : ChatBannedRights.Flags.pin_messages)
-			| (permissions.CanManageTopics == true ? 0 : ChatBannedRights.Flags.manage_topics)
+		flags = (permissions.CanSendMessages ? 0 : ChatBannedRights.Flags.send_messages)
+			| (permissions.CanSendAudios ? 0 : ChatBannedRights.Flags.send_audios)
+			| (permissions.CanSendDocuments ? 0 : ChatBannedRights.Flags.send_docs)
+			| (permissions.CanSendPhotos ? 0 : ChatBannedRights.Flags.send_photos)
+			| (permissions.CanSendVideos ? 0 : ChatBannedRights.Flags.send_videos)
+			| (permissions.CanSendVideoNotes ? 0 : ChatBannedRights.Flags.send_roundvideos)
+			| (permissions.CanSendVoiceNotes ? 0 : ChatBannedRights.Flags.send_voices)
+			| (permissions.CanSendPolls ? 0 : ChatBannedRights.Flags.send_polls)
+			| (permissions.CanSendOtherMessages ? 0 : ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games | ChatBannedRights.Flags.send_inline)
+			| (permissions.CanAddWebPagePreviews ? 0 : ChatBannedRights.Flags.embed_links)
+			| (permissions.CanChangeInfo ? 0 : ChatBannedRights.Flags.change_info)
+			| (permissions.CanInviteUsers ? 0 : ChatBannedRights.Flags.invite_users)
+			| (permissions.CanPinMessages ? 0 : ChatBannedRights.Flags.pin_messages)
+			| (permissions.CanManageTopics ? 0 : ChatBannedRights.Flags.manage_topics)
 	};
 
 	[return: NotNullIfNotNull(nameof(location))]
@@ -433,22 +433,22 @@ public static class TypesTLConverters
 	internal static ChatAdminRights ChatAdminRights(this ChatAdministratorRights? rights)
 		=> rights == null ? new() : new()
 		{
-			flags = (rights.IsAnonymous == true ? TL.ChatAdminRights.Flags.anonymous : 0)
-			| (rights.CanManageChat == true ? TL.ChatAdminRights.Flags.other : 0)
-			| (rights.CanDeleteMessages == true ? TL.ChatAdminRights.Flags.delete_messages : 0)
-			| (rights.CanManageVideoChats == true ? TL.ChatAdminRights.Flags.manage_call : 0)
-			| (rights.CanRestrictMembers == true ? TL.ChatAdminRights.Flags.ban_users : 0)
-			| (rights.CanPromoteMembers == true ? TL.ChatAdminRights.Flags.add_admins : 0)
-			| (rights.CanChangeInfo == true ? TL.ChatAdminRights.Flags.change_info : 0)
-			| (rights.CanInviteUsers == true ? TL.ChatAdminRights.Flags.invite_users : 0)
-			| (rights.CanPostMessages == true ? TL.ChatAdminRights.Flags.post_messages : 0)
-			| (rights.CanEditMessages == true ? TL.ChatAdminRights.Flags.edit_messages : 0)
-			| (rights.CanPinMessages == true ? TL.ChatAdminRights.Flags.pin_messages : 0)
-			| (rights.CanManageTopics == true ? TL.ChatAdminRights.Flags.manage_topics : 0)
-			| (rights.CanPostStories == true ? TL.ChatAdminRights.Flags.post_stories : 0)
-			| (rights.CanEditStories == true ? TL.ChatAdminRights.Flags.edit_stories : 0)
-			| (rights.CanDeleteStories == true ? TL.ChatAdminRights.Flags.delete_stories : 0)
-			| (rights.CanManageDirectMessages == true ? TL.ChatAdminRights.Flags.manage_direct_messages : 0)
+			flags = (rights.IsAnonymous ? TL.ChatAdminRights.Flags.anonymous : 0)
+			| (rights.CanManageChat ? TL.ChatAdminRights.Flags.other : 0)
+			| (rights.CanDeleteMessages ? TL.ChatAdminRights.Flags.delete_messages : 0)
+			| (rights.CanManageVideoChats ? TL.ChatAdminRights.Flags.manage_call : 0)
+			| (rights.CanRestrictMembers ? TL.ChatAdminRights.Flags.ban_users : 0)
+			| (rights.CanPromoteMembers ? TL.ChatAdminRights.Flags.add_admins : 0)
+			| (rights.CanChangeInfo ? TL.ChatAdminRights.Flags.change_info : 0)
+			| (rights.CanInviteUsers ? TL.ChatAdminRights.Flags.invite_users : 0)
+			| (rights.CanPostMessages ? TL.ChatAdminRights.Flags.post_messages : 0)
+			| (rights.CanEditMessages ? TL.ChatAdminRights.Flags.edit_messages : 0)
+			| (rights.CanPinMessages ? TL.ChatAdminRights.Flags.pin_messages : 0)
+			| (rights.CanManageTopics ? TL.ChatAdminRights.Flags.manage_topics : 0)
+			| (rights.CanPostStories ? TL.ChatAdminRights.Flags.post_stories : 0)
+			| (rights.CanEditStories ? TL.ChatAdminRights.Flags.edit_stories : 0)
+			| (rights.CanDeleteStories ? TL.ChatAdminRights.Flags.delete_stories : 0)
+			| (rights.CanManageDirectMessages ? TL.ChatAdminRights.Flags.manage_direct_messages : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
@@ -623,8 +623,8 @@ public static class TypesTLConverters
 	{
 		url = lpo.Url,
 		flags = TL.InputMediaWebPage.Flags.optional
-			| (lpo.PreferLargeMedia == true ? TL.InputMediaWebPage.Flags.force_large_media : 0)
-			| (lpo.PreferSmallMedia == true ? TL.InputMediaWebPage.Flags.force_small_media : 0)
+			| (lpo.PreferLargeMedia ? TL.InputMediaWebPage.Flags.force_large_media : 0)
+			| (lpo.PreferSmallMedia ? TL.InputMediaWebPage.Flags.force_small_media : 0)
 	};
 
 	internal static LinkPreviewOptions LinkPreviewOptions(this MessageMediaWebPage mmwp, bool invert_media) => new()

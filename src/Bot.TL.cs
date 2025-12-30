@@ -11,18 +11,18 @@ public partial class Bot
 {
 	private async Task<TL.ReplyMarkup?> MakeReplyMarkup(ReplyMarkup? replyMarkup) => replyMarkup switch
 	{
-		ReplyKeyboardRemove rkr => new ReplyKeyboardHide { flags = rkr.Selective == true ? ReplyKeyboardHide.Flags.selective : 0 },
+		ReplyKeyboardRemove rkr => new ReplyKeyboardHide { flags = rkr.Selective ? ReplyKeyboardHide.Flags.selective : 0 },
 		ForceReplyMarkup frm => new ReplyKeyboardForceReply
 		{
-			flags = (frm.Selective == true ? ReplyKeyboardForceReply.Flags.selective : 0) | (frm.InputFieldPlaceholder != null ? ReplyKeyboardForceReply.Flags.has_placeholder : 0),
+			flags = (frm.Selective ? ReplyKeyboardForceReply.Flags.selective : 0) | (frm.InputFieldPlaceholder != null ? ReplyKeyboardForceReply.Flags.has_placeholder : 0),
 			placeholder = frm.InputFieldPlaceholder
 		},
 		ReplyKeyboardMarkup rkm => new TL.ReplyKeyboardMarkup
 		{
-			flags = (rkm.Selective == true ? TL.ReplyKeyboardMarkup.Flags.selective : 0)
-				| (rkm.IsPersistent == true ? TL.ReplyKeyboardMarkup.Flags.persistent : 0)
-				| (rkm.ResizeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.resize : 0)
-				| (rkm.OneTimeKeyboard == true ? TL.ReplyKeyboardMarkup.Flags.single_use : 0)
+			flags = (rkm.Selective ? TL.ReplyKeyboardMarkup.Flags.selective : 0)
+				| (rkm.IsPersistent ? TL.ReplyKeyboardMarkup.Flags.persistent : 0)
+				| (rkm.ResizeKeyboard ? TL.ReplyKeyboardMarkup.Flags.resize : 0)
+				| (rkm.OneTimeKeyboard ? TL.ReplyKeyboardMarkup.Flags.single_use : 0)
 				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0),
 			placeholder = rkm.InputFieldPlaceholder,
 			rows = [.. rkm.Keyboard.Select(row => new KeyboardButtonRow { buttons = [.. row.Select(MakeKeyboardButton)] })]
@@ -48,9 +48,9 @@ public partial class Bot
 				premium = rus.UserIsPremium == true,
 				flags = (rus.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (rus.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium)
 			},
-			flags = (rus.RequestName == true ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
-				| (rus.RequestUsername == true ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
-				| (rus.RequestPhoto == true ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+			flags = (rus.RequestName ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
+				| (rus.RequestUsername ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
+				| (rus.RequestPhoto ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
 		};
 		if (btn.RequestChat is { } rc) return new InputKeyboardButtonRequestPeer
 		{
@@ -58,12 +58,12 @@ public partial class Bot
 			button_id = rc.RequestId,
 			max_quantity = 1,
 			peer_type = MakeRequestPeerType(rc),
-			flags = (rc.RequestTitle == true ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
-				| (rc.RequestUsername == true ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
-				| (rc.RequestPhoto == true ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+			flags = (rc.RequestTitle ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
+				| (rc.RequestUsername ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
+				| (rc.RequestPhoto ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
 		};
-		if (btn.RequestContact == true) return new KeyboardButtonRequestPhone { text = btn.Text };
-		if (btn.RequestLocation == true) return new KeyboardButtonRequestGeoLocation { text = btn.Text };
+		if (btn.RequestContact) return new KeyboardButtonRequestPhone { text = btn.Text };
+		if (btn.RequestLocation) return new KeyboardButtonRequestGeoLocation { text = btn.Text };
 		if (btn.RequestPoll != null) return new KeyboardButtonRequestPoll
 		{
 			text = btn.Text,
@@ -86,7 +86,7 @@ public partial class Bot
 			var rptc = new RequestPeerTypeChat
 			{
 				forum = rc.ChatIsForum == true,
-				flags = (rc.ChatIsForum != null ? RequestPeerTypeChat.Flags.has_forum : 0) | (rc.BotIsMember == true ? RequestPeerTypeChat.Flags.bot_participant : 0)
+				flags = (rc.ChatIsForum != null ? RequestPeerTypeChat.Flags.has_forum : 0) | (rc.BotIsMember ? RequestPeerTypeChat.Flags.bot_participant : 0)
 			};
 			return FillFields(rc, rptc, ref rptc.flags, ref rptc.has_username, ref rptc.user_admin_rights, ref rptc.bot_admin_rights);
 		}
@@ -99,7 +99,7 @@ public partial class Bot
 			var more_flags = (rc.ChatHasUsername != null ? RequestPeerTypeChat.Flags.has_has_username : 0)
 				| (rc.UserAdministratorRights != null ? RequestPeerTypeChat.Flags.has_user_admin_rights : 0)
 				| (rc.BotAdministratorRights != null ? RequestPeerTypeChat.Flags.has_bot_admin_rights : 0)
-				| (rc.ChatIsCreated == true ? RequestPeerTypeChat.Flags.creator : 0);
+				| (rc.ChatIsCreated ? RequestPeerTypeChat.Flags.creator : 0);
 			flags = (F)(object)(flags.ToUInt32(null) | (uint)more_flags);
 			return obj;
 		}
@@ -110,7 +110,7 @@ public partial class Bot
 		if (btn.Url != null) return new KeyboardButtonUrl { text = btn.Text, url = btn.Url };
 		if (btn.CallbackData != null) return new KeyboardButtonCallback { text = btn.Text, data = Encoding.UTF8.GetBytes(btn.CallbackData) };
 		if (btn.CallbackGame != null) return new KeyboardButtonGame { text = btn.Text };
-		if (btn.Pay == true) return new KeyboardButtonBuy { text = btn.Text };
+		if (btn.Pay) return new KeyboardButtonBuy { text = btn.Text };
 		if (btn.SwitchInlineQuery != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery };
 		if (btn.SwitchInlineQueryCurrentChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryCurrentChat, flags = KeyboardButtonSwitchInline.Flags.same_peer };
 		if (btn.SwitchInlineQueryChosenChat != null) return new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQueryChosenChat.Query, peer_types = btn.SwitchInlineQueryChosenChat.InlineQueryPeerTypes(), flags = KeyboardButtonSwitchInline.Flags.has_peer_types };
@@ -121,7 +121,7 @@ public partial class Bot
 			url = btn.LoginUrl.Url,
 			fwd_text = btn.LoginUrl.ForwardText,
 			flags = (btn.LoginUrl.ForwardText != null ? InputKeyboardButtonUrlAuth.Flags.has_fwd_text : 0)
-				| (btn.LoginUrl.RequestWriteAccess == true ? InputKeyboardButtonUrlAuth.Flags.request_write_access : 0),
+				| (btn.LoginUrl.RequestWriteAccess ? InputKeyboardButtonUrlAuth.Flags.request_write_access : 0),
 			bot = btn.LoginUrl.BotUsername != null ? await InputUser(btn.LoginUrl.BotUsername) : Client.User
 		};
 		if (btn.WebApp != null) return new KeyboardButtonWebView { text = btn.Text, url = btn.WebApp.Url };
@@ -135,7 +135,7 @@ public partial class Bot
 		{
 			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId);
 			var msg = await GetMessage(peer, replied.MessageId);
-			if (msg == null && replied.AllowSendingWithoutReply != true) throw new WTException("Bad Request: message to reply not found");
+			if (msg == null && !replied.AllowSendingWithoutReply) throw new WTException("Bad Request: message to reply not found");
 			return msg;
 		}
 		return null;
@@ -345,13 +345,13 @@ public partial class Bot
 		switch (file.FileType)
 		{
 			case FileType.Id:
-				return new TL.InputMediaPhoto { id = InputPhoto(((InputFileId)file).Id), flags = hasSpoiler == true ? TL.InputMediaPhoto.Flags.spoiler : 0 };
+				return new TL.InputMediaPhoto { id = InputPhoto(((InputFileId)file).Id), flags = hasSpoiler ? TL.InputMediaPhoto.Flags.spoiler : 0 };
 			case FileType.Url:
-				return new InputMediaPhotoExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler == true ? InputMediaPhotoExternal.Flags.spoiler : 0 };
+				return new InputMediaPhotoExternal { url = ((InputFileUrl)file).Url.AbsoluteUri, flags = hasSpoiler ? InputMediaPhotoExternal.Flags.spoiler : 0 };
 			default: //case FileType.Stream:
 				var stream = (InputFileStream)file;
 				var uploadedFile = await Client.UploadFileAsync(stream.Content, stream.FileName, ProgressCallback(stream));
-				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler == true ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
+				return new InputMediaUploadedPhoto { file = uploadedFile, flags = hasSpoiler ? InputMediaUploadedPhoto.Flags.spoiler : 0 };
 		}
 	}
 
@@ -386,7 +386,7 @@ public partial class Bot
 					id = await InputDocument(((InputFileId)file).Id),
 					video_cover = video_cover,
 					video_timestamp = video_timestamp ?? 0,
-					flags = (hasSpoiler == true ? TL.InputMediaDocument.Flags.spoiler : 0)
+					flags = (hasSpoiler ? TL.InputMediaDocument.Flags.spoiler : 0)
 						| (video_timestamp.HasValue ? TL.InputMediaDocument.Flags.has_video_timestamp : 0)
 						| (video_cover != null ? TL.InputMediaDocument.Flags.has_video_cover : 0)
 				};
@@ -396,7 +396,7 @@ public partial class Bot
 					url = ((InputFileUrl)file).Url.AbsoluteUri,
 					video_cover = video_cover,
 					video_timestamp = video_timestamp ?? 0,
-					flags = (hasSpoiler == true ? TL.InputMediaDocumentExternal.Flags.spoiler : 0)
+					flags = (hasSpoiler ? TL.InputMediaDocumentExternal.Flags.spoiler : 0)
 						| (video_timestamp.HasValue ? TL.InputMediaDocumentExternal.Flags.has_video_timestamp : 0)
 						| (video_cover != null ? TL.InputMediaDocumentExternal.Flags.has_video_cover : 0)
 				};
@@ -414,7 +414,7 @@ public partial class Bot
 				{
 					video_cover = video_cover,
 					video_timestamp = video_timestamp ?? 0,
-					flags = (hasSpoiler == true ? TL.InputMediaUploadedDocument.Flags.spoiler : 0)
+					flags = (hasSpoiler ? TL.InputMediaUploadedDocument.Flags.spoiler : 0)
 						| (video_timestamp.HasValue ? TL.InputMediaUploadedDocument.Flags.has_video_timestamp : 0)
 						| (video_cover != null ? TL.InputMediaUploadedDocument.Flags.has_video_cover : 0)
 				};
@@ -443,12 +443,12 @@ public partial class Bot
 						flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }];
 					break;
 				case Telegram.Bot.Types.InputMediaDocument imd:
-					if (imd.DisableContentTypeDetection == true) doc.flags |= InputMediaUploadedDocument.Flags.force_file;
+					if (imd.DisableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file;
 					break;
 				case Telegram.Bot.Types.InputMediaVideo imv:
 					doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 						duration = imv.Duration, h = imv.Height, w = imv.Width,
-						flags = imv.SupportsStreaming == true ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
+						flags = imv.SupportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }];
 					break;
 				case Telegram.Bot.Types.InputMediaAnimation ima:
 					if (doc.mime_type == "video/mp4")
@@ -723,9 +723,9 @@ public partial class Bot
 				url = itmc.LinkPreviewOptions.Url,
 				flags = (reply_markup != null ? InputBotInlineMessageMediaWebPage.Flags.has_reply_markup : 0) |
 						(entities != null ? InputBotInlineMessageMediaWebPage.Flags.has_entities : 0) |
-						(itmc.LinkPreviewOptions.PreferLargeMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_large_media : 0) |
-						(itmc.LinkPreviewOptions.PreferSmallMedia == true ? InputBotInlineMessageMediaWebPage.Flags.force_small_media : 0) |
-						(itmc.LinkPreviewOptions.ShowAboveText == true ? InputBotInlineMessageMediaWebPage.Flags.invert_media : 0)
+						(itmc.LinkPreviewOptions.PreferLargeMedia ? InputBotInlineMessageMediaWebPage.Flags.force_large_media : 0) |
+						(itmc.LinkPreviewOptions.PreferSmallMedia ? InputBotInlineMessageMediaWebPage.Flags.force_small_media : 0) |
+						(itmc.LinkPreviewOptions.ShowAboveText ? InputBotInlineMessageMediaWebPage.Flags.invert_media : 0)
 			},
 			InputTextMessageContent itmc => new InputBotInlineMessageText
 			{
@@ -790,13 +790,13 @@ public partial class Bot
 				invoice = new TL.Invoice
 				{
 					flags = (iimc.MaxTipAmount.HasValue ? TL.Invoice.Flags.has_max_tip_amount : 0)
-						| (iimc.NeedName == true ? TL.Invoice.Flags.name_requested : 0)
-						| (iimc.NeedPhoneNumber == true ? TL.Invoice.Flags.phone_requested : 0)
-						| (iimc.NeedEmail == true ? TL.Invoice.Flags.email_requested : 0)
-						| (iimc.NeedShippingAddress == true ? TL.Invoice.Flags.shipping_address_requested : 0)
-						| (iimc.SendPhoneNumberToProvider == true ? TL.Invoice.Flags.phone_to_provider : 0)
-						| (iimc.SendEmailToProvider == true ? TL.Invoice.Flags.email_to_provider : 0)
-						| (iimc.IsFlexible == true ? TL.Invoice.Flags.flexible : 0),
+						| (iimc.NeedName ? TL.Invoice.Flags.name_requested : 0)
+						| (iimc.NeedPhoneNumber ? TL.Invoice.Flags.phone_requested : 0)
+						| (iimc.NeedEmail ? TL.Invoice.Flags.email_requested : 0)
+						| (iimc.NeedShippingAddress ? TL.Invoice.Flags.shipping_address_requested : 0)
+						| (iimc.SendPhoneNumberToProvider ? TL.Invoice.Flags.phone_to_provider : 0)
+						| (iimc.SendEmailToProvider ? TL.Invoice.Flags.email_to_provider : 0)
+						| (iimc.IsFlexible ? TL.Invoice.Flags.flexible : 0),
 					currency = iimc.Currency,
 					prices = iimc.Prices.LabeledPrices(),
 					max_tip_amount = iimc.MaxTipAmount ?? 0,
@@ -889,13 +889,13 @@ public partial class Bot
 			{
 				flags = (maxTipAmount.HasValue ? TL.Invoice.Flags.has_max_tip_amount : 0)
 					| (subscriptionPeriod.HasValue ? TL.Invoice.Flags.has_subscription_period : 0)
-					| (needName == true ? TL.Invoice.Flags.name_requested : 0)
-					| (needPhoneNumber == true ? TL.Invoice.Flags.phone_requested : 0)
-					| (needEmail == true ? TL.Invoice.Flags.email_requested : 0)
-					| (needShippingAddress == true ? TL.Invoice.Flags.shipping_address_requested : 0)
-					| (sendPhoneNumberToProvider == true ? TL.Invoice.Flags.phone_to_provider : 0)
-					| (sendEmailToProvider == true ? TL.Invoice.Flags.email_to_provider : 0)
-					| (isFlexible == true ? TL.Invoice.Flags.flexible : 0),
+					| (needName ? TL.Invoice.Flags.name_requested : 0)
+					| (needPhoneNumber ? TL.Invoice.Flags.phone_requested : 0)
+					| (needEmail ? TL.Invoice.Flags.email_requested : 0)
+					| (needShippingAddress ? TL.Invoice.Flags.shipping_address_requested : 0)
+					| (sendPhoneNumberToProvider ? TL.Invoice.Flags.phone_to_provider : 0)
+					| (sendEmailToProvider ? TL.Invoice.Flags.email_to_provider : 0)
+					| (isFlexible ? TL.Invoice.Flags.flexible : 0),
 				currency = currency,
 				prices = prices.LabeledPrices(),
 				max_tip_amount = maxTipAmount ?? 0,
@@ -1274,8 +1274,8 @@ public partial class Bot
 		var text = ApplyParse(list.ParseMode, list.Title, list.TitleEntities, out var entities);
 		return new TodoList
 		{
-			flags = (list.OthersCanAddTasks == true ? TodoList.Flags.others_can_append : 0)
-				| (list.OthersCanMarkTasksAsDone == true ? TodoList.Flags.others_can_complete : 0),
+			flags = (list.OthersCanAddTasks ? TodoList.Flags.others_can_append : 0)
+				| (list.OthersCanMarkTasksAsDone ? TodoList.Flags.others_can_complete : 0),
 			title = new TextWithEntities { text = text, entities = entities },
 			list = [.. list.Tasks.Select(task => new TodoItem
 			{

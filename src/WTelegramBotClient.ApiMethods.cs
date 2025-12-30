@@ -46,7 +46,7 @@ public partial class WTelegramBotClient
     {
         if (!string.IsNullOrEmpty(url)) throw new NotSupportedException("WTelegramBot doesn't support setting Webhooks");
         await DeleteWebhook(dropPendingUpdates, cancellationToken);
-        if (dropPendingUpdates == true)
+        if (dropPendingUpdates)
             await ThrowIfCancelled(cancellationToken).DropPendingUpdates();
         else
             try

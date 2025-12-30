@@ -563,7 +563,7 @@ public partial class Bot
 							msg.From = GroupAnonymousBot;
 							msg.SenderChat = msg.Chat;
 						}
-						else if (msg.IsAutomaticForward == true)
+						else if (msg.IsAutomaticForward)
 							msg.From = ServiceNotification;
 						break;
 				}

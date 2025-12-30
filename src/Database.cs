@@ -178,8 +178,8 @@ internal partial class Database : IDisposable
 		var param = _cmd[SaveUser].Parameters;
 		param[0].Value = user.Id;
 		param[1].Value = user.AccessHash;
-		param[2].Value = (user.IsBot ? 1 : 0) | (user.IsPremium == true ? 2 : 0) | (user.AddedToAttachmentMenu == true ? 4 : 0)
-			| (user.CanJoinGroups == true ? 8 : 0) | (user.CanReadAllGroupMessages == true ? 16 : 0) | (user.SupportsInlineQueries == true ? 32 : 0);
+		param[2].Value = (user.IsBot ? 1 : 0) | (user.IsPremium ? 2 : 0) | (user.AddedToAttachmentMenu ? 4 : 0)
+			| (user.CanJoinGroups ? 8 : 0) | (user.CanReadAllGroupMessages ? 16 : 0) | (user.SupportsInlineQueries ? 32 : 0);
 		param[3].Value = user.FirstName;
 		param[4].Value = user.LastName ?? "";
 		param[5].Value = user.Username ?? "";
@@ -213,7 +213,7 @@ internal partial class Database : IDisposable
 		var param = _cmd[SaveChat].Parameters;
 		param[0].Value = chat.Id;
 		param[1].Value = chat.AccessHash;
-		param[2].Value = chat.IsForum == true ? 1 : 0;
+		param[2].Value = chat.IsForum ? 1 : 0;
 		param[3].Value = (chat.Type == ChatType.Private ? chat.FirstName : chat.Title) ?? "";
 		param[4].Value = chat.LastName ?? "";
 		param[5].Value = chat.Username ?? "";
