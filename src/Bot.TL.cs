@@ -168,7 +168,7 @@ public partial class Bot
 				quote_offset = replied.QuotePosition ?? 0,
 				todo_item_id = replied.ChecklistTaskId ?? 0,
 				monoforum_peer_id = monoforum_peer_id,
-				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id | InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
+				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id : 0)
 					| (replyToPeer is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
 					| (quote != null ? InputReplyToMessage.Flags.has_quote_text : 0)
 					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
