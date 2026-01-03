@@ -1,4 +1,4 @@
-[![Bot API 9.2](https://img.shields.io/badge/Bot_API-9.2-blueviolet)](https://core.telegram.org/bots/api)
+[![Bot API 9.3](https://img.shields.io/badge/Bot_API-9.3-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)
@@ -63,6 +63,7 @@ Some extended API calls can be made via `WTelegram.Bot` special methods:
 - `GetMessagesById`: fetch posted messages (or range of messages) based on their message IDs
 - `GetChat`: can obtain details about any user/group/channel based on their public name
 - `SetMyPhoto`: change the bot's profile picture
+- `GetForumTopic`/`GetForumTopicExtended`: get details about existing forum topic
 
 Other extended API calls not usually accessible to Bot API can be made via the `Bot.Client` property which is the underlying [WTelegramClient](https://wiz0u.github.io/WTelegramClient/) instance.  
 * This way, you can use new features available only in Client API latest layers without waiting months for it to be available in Bot API
@@ -86,4 +87,4 @@ If your question is more specific to WTelegram.Bot, or an issue with library beh
 
 If you like this library, you can [buy me a coffee](https://www.buymeacoffee.com/wizou) ❤ This will help the project keep going.
 
-© 2021-2025 Olivier Marcoux
+© 2021-2026 Olivier Marcoux

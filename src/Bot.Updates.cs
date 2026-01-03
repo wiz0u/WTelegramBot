@@ -198,13 +198,13 @@ public partial class Bot
 			case TL.UpdateBotNewBusinessMessage ubnbm:
 				if (NotAllowed(UpdateType.BusinessMessage)) return null;
 				var replyToMessage = await MakeMessage(ubnbm.reply_to_message);
-				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubnbm.connection_id;
+				replyToMessage?.BusinessConnectionId = ubnbm.connection_id;
 				message = await MakeMessageAndReply(ubnbm.message, replyToMessage, ubnbm.connection_id);
 				return message == null ? null : new Update { BusinessMessage = message, TLUpdate = update };
 			case TL.UpdateBotEditBusinessMessage ubebm:
 				if (NotAllowed(UpdateType.EditedBusinessMessage)) return null;
 				replyToMessage = await MakeMessage(ubebm.reply_to_message);
-				if (replyToMessage != null) replyToMessage.BusinessConnectionId = ubebm.connection_id;
+				replyToMessage?.BusinessConnectionId = ubebm.connection_id;
 				message = await MakeMessageAndReply(ubebm.message, replyToMessage, ubebm.connection_id);
 				return message == null ? null : new Update { EditedBusinessMessage = message, TLUpdate = update };
 			case TL.UpdateBotDeleteBusinessMessage ubdbm:
@@ -504,7 +504,7 @@ public partial class Bot
 					msg.ForwardOrigin = await MakeOrigin(fwd);
 					msg.IsAutomaticForward = msg.Chat.Type == ChatType.Supergroup && await ChatFromPeer(fwd.saved_from_peer) is Chat { Type: ChatType.Channel } && fwd.saved_from_msg_id != 0;
 				}
-				if (msg.Chat.Type == ChatType.Supergroup && message.reply_to is MessageReplyHeader reply_to)
+				if (msg.Chat.Type is ChatType.Supergroup or ChatType.Private && message.reply_to is MessageReplyHeader reply_to)
 					if (msg.IsTopicMessage = reply_to.flags.HasFlag(MessageReplyHeader.Flags.forum_topic))
 						if (reply_to.reply_to_top_id > 0)
 							msg.MessageThreadId = reply_to.reply_to_top_id;
@@ -582,7 +582,7 @@ public partial class Bot
 			},
 			_ => fwd.from_name != null ? new MessageOriginHiddenUser { SenderUserName = fwd.from_name } : null
 		};
-		if (origin != null) origin.Date = fwd.date;
+		origin?.Date = fwd.date;
 		return origin;
 	}
 
@@ -794,7 +794,8 @@ public partial class Bot
 			MessageActionPinMessage macpm => msg.PinnedMessage = await GetMIMessage(
 				await ChatFromPeer(msgSvc.peer_id, allowUser: true), msgSvc.reply_to is MessageReplyHeader mrh ? mrh.reply_to_msg_id : 0),
 			MessageActionChatJoinedByLink or MessageActionChatJoinedByRequest => msg.NewChatMembers = [msg.From!],
-			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Telegram.Bot.Types.Payments.SuccessfulPayment {
+			MessageActionPaymentSentMe mapsm => msg.SuccessfulPayment = new Telegram.Bot.Types.Payments.SuccessfulPayment
+			{
 				Currency = mapsm.currency,
 				TotalAmount = (int)mapsm.total_amount,
 				InvoicePayload = Encoding.UTF8.GetString(mapsm.payload),
@@ -815,14 +816,17 @@ public partial class Bot
 			MessageActionBotAllowed maba => maba switch
 			{
 				{ domain: not null } => msg.ConnectedWebsite = maba.domain,
-				{ app: not null } => msg.WriteAccessAllowed = new WriteAccessAllowed {
+				{ app: not null } => msg.WriteAccessAllowed = new WriteAccessAllowed
+				{
 					WebAppName = maba.app.short_name,
 					FromRequest = maba.flags.HasFlag(MessageActionBotAllowed.Flags.from_request),
-					FromAttachmentMenu = maba.flags.HasFlag(MessageActionBotAllowed.Flags.attach_menu) },
+					FromAttachmentMenu = maba.flags.HasFlag(MessageActionBotAllowed.Flags.attach_menu)
+				},
 				_ => null
 			},
 			MessageActionSecureValuesSentMe masvsm => msg.PassportData = masvsm.PassportData(),
-			MessageActionGeoProximityReached magpr => msg.ProximityAlertTriggered = new ProximityAlertTriggered {
+			MessageActionGeoProximityReached magpr => msg.ProximityAlertTriggered = new ProximityAlertTriggered
+			{
 				Traveler = (await UserFromPeer(magpr.from_id))!,
 				Watcher = (await UserFromPeer(magpr.to_id))!,
 				Distance = magpr.distance
@@ -831,70 +835,98 @@ public partial class Bot
 			MessageActionGroupCall magc => magc.flags.HasFlag(MessageActionGroupCall.Flags.has_duration)
 				? msg.VideoChatEnded = new VideoChatEnded { Duration = magc.duration }
 				: msg.VideoChatStarted = new VideoChatStarted(),
-			MessageActionInviteToGroupCall maitgc => msg.VideoChatParticipantsInvited = new VideoChatParticipantsInvited {
-				Users = await maitgc.users.Select(UserOrResolve).WhenAllSequential() },
+			MessageActionInviteToGroupCall maitgc => msg.VideoChatParticipantsInvited = new VideoChatParticipantsInvited
+			{
+				Users = await maitgc.users.Select(UserOrResolve).WhenAllSequential()
+			},
 			MessageActionWebViewDataSentMe mawvdsm => msg.WebAppData = new WebAppData { ButtonText = mawvdsm.text, Data = mawvdsm.data },
-			MessageActionTopicCreate matc => msg.ForumTopicCreated = new ForumTopicCreated { Name = matc.title, IconColor = matc.icon_color,
-				IconCustomEmojiId = matc.flags.HasFlag(MessageActionTopicCreate.Flags.has_icon_emoji_id) ? matc.icon_emoji_id.ToString() : null },
+			MessageActionTopicCreate matc => msg.ForumTopicCreated = new ForumTopicCreated
+			{
+				Name = matc.title,
+				IconColor = matc.icon_color,
+				IconCustomEmojiId = matc.flags.HasFlag(MessageActionTopicCreate.Flags.has_icon_emoji_id) ? matc.icon_emoji_id.ToString() : null,
+				IsNameImplicit = matc.flags.HasFlag(MessageActionTopicCreate.Flags.title_missing)
+			},
 			MessageActionTopicEdit mate => mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_closed) ?
 					mate.closed ? msg.ForumTopicClosed = new() : msg.ForumTopicReopened = new()
 				: mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_hidden)
 					? mate.hidden ? msg.GeneralForumTopicHidden = new() : msg.GeneralForumTopicUnhidden = new()
-					: msg.ForumTopicEdited = new ForumTopicEdited { Name = mate.title, IconCustomEmojiId = mate.icon_emoji_id != 0
-						? mate.icon_emoji_id.ToString() : mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_icon_emoji_id) ? "" : null },
+					: msg.ForumTopicEdited = new ForumTopicEdited
+					{
+						Name = mate.title,
+						IconCustomEmojiId = mate.icon_emoji_id != 0
+						? mate.icon_emoji_id.ToString() : mate.flags.HasFlag(MessageActionTopicEdit.Flags.has_icon_emoji_id) ? "" : null
+					},
 			MessageActionBoostApply maba => msg.BoostAdded = new ChatBoostAdded { BoostCount = maba.boosts },
-			MessageActionGiveawayLaunch magl => msg.GiveawayCreated = new GiveawayCreated {
+			MessageActionGiveawayLaunch magl => msg.GiveawayCreated = new GiveawayCreated
+			{
 				PrizeStarCount = ((int)magl.stars).NullIfZero()
 			},
-			MessageActionGiveawayResults magr => msg.GiveawayCompleted = new GiveawayCompleted {
-				WinnerCount = magr.winners_count, UnclaimedPrizeCount = magr.unclaimed_count,
+			MessageActionGiveawayResults magr => msg.GiveawayCompleted = new GiveawayCompleted
+			{
+				WinnerCount = magr.winners_count,
+				UnclaimedPrizeCount = magr.unclaimed_count,
 				GiveawayMessage = await GetRepliedMessage(msgSvc),
 				IsStarGiveaway = magr.flags.HasFlag(MessageActionGiveawayResults.Flags.stars)
 			},
 			MessageActionSetChatWallPaper mascwp => msg.ChatBackgroundSet = new ChatBackground { Type = mascwp.wallpaper.BackgroundType() },
-			MessageActionPaymentRefunded mapr => msg.RefundedPayment = new RefundedPayment { 
-				Currency = mapr.currency, TotalAmount = (int)mapr.total_amount,
+			MessageActionPaymentRefunded mapr => msg.RefundedPayment = new RefundedPayment
+			{
+				Currency = mapr.currency,
+				TotalAmount = (int)mapr.total_amount,
 				InvoicePayload = mapr.payload.NullOrUtf8() ?? "",
-				TelegramPaymentChargeId = mapr.charge.id, ProviderPaymentChargeId = mapr.charge.provider_charge_id
+				TelegramPaymentChargeId = mapr.charge.id,
+				ProviderPaymentChargeId = mapr.charge.provider_charge_id
 			},
-			MessageActionStarGift masg => masg.gift is not StarGift gift ? null : msg.Gift = new GiftInfo {
+			MessageActionStarGift masg => masg.gift is StarGift gift && new GiftInfo
+			{
 				Gift = MakeGift(gift),
 				OwnedGiftId = masg.peer != null ? $"{masg.peer.ID}_{masg.saved_id}" : msgSvc.id.ToString(),
 				ConvertStarCount = masg.convert_stars.NullIfNegative(),
 				PrepaidUpgradeStarCount = masg.upgrade_stars.NullIfNegative(),
+				IsUpgradeSeparate = masg.flags.HasFlag(MessageActionStarGift.Flags.upgrade_separate),
 				CanBeUpgraded = masg.flags.HasFlag(MessageActionStarGift.Flags.can_upgrade),
 				Text = masg.message?.text,
 				Entities = MakeEntities(masg.message?.entities),
-				IsPrivate = masg.flags.HasFlag(MessageActionStarGift.Flags.name_hidden)
-			},
+				IsPrivate = masg.flags.HasFlag(MessageActionStarGift.Flags.name_hidden),
+				UniqueGiftNumber = masg.gift_num.NullIfZero()
+			} is { } giftInfo ? masg.flags.HasFlag(MessageActionStarGift.Flags.prepaid_upgrade)
+				? msg.GiftUpgradeSent = giftInfo
+				: msg.Gift = giftInfo
+			: null,
 			MessageActionStarGiftUnique masgu => masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.refunded)
 			? masgu.gift is not StarGift gift ? null : msg.Gift = new GiftInfo { Gift = MakeGift(gift) }
-			: masgu.gift is not StarGiftUnique giftUnique ? null : msg.UniqueGift = new UniqueGiftInfo {
+			: masgu.gift is not StarGiftUnique giftUnique ? null : msg.UniqueGift = new UniqueGiftInfo
+			{
 				Gift = await MakeUniqueGift(giftUnique),
-				Origin = masgu.resale_amount.Amount > 0 ? "resale" : masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade) ? "upgrade" : "transfer",
-				OwnedGiftId = masgu.peer != null ? $"{masgu.peer.ID}_{masgu.saved_id}" : msgSvc.id.ToString(),
-				TransferStarCount = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_transfer_stars) ? (int)masgu.transfer_stars : null,
+				Origin = masgu.Origin(),
+				OwnedGiftId = masgu.peer != null && masgu.saved_id != 0 ? $"{masgu.peer.ID}_{masgu.saved_id}" :
+					msgSvc.peer_id is PeerUser pu ? msgSvc.id.ToString() : null,
+				TransferStarCount = masgu.transfer_stars.NullIfNegative(),
 				NextTransferDate = masgu.can_transfer_at.NullIfDefault(),
-				LastResaleStarCount = masgu.resale_amount.Amount.NullIfNegative(),
+				LastResaleAmount = masgu.resale_amount?.Amount.NullIfNegative(),
+				LastResaleCurrency = masgu.resale_amount?.Currency()
 			},
 			MessageActionPaidMessagesPrice mapmp => msg.Chat.Type == ChatType.Channel
 			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = mapmp.stars, AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
 			: msg.PaidMessagePriceChanged = new PaidMessagePriceChanged { PaidMessageStarCount = mapmp.stars },
-			MessageActionTodoCompletions matc => msg.ChecklistTasksDone = new ChecklistTasksDone {
+			MessageActionTodoCompletions matc => msg.ChecklistTasksDone = new ChecklistTasksDone
+			{
 				ChecklistMessage = await GetRepliedMessage(msgSvc),
 				MarkedAsDoneTaskIds = matc.completed,
 				MarkedAsNotDoneTaskIds = matc.incompleted,
 			},
-			MessageActionTodoAppendTasks matat => msg.ChecklistTasksAdded = new ChecklistTasksAdded {
+			MessageActionTodoAppendTasks matat => msg.ChecklistTasksAdded = new ChecklistTasksAdded
+			{
 				ChecklistMessage = await GetRepliedMessage(msgSvc),
 				Tasks = ChecklistTasks(matat.list)
 			},
 			MessageActionSuggestedPostApproval maspa => await GetRepliedMessage(msgSvc) is var spm ?
 				maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.balance_too_low)
-				?	msg.SuggestedPostApprovalFailed = new SuggestedPostApprovalFailed { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), }
+				? msg.SuggestedPostApprovalFailed = new SuggestedPostApprovalFailed { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), }
 				: maspa.flags.HasFlag(MessageActionSuggestedPostApproval.Flags.rejected)
-				?	msg.SuggestedPostDeclined = new SuggestedPostDeclined { SuggestedPostMessage = spm, Comment = maspa.reject_comment }
-				:	msg.SuggestedPostApproved = new SuggestedPostApproved { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), SendDate = maspa.schedule_date }
+				? msg.SuggestedPostDeclined = new SuggestedPostDeclined { SuggestedPostMessage = spm, Comment = maspa.reject_comment }
+				: msg.SuggestedPostApproved = new SuggestedPostApproved { SuggestedPostMessage = spm, Price = maspa.price.SuggestedPostPrice(), SendDate = maspa.schedule_date }
 				: null,
 			MessageActionSuggestedPostSuccess masps => await GetRepliedMessage(msgSvc) is var spm ?
 				msg.SuggestedPostPaid = masps.price switch
@@ -903,7 +935,8 @@ public partial class Bot
 					TL.StarsTonAmount sta => new SuggestedPostPaid { Currency = "TON", Amount = sta.amount, SuggestedPostMessage = spm },
 					_ => new() { SuggestedPostMessage = spm }
 				} : null,
-			MessageActionSuggestedPostRefund maspr => msg.SuggestedPostRefunded = new SuggestedPostRefunded {
+			MessageActionSuggestedPostRefund maspr => msg.SuggestedPostRefunded = new SuggestedPostRefunded
+			{
 				SuggestedPostMessage = await GetRepliedMessage(msgSvc),
 				Reason = maspr.flags.HasFlag(MessageActionSuggestedPostRefund.Flags.payer_initiated) ? SuggestedPostRefundedReason.PaymentRefunded : SuggestedPostRefundedReason.PostDeleted
 			},

@@ -932,7 +932,7 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post, 
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post,
 		bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		var query = new TL.Methods.Messages_SendMessage
@@ -951,7 +951,7 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
-		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post, 
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post,
 		bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media)
 	{
 		var query = new TL.Methods.Messages_SendMedia
@@ -1023,7 +1023,7 @@ public partial class Bot
 		Sticker = intro.sticker is TL.Document doc ? await MakeSticker(doc) : null
 	};
 
-	private async Task<BusinessConnection> MakeBusinessConnection(BotBusinessConnection bbc) => new BusinessConnection
+	private async Task<BusinessConnection> MakeBusinessConnection(BotBusinessConnection bbc) => new()
 	{
 		Id = bbc.connection_id,
 		User = await UserOrResolve(bbc.user_id),
@@ -1117,19 +1117,29 @@ public partial class Bot
 		Sticker = gift.sticker is TL.Document doc ? MakeSticker(doc, doc.GetAttribute<DocumentAttributeSticker>(), sync: true).Result : null!,
 		StarCount = gift.stars,
 		UpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
-		TotalCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_total : null,
-		RemainingCount = gift.flags.HasFlag(StarGift.Flags.limited) ? gift.availability_remains : null,
+		IsPremium = gift.flags.HasFlag(StarGift.Flags.require_premium),
+		HasColors = gift.flags.HasFlag(StarGift.Flags.peer_color_available),
+		TotalCount = gift.availability_total > 0 ? gift.availability_total : null,
+		RemainingCount = gift.availability_total > 0 ? gift.availability_remains : null,
+		PersonalTotalCount = gift.per_user_total > 0 ? gift.per_user_total : null,
+		PersonalRemainingCount = gift.per_user_total > 0 ? gift.per_user_remains : null,
+		Background = gift.background?.GiftBackground(),
+		UniqueGiftVariantCount = gift.upgrade_variants.NullIfZero(),
 		PublisherChat = gift.released_by is PeerChannel pch ? Chat(pch.channel_id) : null,
 	};
 
-	internal async Task<UniqueGift> MakeUniqueGift(TL.StarGiftUnique sgu) => new UniqueGift
+	internal async Task<UniqueGift> MakeUniqueGift(TL.StarGiftUnique sgu) => new()
 	{
+		GiftId = sgu.id.ToString(),
 		BaseName = sgu.title,
 		Name = sgu.slug,
 		Number = sgu.num,
 		Model = await UniqueGiftModel(sgu.attributes.OfType<StarGiftAttributeModel>().First()),
 		Symbol = await UniqueGiftSymbol(sgu.attributes.OfType<StarGiftAttributePattern>().First()),
 		Backdrop = UniqueGiftBackdrop(sgu.attributes.OfType<StarGiftAttributeBackdrop>().First()),
+		IsPremium = sgu.flags.HasFlag(StarGiftUnique.Flags.require_premium),
+		IsFromBlockchain = sgu.flags.HasFlag(StarGiftUnique.Flags.has_host_id),
+		Colors = (sgu.peer_color as PeerColorCollectible)?.UniqueGiftColors(),
 		PublisherChat = sgu.released_by is PeerChannel pch ? Chat(pch.channel_id) : null,
 	};
 
@@ -1157,51 +1167,47 @@ public partial class Bot
 	{
 		await InitComplete();
 		if (giftId.IndexOf('_') is >= 0 and int underscore_pos)
-			return new InputSavedStarGiftChat {
-				peer = await InputPeerChat(long.Parse(giftId[..underscore_pos])), 
-				saved_id = long.Parse(giftId[(underscore_pos+1)..]) };
+			return new InputSavedStarGiftChat
+			{
+				peer = await InputPeerChat(long.Parse(giftId[..underscore_pos])),
+				saved_id = long.Parse(giftId[(underscore_pos + 1)..])
+			};
 		else
 			return new InputSavedStarGiftUser { msg_id = int.Parse(giftId) };
 	}
 
-	private async Task<OwnedGift> OwnedGift(SavedStarGift gift)
+	private async Task<OwnedGift> OwnedGift(SavedStarGift gift) => gift.gift switch
 	{
-		switch (gift.gift)
+		StarGiftUnique sgu => new OwnedGiftUnique
 		{
-			case StarGiftUnique sgu:
-				return new OwnedGiftUnique
-				{
-					OwnedGiftId = gift.msg_id.ToString(),
-					Gift = await MakeUniqueGift(sgu),
-					SenderUser = User(gift.from_id.ID),
-					SendDate = gift.date,
-					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
-					CanBeTransferred = gift.flags.HasFlag(SavedStarGift.Flags.has_transfer_stars),
-					TransferStarCount = gift.transfer_stars.NullIfNegative(),
-					NextTransferDate = gift.can_transfer_at.NullIfDefault(),
-				};
-			case StarGift sg:
-				var doc = (TL.Document)sg.sticker;
-				var sticker = await MakeSticker(doc);
-				return new OwnedGiftRegular
-				{
-					OwnedGiftId = gift.msg_id.ToString(),
-					Gift = MakeGift(sg),
-					SenderUser = User(gift.from_id.ID),
-					SendDate = gift.date,
-					IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
-					Text = gift.message?.text,
-					Entities = MakeEntities(gift.message?.entities),
-					IsPrivate = gift.flags.HasFlag(SavedStarGift.Flags.name_hidden),
-					CanBeUpgraded = gift.flags.HasFlag(SavedStarGift.Flags.can_upgrade),
-					WasRefunded = gift.flags.HasFlag(SavedStarGift.Flags.refunded),
-					ConvertStarCount = gift.convert_stars.NullIfNegative(),
-					PrepaidUpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
-				};
-			default:
-				return null!;
-		}
-	}
+			OwnedGiftId = gift.msg_id.ToString(),
+			Gift = await MakeUniqueGift(sgu),
+			SenderUser = User(gift.from_id.ID),
+			SendDate = gift.date,
+			IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
+			CanBeTransferred = gift.flags.HasFlag(SavedStarGift.Flags.has_transfer_stars),
+			TransferStarCount = gift.transfer_stars.NullIfNegative(),
+			NextTransferDate = gift.can_transfer_at.NullIfDefault(),
+		},
+		StarGift sg => new OwnedGiftRegular
+		{
+			OwnedGiftId = gift.msg_id.ToString(),
+			Gift = MakeGift(sg),
+			SenderUser = User(gift.from_id.ID),
+			SendDate = gift.date,
+			IsSaved = !gift.flags.HasFlag(SavedStarGift.Flags.unsaved),
+			Text = gift.message?.text,
+			Entities = MakeEntities(gift.message?.entities),
+			IsPrivate = gift.flags.HasFlag(SavedStarGift.Flags.name_hidden),
+			CanBeUpgraded = gift.flags.HasFlag(SavedStarGift.Flags.can_upgrade),
+			WasRefunded = gift.flags.HasFlag(SavedStarGift.Flags.refunded),
+			ConvertStarCount = gift.convert_stars.NullIfNegative(),
+			PrepaidUpgradeStarCount = gift.upgrade_stars.NullIfNegative(),
+			IsUpgradeSeparate = gift.flags.HasFlag(SavedStarGift.Flags.upgrade_separate),
+			UniqueGiftNumber = gift.gift_num.NullIfZero(),
+		},
+		_ => null!,
+	};
 
 	private async Task<UniqueGiftModel> UniqueGiftModel(StarGiftAttributeModel model) => new()
 	{
@@ -1264,7 +1270,8 @@ public partial class Bot
 			Id = item.id,
 			Text = item.title.text,
 			TextEntities = MakeEntities(item.title.entities),
-			CompletedByUser = User(completion?.completed_by is PeerUser pu ? pu.user_id : 0),
+			CompletedByChat = completion?.completed_by is PeerChannel pc ? Chat(pc.channel_id) : null,
+			CompletedByUser = completion?.completed_by is PeerUser pu ? User(pu.user_id) : null,
 			CompletionDate = completion?.date
 		};
 	})];

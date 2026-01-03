@@ -97,7 +97,8 @@ public partial class Bot
 	{
 		var topic = await GetForumTopicExtended(chatId, topicId);
 		return topic == null ? null : new ForumTopic { MessageThreadId = topic.id, Name = topic.title,
-			IconColor = topic.icon_color, IconCustomEmojiId = topic.flags.HasFlag(TL.ForumTopic.Flags.has_icon_emoji_id) ? topic.icon_emoji_id.ToString() : null };
+			IconColor = topic.icon_color, IconCustomEmojiId = topic.flags.HasFlag(TL.ForumTopic.Flags.has_icon_emoji_id) ? topic.icon_emoji_id.ToString() : null,
+			IsNameImplicit = topic.flags.HasFlag(TL.ForumTopic.Flags.title_missing) };
 	}
 	#endregion Power methods
 
@@ -127,7 +128,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -164,21 +165,22 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
 	/// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded message from forwarding and saving</param>
 	/// <param name="videoStartTimestamp">New start timestamp for the forwarded video in the message</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be forwarded; required if the message is forwarded to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; only available when forwarding to private chats</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> ForwardMessage(ChatId chatId, ChatId fromChatId, int messageId, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, int? videoStartTimestamp = default, long directMessagesTopicId = 0,
-		SuggestedPostParameters? suggestedPostParameters = default)
+		SuggestedPostParameters? suggestedPostParameters = default, long messageEffectId = 0)
 	{
 		var peer = await InputPeerChat(chatId);
 		return await PostedMsg(Client.Messages_ForwardMessages(await InputPeerChat(fromChatId), [messageId], [Helpers.RandomLong()], peer,
 			top_msg_id: messageThreadId, reply_to: directMessagesTopicId == 0 ? null : await MakeReplyTo(null, null, 0, directMessagesTopicId),
-			suggested_post: suggestedPostParameters.SuggestedPost(),
+			suggested_post: suggestedPostParameters.SuggestedPost(), effect: messageEffectId.NullIfNegative(),
 			silent: disableNotification, noforwards: protectContent, video_timestamp: videoStartTimestamp), peer);
 	}
 
@@ -186,7 +188,7 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
 	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to forward. The identifiers must be specified in a strictly increasing order.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the forwarded messages from forwarding and saving</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be forwarded; required if the messages are forwarded to a direct messages chat</param>
@@ -213,7 +215,7 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the new caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the new caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -222,12 +224,13 @@ public partial class Bot
 	/// <param name="videoStartTimestamp">New start timestamp for the copied video in the message</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
+	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; only available when copying to private chats</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> CopyMessage(ChatId chatId, ChatId fromChatId, int messageId, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
 		bool disableNotification = default, bool protectContent = default, bool allowPaidBroadcast = default, int? videoStartTimestamp = default,
-		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
+		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default, long messageEffectId = 0)
 	{
 		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), messageId);
 		msgs.UserOrChat(_collector);
@@ -242,10 +245,10 @@ public partial class Bot
 		var task = inputMedia == null
 			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
+				messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
 			: Messages_SendMedia(null, peer, inputMedia, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
+				messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text);
 		return postedMsg;
 	}
@@ -255,7 +258,7 @@ public partial class Bot
 	/// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
 	/// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to copy. The identifiers must be specified in a strictly increasing order.</param>
 	/// <param name="removeCaption">Pass <see langword="true"/> to copy the messages without their captions</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
@@ -321,7 +324,7 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the photo caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the photo needs to be covered with a spoiler animation</param>
@@ -385,7 +388,7 @@ public partial class Bot
 	/// <param name="performer">Performer</param>
 	/// <param name="title">Track name</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -419,7 +422,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableContentTypeDetection">Disables automatic server-side content type detection for files uploaded using <see cref="InputFileStream"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -454,7 +457,7 @@ public partial class Bot
 	/// <param name="width">Video width</param>
 	/// <param name="height">Video height</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the video needs to be covered with a spoiler animation</param>
@@ -498,7 +501,7 @@ public partial class Bot
 	/// <param name="width">Animation width</param>
 	/// <param name="height">Animation height</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="hasSpoiler">Pass <see langword="true"/> if the animation needs to be covered with a spoiler animation</param>
@@ -541,7 +544,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="duration">Duration of the voice message in seconds</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -575,7 +578,7 @@ public partial class Bot
 	/// <param name="duration">Duration of sent video in seconds</param>
 	/// <param name="length">Video width and height, i.e. diameter of the video message</param>
 	/// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -602,14 +605,14 @@ public partial class Bot
 
 	/// <summary>Use this method to send paid media.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
-	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-10000</param>
+	/// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-25000</param>
 	/// <param name="media">A array describing the media to be sent; up to 10 items</param>
 	/// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
 	/// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
 	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -660,7 +663,7 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
 	/// <param name="media">An array describing messages to be sent, must include 2-10 items</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -704,7 +707,7 @@ public partial class Bot
 	/// <param name="livePeriod">Period in seconds during which the location will be updated (see <a href="https://telegram.org/blog/live-locations">Live Locations</a>, should be between 60 and 86400, or 0x7FFFFFFF for live locations that can be edited indefinitely.</param>
 	/// <param name="heading">For live locations, a direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
 	/// <param name="proximityAlertRadius">For live locations, a maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -741,7 +744,7 @@ public partial class Bot
 	/// <param name="foursquareType">Foursquare type of the venue, if known. (For example, “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)</param>
 	/// <param name="googlePlaceId">Google Places identifier of the venue</param>
 	/// <param name="googlePlaceType">Google Places type of the venue. (See <a href="https://developers.google.com/places/web-service/supported_types">supported types</a>.)</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -790,7 +793,7 @@ public partial class Bot
 	/// <param name="vcard">Additional data about the contact in the form of a <a href="https://en.wikipedia.org/wiki/VCard">vCard</a>, 0-2048 bytes</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -838,7 +841,7 @@ public partial class Bot
 	/// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-600. Can't be used together with <paramref name="closeDate"/>.</param>
 	/// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 600 seconds in the future. Can't be used together with <paramref name="openPeriod"/>.</param>
 	/// <param name="isClosed">Pass <see langword="true"/> if the poll needs to be immediately closed. This can be useful for poll preview.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -913,7 +916,7 @@ public partial class Bot
 	/// <param name="emoji">Emoji on which the dice throw animation is based. Currently, must be one of “🎲”, “🎯”, “🏀”, “⚽”, “🎳”, or “🎰”. Dice can have values 1-6 for “🎲”, “🎯” and “🎳”, values 1-5 for “🏀” and “⚽”, and values 1-64 for “🎰”. Defaults to “🎲”</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -936,11 +939,31 @@ public partial class Bot
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
+	/// <summary>Use this method to stream a partial message to a user while the message is being generated; supported only for bots with forum topic mode enabled.</summary>
+	/// <param name="chatId">Unique identifier for the target private chat</param>
+	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes of drafts with the same identifier are animated</param>
+	/// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread</param>
+	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
+	public async Task SendMessageDraft(long chatId, int draftId, string text, int? messageThreadId = default, ParseMode parseMode = default,
+		IEnumerable<MessageEntity>? entities = default)
+	{
+		await InitComplete();
+		var peer = await InputPeerChat(chatId);
+		var tlEntities = ApplyParse(parseMode, ref text!, entities);
+		await Client.Messages_SetTyping(peer, new SendMessageTextDraftAction
+		{
+			random_id = draftId,
+			text = new TextWithEntities { text = text, entities = tlEntities }
+		}, messageThreadId);
+	}
+
 	/// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
 	/// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>). Channel chats and channel direct messages chats aren't supported.</param>
 	/// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <see cref="WTelegram.Bot.SendMessage">text messages</see>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread; for supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread or topic of a forum; for supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
 	public async Task SendChatAction(ChatId chatId, ChatAction action, int messageThreadId = 0, string? businessConnectionId = default)
 	{
@@ -1100,9 +1123,7 @@ public partial class Bot
 	/// <param name="userId">Unique identifier of the target user</param>
 	/// <param name="rights">An object describing new administrator rights.</param>
 	/// <param name="customTitle">Give an admin title to the user (exclusive!)</param>
-	/// <param name="canManageDirectMessages">Pass <see langword="true"/> if the administrator can manage direct messages within the channel and decline suggested posts; for channels only</param>
-	public async Task PromoteChatMember(ChatId chatId, long userId, ChatAdministratorRights? rights, string? customTitle = null,
-		bool canManageDirectMessages = default)
+	public async Task PromoteChatMember(ChatId chatId, long userId, ChatAdministratorRights? rights, string? customTitle = null)
 	{
 		var channel = await InputChannel(chatId);
 		var user = InputPeerUser(userId);
@@ -1351,12 +1372,22 @@ public partial class Bot
 				HasPrivateForwards = full.private_forward_name != null,
 				HasRestrictedVoiceAndVideoMessages = user.flags.HasFlag(TL.User.Flags.premium) && full.flags.HasFlag(UserFull.Flags.voice_messages_forbidden),
 				MessageAutoDeleteTime = full.ttl_period.NullIfZero(),
+				Rating = full.stars_rating == null ? null : new()
+				{
+					Level = full.stars_rating.level,
+					Rating = full.stars_rating.stars,
+					CurrentLevelRating = full.stars_rating.current_level_stars,
+					NextLevelRating = full.stars_rating.next_level_stars.NullIfNegative()
+				},
+				PaidMessageStarCount = full.send_paid_messages_stars.NullIfNegative(),
 			};
 			if (user.color is PeerColor color)
 			{
 				if (color.flags.HasFlag(PeerColor.Flags.has_color)) chat.AccentColorId = color.color;
 				if (color.flags.HasFlag(PeerColor.Flags.has_background_emoji_id)) chat.BackgroundCustomEmojiId = color.background_emoji_id.ToString();
 			}
+			else if (user.color is PeerColorCollectible pcc)
+				chat.UniqueGiftColors = pcc.UniqueGiftColors();
 			if (user.profile_color is PeerColor profile_color)
 			{
 				if (profile_color.flags.HasFlag(PeerColor.Flags.has_color)) chat.ProfileAccentColorId = profile_color.color;
@@ -1436,6 +1467,7 @@ public partial class Bot
 				chat.LinkedChatId = channelFull.linked_chat_id == 0 ? null : ZERO_CHANNEL_ID - channelFull.linked_chat_id;
 				chat.ParentChat = channel.linked_monoforum_id != 0 && chat.IsDirectMessages ? Chat(channel.linked_monoforum_id) : null;
 				chat.Location = channelFull.location.ChatLocation();
+				chat.PaidMessageStarCount = channelFull.send_paid_messages_stars.NullIfNegative();
 			}
 			else if (tlChat is TL.Chat basicChat)
 			{
@@ -1549,10 +1581,11 @@ public partial class Bot
 		var msg = await PostedMsg(Client.Messages_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor,
 			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
 		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
-		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId };
+		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId,
+			IsNameImplicit = ftc.IsNameImplicit };
 	}
 
-	/// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
+	/// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
 	/// <remarks>Use messageThreadId=1 for the 'General' topic</remarks>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
@@ -1576,7 +1609,7 @@ public partial class Bot
 		await Client.Messages_EditForumTopic(channel, messageThreadId, closed: closed);
 	}
 
-	/// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanDeleteMessages</em> administrator rights.</summary>
+	/// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanDeleteMessages</em> administrator rights.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
 	public async Task DeleteForumTopic(ChatId chatId, int messageThreadId)
@@ -1736,7 +1769,7 @@ public partial class Bot
 
 	/// <summary>Sends a gift to the given user or channel chat. The gift can't be converted to Telegram Stars by the receiver.</summary>
 	/// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
-	/// <param name="giftId">Identifier of the gift</param>
+	/// <param name="giftId">Identifier of the gift; limited gifts can't be sent to channel chats</param>
 	/// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
 	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
 	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
@@ -1877,8 +1910,8 @@ public partial class Bot
 	/// <param name="isPublic">Pass <see langword="true"/> to set the public photo, which will be visible even if the main photo is hidden by the business account's privacy settings. An account can have only one public photo.</param>
 	public async Task SetBusinessAccountProfilePhoto(string businessConnectionId, InputProfilePhoto photo, bool isPublic = default)
 	{
-		//TODO: check why tdlib doesn't use InvokeWithBusinessConnection
-		var peer = await GetBusinessPeer(businessConnectionId);
+		//TODO? instead of InvokeWithBusinessConnection, tdlib seem to pass the business user as 'bot' parameter for Photos_UploadProfilePhoto
+		/*var peer = */await GetBusinessPeer(businessConnectionId);
 		switch (photo)
 		{
 			case InputProfilePhotoStatic ipps:
@@ -1942,7 +1975,7 @@ public partial class Bot
 	/// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
 	public async Task TransferBusinessAccountStars(string businessConnectionId, int starCount)
 	{
-		var peer = await GetBusinessPeer(businessConnectionId);
+		/*var peer = */await GetBusinessPeer(businessConnectionId);
 		var invoice = new InputInvoiceBusinessBotTransferStars { bot = TL.InputUser.Self, stars = starCount };
 		var ppfb = await Client.InvokeWithBusinessConnection(businessConnectionId,
 			new Payments_GetPaymentForm { invoice = invoice });
@@ -1957,15 +1990,18 @@ public partial class Bot
 	/// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the account's profile page</param>
 	/// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the account's profile page</param>
 	/// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
-	/// <param name="excludeLimited">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times</param>
+	/// <param name="excludeLimitedUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can be upgraded to unique</param>
+	/// <param name="excludeLimitedNonUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can't be upgraded to unique</param>
+	/// <param name="excludeFromBlockchain">Pass <see langword="true"/> to exclude gifts that were assigned from the TON blockchain and can't be resold or transferred in Telegram</param>
 	/// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
 	/// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
 	/// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
 	/// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
 	/// <returns><see cref="OwnedGifts"/> on success.</returns>
 	public async Task<OwnedGifts> GetBusinessAccountGifts(string businessConnectionId, bool excludeUnsaved = default,
-		bool excludeSaved = default, bool excludeUnlimited = default, bool excludeLimited = default, bool excludeUnique = default,
-		bool sortByPrice = default, string? offset = default, int? limit = default)
+		bool excludeSaved = default, bool excludeUnlimited = default, bool excludeLimitedUpgradable = default, bool excludeLimitedNonUpgradable = default,
+		bool excludeFromBlockchain = default, bool excludeUnique = default, bool sortByPrice = default, string? offset = default,
+		int? limit = default)
 	{
 		var peer = await GetBusinessPeer(businessConnectionId);
 		var pssg = await Client.InvokeWithBusinessConnection(businessConnectionId,
@@ -1974,13 +2010,76 @@ public partial class Bot
 				flags = (excludeUnsaved ? Payments_GetSavedStarGifts.Flags.exclude_unsaved : 0)
 					| (excludeSaved ? Payments_GetSavedStarGifts.Flags.exclude_saved : 0)
 					| (excludeUnlimited ? Payments_GetSavedStarGifts.Flags.exclude_unlimited : 0)
-					| (excludeLimited ? Payments_GetSavedStarGifts.Flags.exclude_upgradable | Payments_GetSavedStarGifts.Flags.exclude_unupgradable : 0)
+					| (excludeLimitedUpgradable ? Payments_GetSavedStarGifts.Flags.exclude_upgradable : 0)
+					| (excludeLimitedNonUpgradable ? Payments_GetSavedStarGifts.Flags.exclude_unupgradable : 0)
+					| (excludeFromBlockchain ? Payments_GetSavedStarGifts.Flags.exclude_hosted : 0)
 					| (excludeUnique ? Payments_GetSavedStarGifts.Flags.exclude_unique : 0)
 					| (sortByPrice ? Payments_GetSavedStarGifts.Flags.sort_by_value : 0),
 				peer = peer,
 				offset = offset,
 				limit = limit ?? 100
 			});
+		pssg.UserOrChat(_collector);
+		return new OwnedGifts
+		{
+			Gifts = await pssg.gifts.Select(OwnedGift).WhenAllSequential(),
+			NextOffset = pssg.next_offset,
+			TotalCount = pssg.count
+		};
+	}
+
+	/// <summary>Returns the gifts owned and hosted by a user.</summary>
+	/// <param name="userId">Unique identifier of the user</param>
+	/// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
+	/// <param name="excludeLimitedUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can be upgraded to unique</param>
+	/// <param name="excludeLimitedNonUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can't be upgraded to unique</param>
+	/// <param name="excludeFromBlockchain">Pass <see langword="true"/> to exclude gifts that were assigned from the TON blockchain and can't be resold or transferred in Telegram</param>
+	/// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
+	/// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
+	/// <param name="offset">Offset of the first entry to return as received from the previous request; use an empty string to get the first chunk of results</param>
+	/// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+	/// <returns><see cref="OwnedGifts"/> on success.</returns>
+	public async Task<OwnedGifts> GetUserGifts(long userId, bool excludeUnlimited = default, bool excludeLimitedUpgradable = default,
+		bool excludeLimitedNonUpgradable = default, bool excludeFromBlockchain = default, bool excludeUnique = default,
+		bool sortByPrice = default, string? offset = default, int? limit = default)
+	{
+		await InitComplete();
+		var peer = InputPeerUser(userId);
+		var pssg = await Client.Payments_GetSavedStarGifts(peer, offset, limit ?? 100, null,
+				true, false, excludeUnlimited, excludeUnique, 
+				sortByPrice, excludeLimitedUpgradable, excludeLimitedNonUpgradable, false, excludeFromBlockchain);
+		pssg.UserOrChat(_collector);
+		return new OwnedGifts
+		{
+			Gifts = await pssg.gifts.Select(OwnedGift).WhenAllSequential(),
+			NextOffset = pssg.next_offset,
+			TotalCount = pssg.count
+		};
+	}
+
+	/// <summary>Returns the gifts owned by a chat.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+	/// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the chat's profile page. Always <see langword="true"/>, unless the bot has the <em>CanPostMessages</em> administrator right in the channel.</param>
+	/// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the chat's profile page. Always <see langword="false"/>, unless the bot has the <em>CanPostMessages</em> administrator right in the channel.</param>
+	/// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
+	/// <param name="excludeLimitedUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can be upgraded to unique</param>
+	/// <param name="excludeLimitedNonUpgradable">Pass <see langword="true"/> to exclude gifts that can be purchased a limited number of times and can't be upgraded to unique</param>
+	/// <param name="excludeFromBlockchain">Pass <see langword="true"/> to exclude gifts that were assigned from the TON blockchain and can't be resold or transferred in Telegram</param>
+	/// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
+	/// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
+	/// <param name="offset">Offset of the first entry to return as received from the previous request; use an empty string to get the first chunk of results</param>
+	/// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+	/// <returns><see cref="OwnedGifts"/> on success.</returns>
+	public async Task<OwnedGifts> GetChatGifts(ChatId chatId, bool excludeUnsaved = default, bool excludeSaved = default,
+		bool excludeUnlimited = default, bool excludeLimitedUpgradable = default, bool excludeLimitedNonUpgradable = default,
+		bool excludeFromBlockchain = default, bool excludeUnique = default, bool sortByPrice = default, string? offset = default,
+		int? limit = default)
+	{
+		await InitComplete();
+		var peer = await InputPeerChat(chatId);
+		var pssg = await Client.Payments_GetSavedStarGifts(peer, offset, limit ?? 100, null,
+				excludeUnsaved, excludeSaved, excludeUnlimited, excludeUnique,
+				sortByPrice, excludeLimitedUpgradable, excludeLimitedNonUpgradable, false, excludeFromBlockchain);
 		pssg.UserOrChat(_collector);
 		return new OwnedGifts
 		{
@@ -2076,6 +2175,29 @@ public partial class Bot
 		//tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 		var updates = await Client.Stories_SendStory(peer, tlMedia, [new InputPrivacyValueAllowAll()], Helpers.RandomLong(), caption, entities, activePeriod,
 			areas?.Select(TypesTLConverters.MediaArea).ToArray(), pinned: postToChatPage, noforwards: protectContent);
+		updates.UserOrChat(_collector);
+		return new Story()
+		{
+			Chat = Chat(peer.ID)!,
+			Id = updates.UpdateList.OfType<UpdateStoryID>().FirstOrDefault()?.id ?? 0
+		};
+	}
+
+	/// <summary>Reposts a story on behalf of a business account from another business account. Both business accounts must be managed by the same bot, and the story on the source account must have been posted (or reposted) by the bot. Requires the <em>CanManageStories</em> business bot right for both business accounts.</summary>
+	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
+	/// <param name="fromChatId">Unique identifier of the chat which posted the story that should be reposted</param>
+	/// <param name="fromStoryId">Unique identifier of the story that should be reposted</param>
+	/// <param name="activePeriod">Period after which the story is moved to the archive, in seconds; must be one of <c>6 * 3600</c>, <c>12 * 3600</c>, <c>86400</c>, or <c>2 * 86400</c></param>
+	/// <param name="postToChatPage">Pass <see langword="true"/> to keep the story accessible after it expires</param>
+	/// <param name="protectContent">Pass <see langword="true"/> if the content of the story must be protected from forwarding and screenshotting</param>
+	/// <returns><see cref="Story"/> on success.</returns>
+	public async Task<Story> RepostStory(string businessConnectionId, long fromChatId, int fromStoryId, int activePeriod,
+		bool postToChatPage = default, bool protectContent = default)
+	{
+		var peer = await GetBusinessPeer(businessConnectionId);
+		var fromPeer = await InputPeerChat(fromChatId);
+		var updates = await Client.Stories_SendStory(peer, null, [new InputPrivacyValueAllowAll()], Helpers.RandomLong(), null, null, activePeriod,
+			null, fromPeer, fromStoryId, pinned: postToChatPage, noforwards: protectContent);
 		updates.UserOrChat(_collector);
 		return new Story()
 		{
@@ -2388,7 +2510,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
 	/// <param name="emoji">Emoji associated with the sticker; only for just uploaded stickers</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -2672,7 +2794,7 @@ public partial class Bot
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Pay <c>total price</c>' button will be shown. If not empty, the first button must be a Pay button.</param>
 	/// <param name="startParameter">Unique deep-linking parameter. If left empty, <b>forwarded copies</b> of the sent message will have a <em>Pay</em> button, allowing multiple users to pay directly from the forwarded message, using the same invoice. If non-empty, forwarded copies of the sent message will have a <em>URL</em> button with a deep link to the bot (instead of a <em>Pay</em> button), with the value used as the start parameter</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
@@ -2823,7 +2945,7 @@ public partial class Bot
 	/// <param name="gameShortName">Short name of the game, serves as the unique identifier for the game. Set up your games via <a href="https://t.me/botfather">@BotFather</a>.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Play GameTitle' button will be shown. If not empty, the first button must launch the game.</param>
-	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of the forum; for forum supergroups only</param>
+	/// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
 	/// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>

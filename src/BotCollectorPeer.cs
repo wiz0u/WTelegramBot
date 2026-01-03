@@ -26,13 +26,7 @@ class BotCollectorPeer(Bot client) : Peer, WTelegram.IPeerCollector, IReadOnlyDi
 						prevUser.FirstName ??= user.first_name;
 						prevUser.LastName ??= user.last_name;
 						if (user.lang_code != null) prevUser.LanguageCode = user.lang_code;
-						if (prevUser.IsBot)
-						{
-							prevUser.CanJoinGroups = !user.flags.HasFlag(TL.User.Flags.bot_nochats);
-							prevUser.CanReadAllGroupMessages = user.flags.HasFlag(TL.User.Flags.bot_chat_history);
-							prevUser.SupportsInlineQueries = user.flags.HasFlag(TL.User.Flags.has_bot_inline_placeholder);
-							prevUser.CanConnectToBusiness = user.flags2.HasFlag(TL.User.Flags2.bot_business);
-						}
+						if (prevUser.IsBot) prevUser.LoadBotFlags(user);
 						client._users[user.id] = prevUser;
 					}
 	}

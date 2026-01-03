@@ -21,32 +21,36 @@ public static class TypesTLConverters
 	public static TL.MessageBase? TLMessage(this Message message) => (message as WTelegram.Types.Message)?.TLMessage;
 
 	/// <summary>Convert TL.User to Bot Types.User</summary>
-	[return: NotNullIfNotNull(nameof(user))]
-	public static WTelegram.Types.User? User(this TL.User? user)
+	[return: NotNullIfNotNull(nameof(tlUser))]
+	public static WTelegram.Types.User? User(this TL.User? tlUser)
 	{
-		if (user == null) return null;
-		var result = new WTelegram.Types.User
+		if (tlUser == null) return null;
+		var user = new WTelegram.Types.User
 		{
-			TLUser = user,
-			Id = user.id,
-			IsBot = user.IsBot,
-			FirstName = user.first_name,
-			LastName = user.last_name,
-			Username = user.MainUsername,
-			LanguageCode = user.lang_code,
-			IsPremium = user.flags.HasFlag(TL.User.Flags.premium),
-			AddedToAttachmentMenu = user.flags.HasFlag(TL.User.Flags.attach_menu_enabled),
-			HasMainWebApp = user.flags2.HasFlag(TL.User.Flags2.bot_has_main_app),
-			AccessHash = user.access_hash
+			TLUser = tlUser,
+			Id = tlUser.id,
+			IsBot = tlUser.IsBot,
+			FirstName = tlUser.first_name,
+			LastName = tlUser.last_name,
+			Username = tlUser.MainUsername,
+			LanguageCode = tlUser.lang_code,
+			IsPremium = tlUser.flags.HasFlag(TL.User.Flags.premium),
+			AddedToAttachmentMenu = tlUser.flags.HasFlag(TL.User.Flags.attach_menu_enabled),
+			AccessHash = tlUser.access_hash
 		};
-		if (user.IsBot)
-		{
-			result.CanJoinGroups = !user.flags.HasFlag(TL.User.Flags.bot_nochats);
-			result.CanReadAllGroupMessages = user.flags.HasFlag(TL.User.Flags.bot_chat_history);
-			result.SupportsInlineQueries = user.flags.HasFlag(TL.User.Flags.has_bot_inline_placeholder);
-			result.CanConnectToBusiness = user.flags2.HasFlag(TL.User.Flags2.bot_business);
-		}
-		return result;
+		if (tlUser.IsBot) user.LoadBotFlags(tlUser);
+		return user;
+	}
+
+	internal static void LoadBotFlags(this WTelegram.Types.User user, TL.User tlUser)
+	{
+		//   AddedToAttachmentMenu is not updated from a min user
+		user.CanJoinGroups = !tlUser.flags.HasFlag(TL.User.Flags.bot_nochats);
+		user.CanReadAllGroupMessages = tlUser.flags.HasFlag(TL.User.Flags.bot_chat_history);
+		user.SupportsInlineQueries = tlUser.flags.HasFlag(TL.User.Flags.has_bot_inline_placeholder);
+		user.CanConnectToBusiness = tlUser.flags2.HasFlag(TL.User.Flags2.bot_business);
+		user.HasMainWebApp = tlUser.flags2.HasFlag(TL.User.Flags2.bot_has_main_app);
+		user.HasTopicsEnabled = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_view);
 	}
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
@@ -724,6 +728,12 @@ public static class TypesTLConverters
 	internal static StarAmount StarAmount(this TL.StarsAmountBase sab) => sab is TL.StarsAmount sa
 		? new StarAmount { Amount = (int)sa.amount, NanostarAmount = sa.nanos }
 		: throw new WTException($"Unsupported {sab}");
+	internal static string Currency(this TL.StarsAmountBase sab) => sab switch
+	{
+		TL.StarsAmount => "XTR",
+		TL.StarsTonAmount => "TON",
+		_ => throw new WTException("Unknown StarsAmountBase currency")
+	};
 
 	internal static TL.StarsAmountBase? StarAmount(this SuggestedPostPrice spp) => spp.Currency switch
 	{
@@ -732,13 +742,8 @@ public static class TypesTLConverters
 		_ => throw new WTException("Invalid SuggestedPostPrice currency")
 	};
 	[return: NotNullIfNotNull(nameof(sab))]
-	internal static SuggestedPostPrice? SuggestedPostPrice(this TL.StarsAmountBase? sab) => sab switch
-	{
-		null => null,
-		TL.StarsAmount sa => new SuggestedPostPrice() { Currency = "XTR", Amount = sa.amount },
-		TL.StarsTonAmount sta => new SuggestedPostPrice() { Currency = "TON", Amount = sta.amount },
-		_ => throw new WTException("Invalid SuggestedPostPrice currency")
-	};
+	internal static SuggestedPostPrice? SuggestedPostPrice(this TL.StarsAmountBase? sab) => sab is null ? null :
+		new SuggestedPostPrice() { Currency = sab.Currency(), Amount = sab.Amount };
 
 	internal static long ToChatId(this Peer peer)
 		=> peer switch { PeerChat pc => -pc.chat_id, PeerChannel pch => ZERO_CHANNEL_ID - pch.channel_id, _ => peer.ID };
@@ -767,6 +772,7 @@ public static class TypesTLConverters
 		LimitedGifts = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_limited_stargifts),
 		UniqueGifts = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_unique_stargifts),
 		PremiumSubscription = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_premium_gifts),
+		GiftsFromChannels = !flags.HasFlag(DisallowedGiftsSettings.Flags.disallow_stargifts_from_channels),
 	};
 
 	internal static MediaArea MediaArea(this StoryArea area)
@@ -844,5 +850,28 @@ public static class TypesTLConverters
 		Price = sp.price.SuggestedPostPrice(),
 		State = sp.flags.HasFlag(TL.SuggestedPost.Flags.accepted) ? "approved" :
 				sp.flags.HasFlag(TL.SuggestedPost.Flags.rejected) ? "declined" : "pending"
+	};
+
+	internal static string Origin(this MessageActionStarGiftUnique masgu)
+	{
+		if (masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.from_offer)) return "offer";
+		if (masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.assigned)) return "blockchain";
+		if (masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.prepaid_upgrade)) return "gifted_upgrade";
+		if (masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.has_resale_amount)) return "resale";
+		if (masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.upgrade)) return "upgrade";
+		return "transfer";
+	}
+
+	internal static GiftBackground GiftBackground(this TL.StarGiftBackground bg)
+		=> new() { CenterColor = bg.center_color, EdgeColor = bg.edge_color, TextColor = bg.text_color };
+
+	internal static UniqueGiftColors UniqueGiftColors(this PeerColorCollectible pcc) => new()
+	{
+		ModelCustomEmojiId = pcc.gift_emoji_id.ToString(),
+		SymbolCustomEmojiId = pcc.background_emoji_id.ToString(),
+		LightThemeMainColor = pcc.accent_color,
+		LightThemeOtherColors = pcc.colors,
+		DarkThemeMainColor = pcc.flags.HasFlag(PeerColorCollectible.Flags.has_dark_accent_color) ? pcc.dark_accent_color : pcc.accent_color,
+		DarkThemeOtherColors = pcc.flags.HasFlag(PeerColorCollectible.Flags.has_dark_colors) ? pcc.dark_colors : pcc.colors,
 	};
 }

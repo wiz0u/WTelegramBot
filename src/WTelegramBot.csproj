@@ -19,7 +19,7 @@
 
 Release Notes:
 $(ReleaseNotes)</Description>
-    <Copyright>Copyright © Olivier Marcoux 2024-2025</Copyright>
+    <Copyright>Copyright © Olivier Marcoux 2024-2026</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/wiz0u/WTelegramBot</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
