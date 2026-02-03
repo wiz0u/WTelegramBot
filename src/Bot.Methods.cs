@@ -2902,7 +2902,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var starStatus = await Client.Payments_GetStarsTransactions(InputPeer.Self, offset.ToString(), limit, ascending: true);
-		return new() { Transactions = [.. starStatus.history.Select(MakeStarTransaction)] };
+		return new() { Transactions = starStatus.history?.Select(MakeStarTransaction).ToArray() ?? [] };
 	}
 
 	/// <summary>Refunds a successful payment in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</summary>
