@@ -99,7 +99,7 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 	// commands accepted by this example program:
 	if (text == "/start")
 	{
-		await bot.SendMessage(msg.Chat, $"Hello, {msg.From}!\nTry commands /pic /react /lastseen /getchat /setphoto", replyParameters: msg);
+		await bot.SendMessage(msg.Chat, $"Hello, {msg.From}!\nTry commands /pic /react /lastseen /getchat", replyParameters: msg);
 	}
 	else if (text == "/pic")
 	{
@@ -122,19 +122,6 @@ async Task OnMessage(WTelegram.Types.Message msg, UpdateType type)
 		var dump = System.Text.Json.JsonSerializer.Serialize(chat, JsonBotAPI.Options);
 		dump = $"<pre>{TL.HtmlText.Escape(dump)}</pre>";
 		await bot.SendMessage(msg.Chat, dump, parseMode: ParseMode.Html);
-	}
-	else if (text == "/setphoto")
-	{
-		var prevPhotos = await bot.GetUserProfilePhotos(my.Id);
-		var jpegData = await new HttpClient().GetByteArrayAsync("https://picsum.photos/256/256.jpg");
-		await bot.SetMyPhoto(InputFile.FromStream(new MemoryStream(jpegData)));
-		await bot.SendMessage(msg.Chat, "New bot profile photo set. Check my profile to see it. Restoring it in 20 seconds");
-		if (prevPhotos.TotalCount > 0)
-		{
-			await Task.Delay(20000);
-			await bot.SetMyPhoto(prevPhotos.Photos[0][^1].FileId); // restore previous photo
-			await bot.SendMessage(msg.Chat, "Bot profile photo restored");
-		}
 	}
 }
 

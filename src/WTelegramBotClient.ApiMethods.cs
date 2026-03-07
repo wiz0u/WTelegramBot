@@ -825,7 +825,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message</param>
     /// <param name="replyParameters">An object for description of the message to reply to</param>
-    /// <param name="replyMarkup">An object for an inline keyboard</param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendChecklist(
@@ -871,7 +871,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? DiceEmoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
-    /// <summary>Use this method to stream a partial message to a user while the message is being generated; supported only for bots with forum topic mode enabled.</summary>
+    /// <summary>Use this method to stream a partial message to a user while the message is being generated.</summary>
     /// <param name="chatId">Unique identifier for the target private chat</param>
     /// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes of drafts with the same identifier are animated</param>
     /// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
@@ -930,6 +930,19 @@ public partial class WTelegramBotClient
         int? limit = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetUserProfilePhotos(userId, offset ?? 0, limit ?? 100).ThrowAsApi(this);
+
+    /// <summary>Use this method to get a list of profile audios for a user.</summary>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="offset">Sequential number of the first audio to be returned. By default, all audios are returned.</param>
+    /// <param name="limit">Limits the number of audios to be retrieved. Values between 1-100 are accepted. Defaults to 100.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="UserProfileAudios"/> object.</returns>
+    public async Task<UserProfileAudios> GetUserProfileAudios(
+        long userId,
+        int? offset = default,
+        int? limit = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetUserProfileAudios(userId, offset ?? 0, limit ?? 100).ThrowAsApi(this);
 
     /// <summary>Changes the emoji status for a given user that previously allowed the bot to manage their emoji status via the Mini App method <a href="https://core.telegram.org/bots/webapps#initializing-mini-apps">requestEmojiStatusAccess</a>.</summary>
     /// <param name="userId">Unique identifier of the target user</param>
@@ -1349,7 +1362,7 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetForumTopicIconStickers().ThrowAsApi(this);
 
-    /// <summary>Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
+    /// <summary>Use this method to create a topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator right.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
     /// <param name="name">Topic name, 1-128 characters</param>
     /// <param name="iconColor">Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)</param>
@@ -1594,6 +1607,20 @@ public partial class WTelegramBotClient
         string? languageCode = default,
         CancellationToken cancellationToken = default
     ) => (await ThrowIfCancelled(cancellationToken).GetMyInfo(languageCode).ThrowAsApi(this)).shortDescription;
+
+    /// <summary>Changes the profile photo of the bot.</summary>
+    /// <param name="photo">The new profile photo to set</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetMyProfilePhoto(
+        InputProfilePhoto photo,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetMyProfilePhoto(photo).ThrowAsApi(this);
+
+    /// <summary>Removes the profile photo of the bot.</summary>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task RemoveMyProfilePhoto(
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).RemoveMyProfilePhoto().ThrowAsApi(this);
 
     /// <summary>Use this method to change the bot's menu button in a private chat, or the default menu button.</summary>
     /// <param name="chatId">Unique identifier for the target private chat. If not specified, default bot's menu button will be changed</param>
@@ -2219,7 +2246,7 @@ public partial class WTelegramBotClient
     /// <param name="chatId">Unique identifier for the target chat</param>
     /// <param name="messageId">Unique identifier for the target message</param>
     /// <param name="checklist">An object for the new checklist</param>
-    /// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
+    /// <param name="replyMarkup">An object for the new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a> for the message</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned.</returns>
     public async Task<Message> EditMessageChecklist(

@@ -51,6 +51,7 @@ public static class TypesTLConverters
 		user.CanConnectToBusiness = tlUser.flags2.HasFlag(TL.User.Flags2.bot_business);
 		user.HasMainWebApp = tlUser.flags2.HasFlag(TL.User.Flags2.bot_has_main_app);
 		user.HasTopicsEnabled = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_view);
+		user.AllowsUsersToCreateTopics = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_can_manage_topics);
 	}
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
@@ -235,7 +236,7 @@ public static class TypesTLConverters
 			| (permissions.CanChangeInfo ? 0 : ChatBannedRights.Flags.change_info)
 			| (permissions.CanInviteUsers ? 0 : ChatBannedRights.Flags.invite_users)
 			| (permissions.CanPinMessages ? 0 : ChatBannedRights.Flags.pin_messages)
-			| (permissions.CanManageTopics ? 0 : ChatBannedRights.Flags.manage_topics)
+			| ((permissions.CanManageTopics ?? permissions.CanPinMessages) ? 0 : ChatBannedRights.Flags.manage_topics)
 	};
 
 	[return: NotNullIfNotNull(nameof(location))]
@@ -252,7 +253,7 @@ public static class TypesTLConverters
 		};
 
 	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this TL.ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
-		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => btn switch
+		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => (btn switch
 		{
 			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
 			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
@@ -269,7 +270,25 @@ public static class TypesTLConverters
 			}),
 			KeyboardButtonWebView kbwv => InlineKeyboardButton.WithWebApp(kbwv.text, new WebAppInfo { Url = kbwv.url }),
 			_ => new InlineKeyboardButton(btn.Text),
-		})));
+		}).WithStyle(btn.Style))));
+
+	internal static Audio? Audio(this TL.DocumentBase doc, DocumentAttributeAudio? audio = null)
+	{
+		if (doc is not TL.Document document) return null;
+		audio ??= document.GetAttribute<DocumentAttributeAudio>();
+		if (audio == null) return null;
+		var thumb = document.LargestThumbSize;
+		return new Audio
+		{
+			FileSize = document.size,
+			Duration = (int)(audio?.duration + 0.5 ?? 0.0),
+			Performer = audio?.performer,
+			Title = audio?.title,
+			FileName = document.Filename,
+			MimeType = document.mime_type,
+			Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
+		}.SetFileIds(document.ToFileLocation(), document.dc_id);
+	}
 
 	internal static Video Video(this TL.Document document, MessageMediaDocument mmd)
 	{
@@ -286,12 +305,26 @@ public static class TypesTLConverters
 			MimeType = document.mime_type,
 			Cover = mmd.video_cover?.PhotoSizes(),
 			StartTimestamp = mmd.video_timestamp.NullIfZero(),
+			Qualities = mmd.alt_documents?.VideoQualities().ToArray()
 		}.SetFileIds(document.ToFileLocation(), document.dc_id);
+	}
+	
+	internal static IEnumerable<VideoQuality> VideoQualities(this TL.DocumentBase[] alt_document)
+	{
+		foreach (var alt_doc in alt_document)
+			if (alt_doc is TL.Document document && document.GetAttribute<DocumentAttributeVideo>() is { } video)
+				yield return new VideoQuality
+				{
+					FileSize = document.size,
+					Width = video.w,
+					Height = video.h,
+					Codec = video.video_codec
+				}.SetFileIds(document.ToFileLocation(), document.dc_id);
 	}
 
 	/// <summary>Convert TL.Photo into Bot Types.PhotoSize[]</summary>
 	public static PhotoSize[]? PhotoSizes(this PhotoBase photoBase)
-		=> (photoBase is not Photo photo) ? null : photo.sizes.Select(ps => ps.PhotoSize(photo.ToFileLocation(ps), photo.dc_id)).ToArray();
+		=> (photoBase is not Photo photo) ? null : [.. photo.sizes.Select(ps => ps.PhotoSize(photo.ToFileLocation(ps), photo.dc_id))];
 
 	/// <summary>Convert TL.PhotoSize into Bot Types.PhotoSize</summary>
 	public static PhotoSize PhotoSize(this PhotoSizeBase ps, InputFileLocationBase location, int dc_id)
@@ -874,4 +907,39 @@ public static class TypesTLConverters
 		DarkThemeMainColor = pcc.flags.HasFlag(PeerColorCollectible.Flags.has_dark_accent_color) ? pcc.dark_accent_color : pcc.accent_color,
 		DarkThemeOtherColors = pcc.flags.HasFlag(PeerColorCollectible.Flags.has_dark_colors) ? pcc.dark_colors : pcc.colors,
 	};
+
+	internal static UniqueGiftModelRarity? Rarity(this StarGiftAttributeRarityBase? rarity) => rarity switch
+	{
+		StarGiftAttributeRarityUncommon => UniqueGiftModelRarity.Uncommon,
+		StarGiftAttributeRarityRare => UniqueGiftModelRarity.Rare,
+		StarGiftAttributeRarityEpic => UniqueGiftModelRarity.Epic,
+		StarGiftAttributeRarityLegendary => UniqueGiftModelRarity.Legendary,
+		_ => null
+	};
+
+	internal static T WithStyle<T>(this T ikb, TL.KeyboardButtonStyle? style) where T : IKeyboardButton
+	{
+		if (style != null)
+		{
+			if (style.icon != 0) ikb.IconCustomEmojiId = style.icon.ToString();
+			ikb.Style = style.flags.HasFlag(TL.KeyboardButtonStyle.Flags.bg_primary) ? ReplyMarkups.KeyboardButtonStyle.Primary :
+						style.flags.HasFlag(TL.KeyboardButtonStyle.Flags.bg_danger) ? ReplyMarkups.KeyboardButtonStyle.Danger :
+						style.flags.HasFlag(TL.KeyboardButtonStyle.Flags.bg_success) ? ReplyMarkups.KeyboardButtonStyle.Success : null;
+		}
+		return ikb;
+	}
+
+	internal static TL.KeyboardButtonStyle? KeyboardButtonStyle(this IKeyboardButton btn)
+	{
+		TL.KeyboardButtonStyle? style = btn.IconCustomEmojiId == null ? null
+			: new() { flags = TL.KeyboardButtonStyle.Flags.has_icon, icon = long.Parse(btn.IconCustomEmojiId) };
+		if (btn.Style != null) (style ??= new()).flags |= btn.Style switch
+		{
+			ReplyMarkups.KeyboardButtonStyle.Primary => TL.KeyboardButtonStyle.Flags.bg_primary,
+			ReplyMarkups.KeyboardButtonStyle.Danger => TL.KeyboardButtonStyle.Flags.bg_danger,
+			ReplyMarkups.KeyboardButtonStyle.Success => TL.KeyboardButtonStyle.Flags.bg_success,
+			_ => 0
+		};
+		return style;
+	}
 }

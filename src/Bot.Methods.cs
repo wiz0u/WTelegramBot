@@ -63,7 +63,7 @@ public partial class Bot
 	}
 
 	/// <summary>Use this method to change the bot's photo</summary>
-	/// <param name="photo">New bot photo, can be an existing <see cref="InputFileId"/>, or uploaded using <see cref="InputFileStream"/>, or <see langword="null"/> to delete photo</param>
+	[Obsolete("Use Bot API methods SetMyProfilePhoto/RemoveMyProfilePhoto instead")]
 	public async Task<Telegram.Bot.Types.PhotoSize[]> SetMyPhoto(InputFile? photo)
 	{
 		var im = photo == null ? null : await InputMediaPhoto(photo);
@@ -896,7 +896,7 @@ public partial class Bot
 	/// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
 	/// <param name="messageEffectId">Unique identifier of the message effect to be added to the message</param>
 	/// <param name="replyParameters">An object for description of the message to reply to</param>
-	/// <param name="replyMarkup">An object for an inline keyboard</param>
+	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendChecklist(string businessConnectionId, long chatId, InputChecklist checklist,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
@@ -939,7 +939,7 @@ public partial class Bot
 			peer, null, replyToMessage, businessConnectionId);
 	}
 
-	/// <summary>Use this method to stream a partial message to a user while the message is being generated; supported only for bots with forum topic mode enabled.</summary>
+	/// <summary>Use this method to stream a partial message to a user while the message is being generated.</summary>
 	/// <param name="chatId">Unique identifier for the target private chat</param>
 	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes of drafts with the same identifier are animated</param>
 	/// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
@@ -1002,6 +1002,23 @@ public partial class Bot
 		{
 			TotalCount = (photos as Photos_PhotosSlice)?.count ?? photos.photos.Length,
 			Photos = [.. photos.photos.Select(pb => pb.PhotoSizes()!)]
+		};
+	}
+
+	/// <summary>Use this method to get a list of profile audios for a user.</summary>
+	/// <param name="userId">Unique identifier of the target user</param>
+	/// <param name="offset">Sequential number of the first audio to be returned. By default, all audios are returned.</param>
+	/// <param name="limit">Limits the number of audios to be retrieved. Values between 1-100 are accepted. Defaults to 100.</param>
+	/// <returns>A <see cref="UserProfileAudios"/> object.</returns>
+	public async Task<UserProfileAudios> GetUserProfileAudios(long userId, int offset = 0, int limit = 100)
+	{
+		await InitComplete();
+		var inputUser = InputUser(userId);
+		var music = (Users_SavedMusic)await Client.Users_GetSavedMusic(inputUser, offset, limit);
+		return new UserProfileAudios
+		{
+			TotalCount = music.count,
+			Audios = [.. music.documents.OfType<TL.Document>().Select(m => m.Audio()).NotNull()]
 		};
 	}
 
@@ -1380,6 +1397,7 @@ public partial class Bot
 					NextLevelRating = full.stars_rating.next_level_stars.NullIfNegative()
 				},
 				PaidMessageStarCount = full.send_paid_messages_stars.NullIfNegative(),
+				FirstProfileAudio = full.saved_music.Audio()
 			};
 			if (user.color is PeerColor color)
 			{
@@ -1569,7 +1587,7 @@ public partial class Bot
 		return stickers;
 	}
 
-	/// <summary>Use this method to create a topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
+	/// <summary>Use this method to create a topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator right.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
 	/// <param name="name">Topic name, 1-128 characters</param>
 	/// <param name="iconColor">Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)</param>
@@ -1711,6 +1729,47 @@ public partial class Bot
 		await InitComplete();
 		var botInfo = await Client.Bots_GetBotInfo(languageCode);
 		return (botInfo.name, botInfo.about, botInfo.description);
+	}
+
+	private async Task<IMethod<Photos_Photo>> SetProfilePhoto(InputProfilePhoto photo, bool fallback = false)
+	{
+		switch (photo)
+		{
+			case InputProfilePhotoStatic ipps:
+				if (ipps.Photo.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
+				var imup = (InputMediaUploadedPhoto)await InputMediaPhoto(ipps.Photo);
+				return new Photos_UploadProfilePhoto
+				{
+					file = imup.file,
+					flags = Photos_UploadProfilePhoto.Flags.has_file | (fallback ? Photos_UploadProfilePhoto.Flags.fallback : 0)
+				};
+			case InputProfilePhotoAnimated ippa:
+				if (ippa.Animation.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
+				var imud = (InputMediaUploadedDocument)await InputMediaDocument(ippa.Animation);
+				return new Photos_UploadProfilePhoto
+				{
+					video = imud.file,
+					video_start_ts = ippa.MainFrameTimestamp ?? 0.0,
+					flags = Photos_UploadProfilePhoto.Flags.has_video | (fallback ? Photos_UploadProfilePhoto.Flags.fallback : 0)
+						| (ippa.MainFrameTimestamp.HasValue ? Photos_UploadProfilePhoto.Flags.has_video_start_ts : 0)
+				};
+			default:
+				throw new RpcException(400, "Invalid profile photo type specified");
+		}
+	}
+
+	/// <summary>Changes the profile photo of the bot.</summary>
+	/// <param name="photo">The new profile photo to set</param>
+	public async Task SetMyProfilePhoto(InputProfilePhoto photo)
+	{
+		var query = await SetProfilePhoto(photo);
+		await Client.Invoke(query);
+	}
+
+	/// <summary>Removes the profile photo of the bot.</summary>
+	public async Task RemoveMyProfilePhoto()
+	{
+		await Client.Photos_UpdateProfilePhoto(null);
 	}
 
 	/// <summary>Use this method to change the bot's menu button in a private chat, or the default menu button.</summary>
@@ -1912,24 +1971,8 @@ public partial class Bot
 	{
 		//TODO? instead of InvokeWithBusinessConnection, tdlib seem to pass the business user as 'bot' parameter for Photos_UploadProfilePhoto
 		/*var peer = */await GetBusinessPeer(businessConnectionId);
-		switch (photo)
-		{
-			case InputProfilePhotoStatic ipps:
-				if (ipps.Photo.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
-				var imup = (InputMediaUploadedPhoto)await InputMediaPhoto(ipps.Photo);
-				await Client.InvokeWithBusinessConnection(businessConnectionId,
-					new Photos_UploadProfilePhoto { file = imup.file,
-						flags = Photos_UploadProfilePhoto.Flags.has_file | (isPublic ? Photos_UploadProfilePhoto.Flags.fallback : 0) });
-				break;
-			case InputProfilePhotoAnimated ippa:
-				if (ippa.Animation.FileType != FileType.Stream) throw new RpcException(400, "Photo must be uploaded as a file");
-				var imud = (InputMediaUploadedDocument)await InputMediaDocument(ippa.Animation);
-				await Client.InvokeWithBusinessConnection(businessConnectionId,
-					new Photos_UploadProfilePhoto { video = imud.file, video_start_ts =	ippa.MainFrameTimestamp ?? 0.0,
-						flags = Photos_UploadProfilePhoto.Flags.has_video | (isPublic ? Photos_UploadProfilePhoto.Flags.fallback : 0)
-							| (ippa.MainFrameTimestamp.HasValue ? Photos_UploadProfilePhoto.Flags.has_video_start_ts : 0)});
-				break;
-		}
+		var query = await SetProfilePhoto(photo, isPublic);
+		await Client.InvokeWithBusinessConnection(businessConnectionId, query);
 	}
 
 	/// <summary>Removes the current profile photo of a managed business account. Requires the <em>CanEditProfilePhoto</em> business bot right.</summary>
@@ -2421,7 +2464,7 @@ public partial class Bot
 	/// <param name="chatId">Unique identifier for the target chat</param>
 	/// <param name="messageId">Unique identifier for the target message</param>
 	/// <param name="checklist">An object for the new checklist</param>
-	/// <param name="replyMarkup">An object for the new inline keyboard for the message</param>
+	/// <param name="replyMarkup">An object for the new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a> for the message</param>
 	/// <returns>The edited <see cref="Message"/> is returned.</returns>
 	public async Task<Message> EditMessageChecklist(string businessConnectionId, long chatId, int messageId, InputChecklist checklist,
 		InlineKeyboardMarkup? replyMarkup = default)

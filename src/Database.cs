@@ -171,6 +171,7 @@ internal partial class Database : IDisposable
 			IsBot = (flags & 1) != 0, IsPremium = (flags & 2) != 0, AddedToAttachmentMenu = (flags & 4) != 0,
 			CanJoinGroups = (flags & 8) != 0, CanReadAllGroupMessages = (flags & 16) != 0, SupportsInlineQueries = (flags & 32) != 0,
 			CanConnectToBusiness = (flags & 64) != 0, HasMainWebApp = (flags & 128) != 0, HasTopicsEnabled = (flags & 256) != 0,
+			AllowsUsersToCreateTopics = (flags & 512) != 0,
 		};
 	}
 
@@ -181,7 +182,8 @@ internal partial class Database : IDisposable
 		param[1].Value = user.AccessHash;
 		param[2].Value = (user.IsBot ? 1 : 0) | (user.IsPremium ? 2 : 0) | (user.AddedToAttachmentMenu ? 4 : 0)
 			| (user.CanJoinGroups ? 8 : 0) | (user.CanReadAllGroupMessages ? 16 : 0) | (user.SupportsInlineQueries ? 32 : 0)
-			| (user.CanConnectToBusiness ? 64 : 0) | (user.HasMainWebApp ? 128 : 0) | (user.HasTopicsEnabled ? 256 : 0);
+			| (user.CanConnectToBusiness ? 64 : 0) | (user.HasMainWebApp ? 128 : 0) | (user.HasTopicsEnabled ? 256 : 0)
+			| (user.AllowsUsersToCreateTopics ? 512 : 0);
 		param[3].Value = user.FirstName;
 		param[4].Value = user.LastName ?? "";
 		param[5].Value = user.Username ?? "";

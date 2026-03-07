@@ -41,6 +41,9 @@ public static class BotHelpers
 		return [.. result];
 	}
 
+	internal static IEnumerable<T> NotNull<T>(this IEnumerable<T?> enumerable) where T : class
+		=> enumerable.Where(e => e != null).Select(e => e!);
+
 	internal static string? NullIfEmpty(this string? s) => s == "" ? null : s;
 	internal static int? NullIfZero(this int i) => i == 0 ? null : i;
 	internal static DateTime? NullIfDefault(this DateTime d) => d == default ? null : d;

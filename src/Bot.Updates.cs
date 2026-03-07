@@ -632,22 +632,9 @@ public partial class Bot
 				else if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
 					msg.Video = document.Video(mmd);
 				else if (document.GetAttribute<DocumentAttributeAudio>() is { } audio)
-				{
-					msg.Audio = new Telegram.Bot.Types.Audio
-					{
-						FileSize = document.size,
-						Duration = (int)(audio?.duration + 0.5 ?? 0.0),
-						Performer = audio?.performer,
-						Title = audio?.title,
-						FileName = document.Filename,
-						MimeType = document.mime_type,
-						Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id)
-					}.SetFileIds(document.ToFileLocation(), document.dc_id);
-				}
+					msg.Audio = document.Audio(audio);
 				else if (document.GetAttribute<DocumentAttributeSticker>() is { } sticker)
-				{
 					msg.Sticker = await MakeSticker(document, sticker);
-				}
 				else
 				{
 					msg.Document = document.Document(thumb);
