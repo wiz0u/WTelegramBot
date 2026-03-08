@@ -432,7 +432,7 @@ public partial class Bot
 		if (msgBase?.ReplyTo == null) return msg;
 		if (msgBase.ReplyTo is MessageReplyHeader reply_to)
 		{
-			if (replyToMessage != null)
+			if (replyToMessage != null && reply_to.reply_to_msg_id == replyToMessage.Id)
 				msg.ReplyToMessage = replyToMessage;
 			else if (reply_to.reply_from == null)
 				msg.ReplyToMessage = await GetRepliedMessage(msgBase);
@@ -930,6 +930,8 @@ public partial class Bot
 				SuggestedPostMessage = await GetRepliedMessage(msgSvc),
 				Reason = maspr.flags.HasFlag(MessageActionSuggestedPostRefund.Flags.payer_initiated) ? SuggestedPostRefundedReason.PaymentRefunded : SuggestedPostRefundedReason.PostDeleted
 			},
+			MessageActionNewCreatorPending mancp => msg.ChatOwnerLeft = new ChatOwnerLeft { NewOwner = User(mancp.new_creator_id) },
+			MessageActionChangeCreator macc => msg.ChatOwnerChanged = new ChatOwnerChanged { NewOwner = User(macc.new_creator_id)! },
 			_ => null,
 		};
 	}

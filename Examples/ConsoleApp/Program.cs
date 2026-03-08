@@ -3,8 +3,10 @@
 // ----------------------------------------------------------------------------------------------
 using System.Text;
 using Telegram.Bot;
+using Telegram.Bot.Extensions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 // This code needs these 3 variables in Project Properties > Debug > Launch Profiles > Environment variables
 // Get your Api Id/Hash from https://my.telegram.org/apps

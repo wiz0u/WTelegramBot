@@ -1595,11 +1595,12 @@ public partial class Bot
 	/// <returns>Information about the created topic as a <see cref="ForumTopic"/> object.</returns>
 	public async Task<ForumTopic> CreateForumTopic(ChatId chatId, string name, int? iconColor = default, string? iconCustomEmojiId = default)
 	{
-		var channel = await InputChannel(chatId);
-		var msg = await PostedMsg(Client.Messages_CreateForumTopic(channel, name, Helpers.RandomLong(), iconColor,
-			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), channel);
+		var chat = await InputPeerChat(chatId);
+		var msg = await PostedMsg(Client.Messages_CreateForumTopic(chat, name, Helpers.RandomLong(), iconColor,
+			icon_emoji_id: iconCustomEmojiId == null ? null : long.Parse(iconCustomEmojiId)), chat);
 		var ftc = msg.ForumTopicCreated ?? throw new WTException("Channels_CreateForumTopic didn't result in ForumTopicCreated service message");
-		return new ForumTopic { MessageThreadId = msg.MessageId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId,
+		var messageThreadId = msg.IsTopicMessage && msg.MessageThreadId.HasValue ? msg.MessageThreadId.Value : msg.MessageId;
+		return new ForumTopic { MessageThreadId = messageThreadId, Name = ftc.Name, IconColor = ftc.IconColor, IconCustomEmojiId = ftc.IconCustomEmojiId,
 			IsNameImplicit = ftc.IsNameImplicit };
 	}
 
