@@ -116,6 +116,7 @@ public static class TypesTLConverters
 			ChatParticipantAdmin => new ChatMemberAdministrator
 			{
 				User = user,
+				IsAnonymous = false,
 				CanManageChat = true,
 				CanChangeInfo = true,
 				//CanPostMessages, CanEditMessages: set only for channels
@@ -127,17 +128,17 @@ public static class TypesTLConverters
 				CanPromoteMembers = false,
 				CanManageVideoChats = true,
 				//CanPostStories, CanEditStories, CanDeleteStories, CanManageDirectMessages: set only for channels
-				IsAnonymous = false,
+				CanManageTags = true
 			},
-			ChatParticipant => new ChatMemberMember { User = user },
+			ChatParticipant => new ChatMemberMember { User = user, Tag = participant.Rank },
 			_ => new ChatMemberLeft { User = user }
 		};
 
 	internal static ChatMember ChatMember(this ChannelParticipantBase? participant, User user)
 		=> participant switch
 		{
-			ChannelParticipantSelf cps => new ChatMemberMember { User = user, UntilDate = cps.subscription_until_date.NullIfDefault() },
-			ChannelParticipant cp => new ChatMemberMember { User = user, UntilDate = cp.subscription_until_date.NullIfDefault() },
+			ChannelParticipantSelf cps => new ChatMemberMember { User = user, UntilDate = cps.subscription_until_date.NullIfDefault(), Tag = cps.rank },
+			ChannelParticipant cp => new ChatMemberMember { User = user, UntilDate = cp.subscription_until_date.NullIfDefault(), Tag = cp.rank },
 			ChannelParticipantCreator cpc => new ChatMemberOwner { User = user, CustomTitle = cpc.rank, IsAnonymous = cpc.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.anonymous) },
 			ChannelParticipantAdmin cpa => new ChatMemberAdministrator
 			{
@@ -160,6 +161,7 @@ public static class TypesTLConverters
 				CanEditStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
 				CanDeleteStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 				CanManageDirectMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
+				CanManageTags = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_ranks),
 			},
 			ChannelParticipantBanned cpb =>
 				cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.view_messages)
@@ -169,6 +171,7 @@ public static class TypesTLConverters
 					User = user,
 					IsMember = !cpb.flags.HasFlag(ChannelParticipantBanned.Flags.left),
 					UntilDate = UntilDate(cpb.banned_rights.until_date),
+					Tag = cpb.rank,
 					CanChangeInfo = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.change_info),
 					CanInviteUsers = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.invite_users),
 					CanPinMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages),
@@ -183,6 +186,7 @@ public static class TypesTLConverters
 					CanSendOtherMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_stickers | ChatBannedRights.Flags.send_gifs | ChatBannedRights.Flags.send_games),
 					CanAddWebPagePreviews = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.embed_links),
 					CanManageTopics = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
+					CanEditTag = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.edit_rank),
 				},
 			_ /*ChannelParticipantLeft*/ => new ChatMemberLeft { User = user, },
 		};
@@ -205,7 +209,8 @@ public static class TypesTLConverters
 		CanChangeInfo = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.change_info),
 		CanInviteUsers = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.invite_users),
 		CanPinMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages),
-		CanManageTopics = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics)
+		CanManageTopics = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
+		CanEditTag = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.edit_rank),
 	};
 
 	internal static ChatPermissions LegacyMode(this ChatPermissions permissions, bool? useIndependentChatPermissions)
@@ -237,6 +242,7 @@ public static class TypesTLConverters
 			| (permissions.CanInviteUsers ? 0 : ChatBannedRights.Flags.invite_users)
 			| (permissions.CanPinMessages ? 0 : ChatBannedRights.Flags.pin_messages)
 			| ((permissions.CanManageTopics ?? permissions.CanPinMessages) ? 0 : ChatBannedRights.Flags.manage_topics)
+			| (permissions.CanEditTag? 0 : ChatBannedRights.Flags.edit_rank)
 	};
 
 	[return: NotNullIfNotNull(nameof(location))]
@@ -486,6 +492,7 @@ public static class TypesTLConverters
 			| (rights.CanEditStories ? TL.ChatAdminRights.Flags.edit_stories : 0)
 			| (rights.CanDeleteStories ? TL.ChatAdminRights.Flags.delete_stories : 0)
 			| (rights.CanManageDirectMessages ? TL.ChatAdminRights.Flags.manage_direct_messages : 0)
+			| (rights.CanManageTags ?? rights.CanPinMessages ? TL.ChatAdminRights.Flags.manage_ranks : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
@@ -507,6 +514,7 @@ public static class TypesTLConverters
 			CanEditStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.edit_stories),
 			CanDeleteStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 			CanManageDirectMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
+			CanManageTags = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_ranks),
 		};
 
 	[return: NotNullIfNotNull(nameof(maskPosition))]

@@ -260,6 +260,12 @@ public partial class Bot
 		return msg;
 	}
 
+	static string ToDateFormat(MessageEntityFormattedDate.Flags flags)
+		=> string.Concat("rtTdDw".Where((c, i) => ((int)flags & (1 << i)) != 0));
+
+	static MessageEntityFormattedDate.Flags ToDateFlags(string dateTimeFormat)
+		=> (MessageEntityFormattedDate.Flags)dateTimeFormat.Sum(c => 1 << "rtTdDw".IndexOf(c));
+
 	private MessageEntity[]? MakeEntities(TL.MessageEntity[]? entities) => entities?.Select(e => e switch
 	{
 		TL.MessageEntityMention => new MessageEntity { Type = MessageEntityType.Mention, Offset = e.Offset, Length = e.Length },
@@ -282,6 +288,7 @@ public partial class Bot
 		TL.MessageEntityBlockquote mebq => mebq.flags.HasFlag(MessageEntityBlockquote.Flags.collapsed)
 			? new MessageEntity { Type = MessageEntityType.ExpandableBlockquote, Offset = e.Offset, Length = e.Length }
 			: new MessageEntity { Type = MessageEntityType.Blockquote, Offset = e.Offset, Length = e.Length },
+		TL.MessageEntityFormattedDate mefd => new MessageEntity { Type = MessageEntityType.DateTime, Offset = e.Offset, Length = e.Length, UnixTime = mefd.date, DateTimeFormat = ToDateFormat(mefd.flags) },
 		_ => null!,
 	}).Where(e => e != null).ToArray();
 
@@ -303,14 +310,15 @@ public partial class Bot
 				MessageEntityType.CustomEmoji => new TL.MessageEntityCustomEmoji { offset = e.Offset, length = e.Length, document_id = long.Parse(e.CustomEmojiId!) },
 				MessageEntityType.Blockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length },
 				MessageEntityType.ExpandableBlockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length, flags = MessageEntityBlockquote.Flags.collapsed },
+				MessageEntityType.DateTime => new TL.MessageEntityFormattedDate { offset = e.Offset, length = e.Length, flags = ToDateFlags(e.DateTimeFormat ?? ""), date = e.UnixTime!.Value },
 				_ => (TL.MessageEntity)null!
 			}).Where(e => e != null)];
 		else if (text == null)
 			return null;
 		return parseMode switch
 		{
-			ParseMode.Markdown or ParseMode.MarkdownV2 => Client.MarkdownToEntities(ref text, true, _collector),
-			ParseMode.Html => Client.HtmlToEntities(ref text, true, _collector),
+			ParseMode.Markdown or ParseMode.MarkdownV2 => Client.MarkdownToEntities(ref text, _collector),
+			ParseMode.Html => Client.HtmlToEntities(ref text, _collector),
 			_ => null,
 		};
 	}

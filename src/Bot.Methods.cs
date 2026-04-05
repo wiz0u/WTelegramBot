@@ -53,28 +53,13 @@ public partial class Bot
 	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
 	{
 		var peer = await InputPeerChat(chatId);
-		var msgs = await Client.GetMessages(peer, [.. messageIds.Select(id => (InputMessageID)id)]);
+		var msgs = await Client.GetMessages(peer, [.. messageIds.Select(id => (InputMessage)id)]);
 		msgs.UserOrChat(_collector);
 		var messages = new List<Message>();
 		foreach (var msgBase in msgs.Messages)
 			if (await MakeMessage(msgBase) is { } msg)
 				messages.Add(msg);
 		return messages;
-	}
-
-	/// <summary>Use this method to change the bot's photo</summary>
-	[Obsolete("Use Bot API methods SetMyProfilePhoto/RemoveMyProfilePhoto instead")]
-	public async Task<Telegram.Bot.Types.PhotoSize[]> SetMyPhoto(InputFile? photo)
-	{
-		var im = photo == null ? null : await InputMediaPhoto(photo);
-		var pp = im switch
-		{
-			null => await Client.Photos_UpdateProfilePhoto(null),
-			TL.InputMediaPhoto imp => await Client.Photos_UpdateProfilePhoto(imp.id),
-			TL.InputMediaUploadedPhoto imup => await Client.Photos_UploadProfilePhoto(imup.file),
-			_ => throw new WTException("Unsupported InputFile photo"),
-		};
-		return pp.photo.PhotoSizes()!;
 	}
 
 	/// <summary>Use this method to fetch Client API info about a specific forum topic </summary>
@@ -266,7 +251,7 @@ public partial class Bot
 	public async Task<List<Message>> CopyMessages(ChatId chatId, ChatId fromChatId, int[] messageIds, bool removeCaption = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long directMessagesTopicId = 0)
 	{
-		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), [.. messageIds.Select(id => (InputMessageID)id)]);
+		var msgs = await Client.GetMessages(await InputPeerChat(fromChatId), [.. messageIds.Select(id => (InputMessage)id)]);
 		msgs.UserOrChat(_collector);
 		var peer = await InputPeerChat(chatId);
 		var reply_to = await MakeReplyTo(null, peer, messageThreadId, directMessagesTopicId);
@@ -1173,6 +1158,17 @@ public partial class Bot
 		var channel = await InputChannel(chatId);
 		var senderChat = await InputPeerChat(senderChatId);
 		await Client.Channels_EditBanned(channel, senderChat, new ChatBannedRights { flags = ban ? ChatBannedRights.Flags.view_messages : 0 });
+	}
+
+	/// <summary>Use this method to set a tag for a regular member in a group or a supergroup. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTags</em> administrator right.</summary>
+	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+	/// <param name="userId">Unique identifier of the target user</param>
+	/// <param name="tag">New tag for the member; 0-16 characters, emoji are not allowed</param>
+	public async Task SetChatMemberTag(ChatId chatId, long userId, string? tag = default)
+	{
+		var peer = await InputPeerChat(chatId);
+		var user = InputPeerUser(userId);
+		await Client.Messages_EditChatParticipantRank(peer, user, tag);
 	}
 
 	/// <summary>Use this method to set default chat permissions for all members. The bot must be an administrator in the group or a supergroup for this to work and must have the <em>CanRestrictMembers</em> administrator rights.</summary>

@@ -492,6 +492,7 @@ public partial class Bot
 					ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
 					SenderBoostCount = message.from_boosts_applied > 0 ? message.from_boosts_applied : null,
 					SenderBusinessBot = User(message.via_business_bot_id),
+					SenderTag = message.from_rank,
 					IsFromOffline = message.flags2.HasFlag(TL.Message.Flags2.offline),
 					EffectId = message.flags2.HasFlag(TL.Message.Flags2.has_effect) ? message.effect.ToString() : null,
 					PaidStarCount = message.paid_message_stars.NullIfNegative(),
@@ -669,14 +670,14 @@ public partial class Bot
 					Vcard = mmc.vcard,
 				};
 				break;
-			case MessageMediaGeo mmg:
-				msg.Location = mmg.geo.Location();
-				break;
 			case MessageMediaGeoLive mmgl:
 				msg.Location = mmgl.geo.Location();
 				msg.Location.LivePeriod = mmgl.period;
 				msg.Location.Heading = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_heading) ? mmgl.heading : null;
 				msg.Location.ProximityAlertRadius = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_proximity_notification_radius) ? mmgl.proximity_notification_radius : null;
+				break;
+			case MessageMediaGeo mmg:
+				msg.Location = mmg.geo.Location();
 				break;
 			case MessageMediaPoll { poll: TL.Poll poll, results: TL.PollResults pollResults }:
 				msg.Poll = MakePoll(poll, pollResults);

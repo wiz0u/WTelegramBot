@@ -1026,6 +1026,7 @@ public partial class WTelegramBotClient
     /// <param name="canPinMessages">Pass <see langword="true"/> if the administrator can pin messages; for supergroups only</param>
     /// <param name="canManageTopics">Pass <see langword="true"/> if the user is allowed to create, rename, close, and reopen forum topics; for supergroups only</param>
     /// <param name="canManageDirectMessages">Pass <see langword="true"/> if the administrator can manage direct messages within the channel and decline suggested posts; for channels only</param>
+    /// <param name="canManageTags">Pass <see langword="true"/> if the administrator can edit the tags of regular members; for groups and supergroups only</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task PromoteChatMember(
         ChatId chatId,
@@ -1046,28 +1047,30 @@ public partial class WTelegramBotClient
         bool canPinMessages = default,
         bool canManageTopics = default,
         bool canManageDirectMessages = default,
+        bool canManageTags = default,
         CancellationToken cancellationToken = default
     )
     {
-		await ThrowIfCancelled(cancellationToken).PromoteChatMember(chatId, userId, new ChatAdministratorRights
-		{
-			IsAnonymous = isAnonymous,
-			CanChangeInfo = canChangeInfo,
-			CanPostMessages = canPostMessages,
-			CanEditMessages = canEditMessages,
-			CanDeleteMessages = canDeleteMessages,
-			CanRestrictMembers = canRestrictMembers,
-			CanInviteUsers = canInviteUsers,
-			CanPinMessages = canPinMessages,
-			CanPromoteMembers = canPromoteMembers,
-			CanManageVideoChats = canManageVideoChats,
-			CanManageChat = canManageChat,
-			CanManageTopics = canManageTopics,
-			CanPostStories = canPostStories,
-			CanEditStories = canEditStories,
-			CanDeleteStories = canDeleteStories,
+        await ThrowIfCancelled(cancellationToken).PromoteChatMember(chatId, userId, new ChatAdministratorRights
+        {
+            IsAnonymous = isAnonymous,
+            CanChangeInfo = canChangeInfo,
+            CanPostMessages = canPostMessages,
+            CanEditMessages = canEditMessages,
+            CanDeleteMessages = canDeleteMessages,
+            CanRestrictMembers = canRestrictMembers,
+            CanInviteUsers = canInviteUsers,
+            CanPinMessages = canPinMessages,
+            CanPromoteMembers = canPromoteMembers,
+            CanManageVideoChats = canManageVideoChats,
+            CanManageChat = canManageChat,
+            CanManageTopics = canManageTopics,
+            CanPostStories = canPostStories,
+            CanEditStories = canEditStories,
+            CanDeleteStories = canDeleteStories,
             CanManageDirectMessages = canManageDirectMessages,
-		}).ThrowAsApi(this);
+            CanManageTags = canManageTags
+        }).ThrowAsApi(this);
     }
 
     /// <summary>Use this method to set a custom title for an administrator in a supergroup promoted by the bot.</summary>
@@ -1081,6 +1084,18 @@ public partial class WTelegramBotClient
         string customTitle,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SetChatAdministratorCustomTitle(chatId, userId, customTitle).ThrowAsApi(this);
+
+    /// <summary>Use this method to set a tag for a regular member in a group or a supergroup. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTags</em> administrator right.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="userId">Unique identifier of the target user</param>
+    /// <param name="tag">New tag for the member; 0-16 characters, emoji are not allowed</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetChatMemberTag(
+        ChatId chatId,
+        long userId,
+        string? tag = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetChatMemberTag(chatId, userId, tag).ThrowAsApi(this);
 
     /// <summary>Use this method to ban a channel chat in a supergroup or a channel. Until the chat is <see cref="WTelegram.Bot.UnbanChatSenderChat">unbanned</see>, the owner of the banned chat won't be able to send messages on behalf of <b>any of their channels</b>. The bot must be an administrator in the supergroup or channel for this to work and must have the appropriate administrator rights.</summary>
     /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
