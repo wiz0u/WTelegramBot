@@ -14,6 +14,8 @@ public class WTelegramBotClientOptions : TelegramBotClientOptions
     public DbConnection DbConnection { get; }
     /// <summary>You can set the SQL queries for your specific DB engine</summary>
     public string[] SqlCommands { get; set; }
+    /// <summary>Optional MTProxy used</summary>
+    public string? MTProxy { get; }
 
     /// <summary>Create a new <see cref="WTelegramBotClientOptions"/> instance.</summary>
     /// <param name="token">API token</param>
@@ -22,13 +24,15 @@ public class WTelegramBotClientOptions : TelegramBotClientOptions
     /// <param name="dbConnection">DB connection for storage and later resume</param>
     /// <param name="sqlCommands">Template for SQL strings</param>
     /// <param name="useTestEnvironment">Indicates that test environment will be used</param>
+    /// <param name="mtproxy">Optional MTProxy URL to be used</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="token"/> format is invalid</exception>
-    public WTelegramBotClientOptions(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = WTelegram.SqlCommands.Detect, bool useTestEnvironment = false)
+    public WTelegramBotClientOptions(string token, int apiId, string apiHash, DbConnection dbConnection, SqlCommands sqlCommands = WTelegram.SqlCommands.Detect, bool useTestEnvironment = false, string? mtproxy = null)
         : base(token, useTestEnvironment: useTestEnvironment)
     {
         ApiId = apiId;
         ApiHash = apiHash;
         DbConnection = dbConnection;
+        MTProxy = mtproxy;
         if (sqlCommands == WTelegram.SqlCommands.Detect) sqlCommands = Database.DetectType(dbConnection);
         SqlCommands = Database.DefaultSqlCommands[(int)sqlCommands];
     }
@@ -41,6 +45,7 @@ public class WTelegramBotClientOptions : TelegramBotClientOptions
         "bot_token" => Token,
         "device_model" => "server",
         "server_address" => UseTestEnvironment ? "2>149.154.167.40:443" : "2>149.154.167.50:443",
+        "MTProxy" => MTProxy,
         _ => null
     };
 }
