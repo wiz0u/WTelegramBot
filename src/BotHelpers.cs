@@ -33,12 +33,44 @@ public static class BotHelpers
 	};
 
 	// Task.WhenAll may lead to unnecessary multiple parallel resolve of the same users/stickerset
-	internal async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
+	internal static async Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
 	{
-		var result = new List<TResult>();
+		if (tasks is ICollection<Task<TResult>> col)
+		{
+			var result = new TResult[col.Count];
+			int i = 0;
+			foreach (var task in tasks)
+				result[i++] = await task;
+			return result;
+		}
+
+		// fallback
+		var list = new List<TResult>();
 		foreach (var task in tasks)
-			result.Add(await task);
-		return [.. result];
+			list.Add(await task);
+		return list.ToArray();
+	}
+
+	internal static async Task<ChatMember[]> MapParticipants(this IReadOnlyList<TL.ChannelParticipantBase> participants, Bot bot)
+	{
+		var result = new ChatMember[participants.Count];
+		for (int i = 0; i < participants.Count; i++)
+		{
+			var p = participants[i];
+			result[i] = p.ChatMember(await bot.UserOrResolve(p.UserId));
+		}
+		return result;
+	}
+
+	internal static async Task<ChatMember[]> MapParticipants(this IReadOnlyList<TL.ChatParticipantBase> participants, Bot bot)
+	{
+		var result = new ChatMember[participants.Count];
+		for (int i = 0; i < participants.Count; i++)
+		{
+			var p = participants[i];
+			result[i] = p.ChatMember(await bot.UserOrResolve(p.UserId));
+		}
+		return result;
 	}
 
 	internal static IEnumerable<T> NotNull<T>(this IEnumerable<T?> enumerable) where T : class

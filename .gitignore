@@ -364,3 +364,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Examples/NativeAOT
+
+# For testing new features/optimization
+tests/

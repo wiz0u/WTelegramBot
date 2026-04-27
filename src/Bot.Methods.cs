@@ -21,11 +21,13 @@ public partial class Bot
 	public async Task<ChatMember[]> GetChatMemberList(ChatId chatId, int limit = 1000)
 	{
 		InputPeer chat = await InputPeerChat(chatId);
+
 		if (chat is InputPeerChannel ipc)
 		{
-			var participants = new List<ChannelParticipantBase>();
+			var participants = new List<ChannelParticipantBase>(limit);
 			InputChannelBase channel = ipc;
-			for (int offset = 0; ;)
+
+			for (int offset = 0;;)
 			{
 				var ccp = await Client.Channels_GetParticipants(channel, null, offset, limit - offset, 0);
 				ccp.UserOrChat(_collector);
@@ -33,32 +35,42 @@ public partial class Bot
 				offset += ccp.participants.Length;
 				if (offset >= ccp.count || offset >= limit || ccp.participants.Length == 0) break;
 			}
-			return await participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+
+			return await participants.MapParticipants(this);
 		}
 		else
 		{
 			var full = await Client.Messages_GetFullChat(chat.ID);
 			full.UserOrChat(_collector);
-			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
+
+			if (full.full_chat is not ChatFull { participants: ChatParticipants cp })
 				throw new WTException($"Cannot fetch participants for chat {chatId}");
-			return await participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+
+			return await cp.participants.MapParticipants(this);
 		}
 	}
+
 
 	/// <summary>Get chat messages based on their messageIds</summary>
 	/// <remarks>⚠️ Might be limited to 100 ids per call. Fetching other bots messages with this method will result in empty messages</remarks>
 	/// <param name="chatId">The chat id or username</param>
 	/// <param name="messageIds">The message IDs to fetch. You can use <c>Enumerable.Range(startMsgId, count)</c> to get a range of messages</param>
 	/// <returns>List of messages that could be fetched</returns>
-	public async Task<List<Message>> GetMessagesById(ChatId chatId, IEnumerable<int> messageIds)
+	public async Task<List<Message>> GetMessagesById(ChatId chatId, params int[] messageIds)
 	{
+		var inputMessages = new InputMessage[messageIds.Length];
+		for (int i = 0; i < messageIds.Length; i++)
+			inputMessages[i] = messageIds[i];
+
 		var peer = await InputPeerChat(chatId);
-		var msgs = await Client.GetMessages(peer, [.. messageIds.Select(id => (InputMessage)id)]);
+		var msgs = await Client.GetMessages(peer, inputMessages);
 		msgs.UserOrChat(_collector);
-		var messages = new List<Message>();
+
+		var messages = new List<Message>(msgs.Messages.Length);
 		foreach (var msgBase in msgs.Messages)
 			if (await MakeMessage(msgBase) is { } msg)
 				messages.Add(msg);
+
 		return messages;
 	}
 
@@ -1501,19 +1513,23 @@ public partial class Bot
 	public async Task<ChatMember[]> GetChatAdministrators(ChatId chatId)
 	{
 		InputPeer chat = await InputPeerChat(chatId);
+
 		if (chat is InputPeerChannel ipc)
 		{
 			var participants = await Client.Channels_GetParticipants(ipc, new ChannelParticipantsAdmins());
 			participants.UserOrChat(_collector);
-			return await participants.participants.Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+			return await participants.participants.MapParticipants(this);
 		}
 		else
 		{
 			var full = await Client.Messages_GetFullChat(chat.ID);
 			full.UserOrChat(_collector);
-			if (full.full_chat is not ChatFull { participants: ChatParticipants participants })
+
+			if (full.full_chat is not ChatFull { participants: ChatParticipants cp })
 				throw new WTException($"Cannot fetch participants for chat {chatId}");
-			return await participants.participants.Where(p => p.IsAdmin).Select(async p => p.ChatMember(await UserOrResolve(p.UserId))).WhenAllSequential();
+
+			var admins = Array.FindAll(cp.participants, p => p.IsAdmin);
+			return await admins.MapParticipants(this);
 		}
 	}
 
