@@ -52,6 +52,7 @@ public static class TypesTLConverters
 		user.HasMainWebApp = tlUser.flags2.HasFlag(TL.User.Flags2.bot_has_main_app);
 		user.HasTopicsEnabled = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_view);
 		user.AllowsUsersToCreateTopics = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_can_manage_topics);
+		user.CanManageBots = tlUser.flags2.HasFlag(TL.User.Flags2.bot_can_manage_bots);
 	}
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>

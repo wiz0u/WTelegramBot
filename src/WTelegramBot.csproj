@@ -54,7 +54,7 @@ $(ReleaseNotes)</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Telegram.Bot" Version="22.9.5.*" />
-    <PackageReference Include="WTelegramClient" Version="4.4.3.*" />
+    <PackageReference Include="Telegram.Bot" Version="22.9.6.*" />
+    <PackageReference Include="WTelegramClient" Version="4.4.4.*" />
   </ItemGroup>
 </Project>

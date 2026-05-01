@@ -134,7 +134,7 @@ public partial class Bot
 				}, update);
 			case UpdateMessagePoll ump:
 				if (NotAllowed(UpdateType.Poll)) return null;
-				return new Update { Poll = MakePoll(ump.poll, ump.results), TLUpdate = update };
+				return new Update { Poll = await MakePoll(ump.poll, ump.results), TLUpdate = update };
 			case UpdateMessagePollVote umpv:
 				if (NotAllowed(UpdateType.PollAnswer)) return null;
 				return new Update
@@ -144,7 +144,8 @@ public partial class Bot
 						PollId = umpv.poll_id.ToString(),
 						VoterChat = umpv.peer is PeerChannel pc ? await ChannelOrResolve(pc.channel_id) : null,
 						User = umpv.peer is PeerUser pu ? await UserOrResolve(pu.user_id) : null,
-						OptionIds = [.. umpv.options.Select(o => (int)o[0])]
+						OptionIds = umpv.positions,
+						OptionPersistentIds = umpv.options,
 					},
 					TLUpdate = update
 				};
@@ -276,6 +277,17 @@ public partial class Bot
 					{
 						From = await UserOrResolve(ubppm.user_id),
 						PaidMediaPayload = ubppm.payload,
+					},
+					TLUpdate = update
+				};
+			case UpdateManagedBot umb:
+				if (NotAllowed(UpdateType.ManagedBot)) return null;
+				return new Update
+				{
+					ManagedBot = new ManagedBotUpdated
+					{
+						User = await UserOrResolve(umb.user_id),
+						Bot = await UserOrResolve(umb.bot_id),
 					},
 					TLUpdate = update
 				};
@@ -435,9 +447,9 @@ public partial class Bot
 			if (replyToMessage != null && reply_to.reply_to_msg_id == replyToMessage.Id)
 				msg.ReplyToMessage = replyToMessage;
 			else if (reply_to.reply_from == null)
-				msg.ReplyToMessage = await GetRepliedMessage(msgBase);
-			if (reply_to.todo_item_id != 0)
-				msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
+				msg.ReplyToMessage = await GetRepliedMessage(msgBase, true);
+			if (reply_to.todo_item_id != 0) msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
+			if (reply_to.poll_option != null) msg.ReplyToPollOptionId = reply_to.poll_option;
 			if (reply_to.reply_from?.date > default(DateTime))
 			{
 				var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
@@ -680,7 +692,9 @@ public partial class Bot
 				msg.Location = mmg.geo.Location();
 				break;
 			case MessageMediaPoll { poll: TL.Poll poll, results: TL.PollResults pollResults }:
-				msg.Poll = MakePoll(poll, pollResults);
+				msg.Poll = await MakePoll(poll, pollResults);
+				msg.Poll.Description = text;
+				msg.Poll.DescriptionEntities = MakeEntities(entities);
 				return msg;
 			case MessageMediaDice mmd:
 				msg.Dice = new Dice { Emoji = mmd.emoticon, Value = mmd.value };
@@ -933,6 +947,21 @@ public partial class Bot
 			},
 			MessageActionNewCreatorPending mancp => msg.ChatOwnerLeft = new ChatOwnerLeft { NewOwner = User(mancp.new_creator_id) },
 			MessageActionChangeCreator macc => msg.ChatOwnerChanged = new ChatOwnerChanged { NewOwner = User(macc.new_creator_id)! },
+			MessageActionManagedBotCreated mambc => msg.ManagedBotCreated = new ManagedBotCreated { Bot = User(mambc.bot_id)! },
+			MessageActionPollAppendAnswer { answer: TL.PollAnswer answer } mapaa => msg.PollOptionAdded = new PollOptionAdded
+			{
+				PollMessage = await GetRepliedMessage(msgSvc),
+				OptionPersistentId = answer.option,
+				OptionText = answer.text.text,
+				OptionTextEntities = MakeEntities(answer.text.entities)
+			},
+			MessageActionPollDeleteAnswer { answer: TL.PollAnswer answer } mapda => msg.PollOptionDeleted = new PollOptionDeleted
+			{
+				PollMessage = await GetRepliedMessage(msgSvc),
+				OptionPersistentId = answer.option,
+				OptionText = answer.text.text,
+				OptionTextEntities = MakeEntities(answer.text.entities)
+			},
 			_ => null,
 		};
 	}
@@ -950,24 +979,34 @@ public partial class Bot
 		FileUniqueId = msgDoc.FileUniqueId
 	};
 
-	private Telegram.Bot.Types.Poll MakePoll(TL.Poll poll, PollResults pollResults)
+	private async Task<Telegram.Bot.Types.Poll> MakePoll(TL.Poll poll, PollResults pollResults)
 	{
-		int? correctOption = pollResults.results == null ? null : Array.FindIndex(pollResults.results, pav => pav.flags.HasFlag(PollAnswerVoters.Flags.correct));
+		int[]? correctOptionIds = pollResults.results?.Select((pav, i) => pav.flags.HasFlag(PollAnswerVoters.Flags.correct) ? i : -1).Where(i => i >= 0).ToArray();
 		return new Telegram.Bot.Types.Poll
 		{
 			Id = poll.id.ToString(),
 			Question = poll.question.text,
-			Options = [.. poll.answers.Select((pa, i) => new PollOption { Text = pa.text.text, VoterCount = pollResults.results?[i].voters ?? 0 })],
+			QuestionEntities = MakeEntities(poll.question.entities),
+			Options = await Task.WhenAll(poll.answers.Cast<TL.PollAnswer>().Select(async (pa, i) => new PollOption
+			{
+				Text = pa.text.text,
+				VoterCount = pollResults.results?[i].voters ?? 0,
+				PersistentId = pa.option,
+				AdditionDate = pa.date.NullIfDefault(),
+				AddedByUser = await UserFromPeer(pa.added_by),
+				AddedByChat = await ChatFromPeer(pa.added_by),
+			})),
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
 			IsAnonymous = !poll.flags.HasFlag(TL.Poll.Flags.public_voters),
 			Type = poll.flags.HasFlag(TL.Poll.Flags.quiz) ? PollType.Quiz : PollType.Regular,
 			AllowsMultipleAnswers = poll.flags.HasFlag(TL.Poll.Flags.multiple_choice),
-			CorrectOptionId = correctOption < 0 ? null : correctOption,
+			CorrectOptionIds = correctOptionIds,
 			Explanation = pollResults.solution,
 			ExplanationEntities = MakeEntities(pollResults.solution_entities),
 			OpenPeriod = poll.close_period.NullIfZero(),
-			CloseDate = poll.close_date.NullIfDefault()
+			CloseDate = poll.close_date.NullIfDefault(),
+			AllowsRevoting = !poll.flags.HasFlag(TL.Poll.Flags.revoting_disabled),
 		};
 	}
 
@@ -978,7 +1017,7 @@ public partial class Bot
 		return new()
 		{
 			text = new() { text = text, entities = entities },
-			option = [(byte)index]
+			option = index.ToString()
 		};
 	}
 }

@@ -80,6 +80,21 @@ public partial class Bot
 					| (btn.RequestPoll.Type.HasValue ? KeyboardButtonRequestPoll.Flags.has_quiz : 0)
 			},
 			{ WebApp: { } } => new KeyboardButtonSimpleWebView { text = btn.Text, url = btn.WebApp.Url, style = style, flags = style == null ? 0 : KeyboardButtonSimpleWebView.Flags.has_style },
+			{ RequestManagedBot: { } rmb } => new InputKeyboardButtonRequestPeer
+			{
+				text = btn.Text,
+				button_id = rmb.RequestId,
+				max_quantity = 1,
+				peer_type = new RequestPeerTypeCreateBot
+				{
+					suggested_name = rmb.SuggestedName,
+					suggested_username = rmb.SuggestedUsername,
+					flags = RequestPeerTypeCreateBot.Flags.bot_managed
+						| (rmb.SuggestedName != null ? RequestPeerTypeCreateBot.Flags.has_suggested_name : 0)
+						| (rmb.SuggestedUsername != null ? RequestPeerTypeCreateBot.Flags.has_suggested_username : 0),
+				},
+				style = style, flags = style == null ? 0 : InputKeyboardButtonRequestPeer.Flags.has_style
+			},
 			_ => new TL.KeyboardButton { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style }
 		};
 	}
@@ -196,6 +211,7 @@ public partial class Bot
 				quote_entities = quoteEntities,
 				quote_offset = replied.QuotePosition ?? 0,
 				todo_item_id = replied.ChecklistTaskId ?? 0,
+				poll_option = replied.PollOptionId,
 				monoforum_peer_id = monoforum_peer_id,
 				flags = (messageThreadId != 0 ? InputReplyToMessage.Flags.has_top_msg_id : 0)
 					| (replyToPeer is not null ? InputReplyToMessage.Flags.has_reply_to_peer_id : 0)
@@ -203,6 +219,7 @@ public partial class Bot
 					| (quoteEntities != null ? InputReplyToMessage.Flags.has_quote_entities : 0)
 					| (replied.QuotePosition.HasValue ? InputReplyToMessage.Flags.has_quote_offset : 0)
 					| (replied.ChecklistTaskId.HasValue ? InputReplyToMessage.Flags.has_todo_item_id : 0)
+					| (replied.PollOptionId != null ? InputReplyToMessage.Flags.has_poll_option : 0)
 					| (monoforum_peer_id != null ? InputReplyToMessage.Flags.has_monoforum_peer_id : 0)
 			};
 		}
@@ -220,17 +237,18 @@ public partial class Bot
 		return new Message { Chat = await ChatFromPeer(peer), Id = messageId };
 	}
 
-	private async Task<Message?> GetRepliedMessage(MessageBase msg)
+	private async Task<Message?> GetRepliedMessage(MessageBase msg, bool canUseCache = false)
 	{
 		if (msg is not { ReplyHeader: { } mrh, Peer: var peer }) return null;
 		var repliedPeer = mrh.reply_to_peer_id ?? peer;
 		var repliedMsgId = Math.Max(mrh.reply_to_msg_id, mrh.reply_to_top_id);
 		if (repliedPeer == null || repliedMsgId == 0) return null;
 		if (repliedPeer != peer)
-			return await GetMessage(await ChatFromPeer(repliedPeer, true), repliedMsgId);
-		lock (CachedMessages)
-			if (CachedMessages.TryGetValue((repliedPeer.ID, repliedMsgId), out var cachedMsg))
-				return cachedMsg;
+			return await GetMessage(await ChatFromPeer(repliedPeer, true), repliedMsgId, canUseCache: canUseCache);
+		if (canUseCache)
+			lock (CachedMessages)
+				if (CachedMessages.TryGetValue((repliedPeer.ID, repliedMsgId), out var cachedMsg))
+					return cachedMsg;
 		var chat = await ChatFromPeer(peer, true);
 		var msgs = await Client.GetMessages(chat, new InputMessageReplyTo { id = msg.ID });
 		msgs.UserOrChat(_collector);
@@ -239,12 +257,13 @@ public partial class Bot
 	}
 
 	/// <summary>Fetch and build a Bot Message (cached)</summary>
-	protected async Task<Message?> GetMessage(InputPeer? peer, int messageId, bool replyToo = false)
+	protected async Task<Message?> GetMessage(InputPeer? peer, int messageId, bool replyToo = false, bool canUseCache = true)
 	{
 		if (peer == null || messageId == 0) return null;
-		lock (CachedMessages)
-			if (CachedMessages.TryGetValue((peer.ID, messageId), out var cachedMsg))
-				return cachedMsg;
+		if (canUseCache)
+			lock (CachedMessages)
+				if (CachedMessages.TryGetValue((peer.ID, messageId), out var cachedMsg))
+					return cachedMsg;
 		var msgs = await Client.GetMessages(peer, messageId);
 		msgs.UserOrChat(_collector);
 		var msgBase = msgs.Messages.FirstOrDefault();
@@ -259,12 +278,6 @@ public partial class Bot
 				CachedMessages[(peerId, msgBase.ID)] = msg;
 		return msg;
 	}
-
-	static string ToDateFormat(MessageEntityFormattedDate.Flags flags)
-		=> string.Concat("rtTdDw".Where((c, i) => ((int)flags & (1 << i)) != 0));
-
-	static MessageEntityFormattedDate.Flags ToDateFlags(string dateTimeFormat)
-		=> (MessageEntityFormattedDate.Flags)dateTimeFormat.Sum(c => 1 << "rtTdDw".IndexOf(c));
 
 	private MessageEntity[]? MakeEntities(TL.MessageEntity[]? entities) => entities?.Select(e => e switch
 	{
@@ -288,7 +301,7 @@ public partial class Bot
 		TL.MessageEntityBlockquote mebq => mebq.flags.HasFlag(MessageEntityBlockquote.Flags.collapsed)
 			? new MessageEntity { Type = MessageEntityType.ExpandableBlockquote, Offset = e.Offset, Length = e.Length }
 			: new MessageEntity { Type = MessageEntityType.Blockquote, Offset = e.Offset, Length = e.Length },
-		TL.MessageEntityFormattedDate mefd => new MessageEntity { Type = MessageEntityType.DateTime, Offset = e.Offset, Length = e.Length, UnixTime = mefd.date, DateTimeFormat = ToDateFormat(mefd.flags) },
+		TL.MessageEntityFormattedDate mefd => new MessageEntity { Type = MessageEntityType.DateTime, Offset = e.Offset, Length = e.Length, UnixTime = mefd.date, DateTimeFormat = mefd.flags.ToDateFormat() },
 		_ => null!,
 	}).Where(e => e != null).ToArray();
 
@@ -310,7 +323,7 @@ public partial class Bot
 				MessageEntityType.CustomEmoji => new TL.MessageEntityCustomEmoji { offset = e.Offset, length = e.Length, document_id = long.Parse(e.CustomEmojiId!) },
 				MessageEntityType.Blockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length },
 				MessageEntityType.ExpandableBlockquote => new TL.MessageEntityBlockquote { offset = e.Offset, length = e.Length, flags = MessageEntityBlockquote.Flags.collapsed },
-				MessageEntityType.DateTime => new TL.MessageEntityFormattedDate { offset = e.Offset, length = e.Length, flags = ToDateFlags(e.DateTimeFormat ?? ""), date = e.UnixTime!.Value },
+				MessageEntityType.DateTime => new TL.MessageEntityFormattedDate { offset = e.Offset, length = e.Length, flags = TL.HtmlText.ToDateFlags(e.DateTimeFormat ?? ""), date = e.UnixTime!.Value },
 				_ => (TL.MessageEntity)null!
 			}).Where(e => e != null)];
 		else if (text == null)

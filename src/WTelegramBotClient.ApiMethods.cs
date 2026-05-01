@@ -770,8 +770,8 @@ public partial class WTelegramBotClient
     /// <param name="options">A list of 2-12 answer options</param>
     /// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
     /// <param name="type">Poll type, <see cref="PollType.Quiz">Quiz</see> or <see cref="PollType.Regular">Regular</see>, defaults to <see cref="PollType.Regular">Regular</see></param>
-    /// <param name="allowsMultipleAnswers"><see langword="true"/>, if the poll allows multiple answers, ignored for polls in quiz mode, defaults to <see langword="false"/></param>
-    /// <param name="correctOptionId">0-based identifier of the correct answer option, required for polls in quiz mode</param>
+    /// <param name="allowsMultipleAnswers">Pass <see langword="true"/>, if the poll allows multiple answers, defaults to <see langword="false"/></param>
+    /// <param name="correctOptionIds">A list of monotonically increasing 0-based identifiers of the correct answer options, required for polls in quiz mode</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
     /// <param name="explanation">Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style poll, 0-200 characters with at most 2 line feeds after entities parsing</param>
@@ -779,8 +779,8 @@ public partial class WTelegramBotClient
     /// <param name="explanationEntities">A list of special entities that appear in the poll explanation. It can be specified instead of <paramref name="explanationParseMode"/></param>
     /// <param name="questionParseMode">Mode for parsing entities in the question. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Currently, only custom emoji entities are allowed</param>
     /// <param name="questionEntities">A list of special entities that appear in the poll question. It can be specified instead of <paramref name="questionParseMode"/></param>
-    /// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-600. Can't be used together with <paramref name="closeDate"/>.</param>
-    /// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 600 seconds in the future. Can't be used together with <paramref name="openPeriod"/>.</param>
+    /// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-2628000. Can't be used together with <paramref name="closeDate"/>.</param>
+    /// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 2628000 seconds in the future. Can't be used together with <paramref name="openPeriod"/>.</param>
     /// <param name="isClosed">Pass <see langword="true"/> if the poll needs to be immediately closed. This can be useful for poll preview.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -788,6 +788,13 @@ public partial class WTelegramBotClient
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
     /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowsRevoting">Pass <see langword="true"/>, if the poll allows to change chosen answer options, defaults to <see langword="false"/> for quizzes and to <see langword="true"/> for regular polls</param>
+    /// <param name="shuffleOptions">Pass <see langword="true"/>, if the poll options must be shown in random order</param>
+    /// <param name="allowAddingOptions">Pass <see langword="true"/>, if answer options can be added to the poll after creation; not supported for anonymous polls and quizzes</param>
+    /// <param name="hideResultsUntilCloses">Pass <see langword="true"/>, if poll results must be shown only after the poll closes</param>
+    /// <param name="description">Description of the poll to be sent, 0-1024 characters after entities parsing</param>
+    /// <param name="descriptionParseMode">Mode for parsing entities in the poll description. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="descriptionEntities">A list of special entities that appear in the poll description, which can be specified instead of <paramref name="descriptionParseMode"/></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendPoll(
@@ -797,7 +804,7 @@ public partial class WTelegramBotClient
         bool isAnonymous = true,
         PollType? type = default,
         bool allowsMultipleAnswers = default,
-        int? correctOptionId = default,
+        IEnumerable<int>? correctOptionIds = default,
         ReplyParameters? replyParameters = default,
         ReplyMarkup? replyMarkup = default,
         string? explanation = default,
@@ -814,8 +821,15 @@ public partial class WTelegramBotClient
         string? messageEffectId = default,
         string? businessConnectionId = default,
         bool allowPaidBroadcast = default,
+        bool allowsRevoting = default,
+        bool shuffleOptions = default,
+        bool allowAddingOptions = default,
+        bool hideResultsUntilCloses = default,
+        string? description = default,
+        ParseMode descriptionParseMode = default,
+        IEnumerable<MessageEntity>? descriptionEntities = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionId, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionIds, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, allowsRevoting, shuffleOptions, allowAddingOptions, hideResultsUntilCloses, description, descriptionParseMode, descriptionEntities).ThrowAsApi(this);
 
     /// <summary>Use this method to send a checklist on behalf of a connected business account.</summary>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
@@ -1533,6 +1547,24 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetBusinessConnection(businessConnectionId).ThrowAsApi(this);
 
+    /// <summary>Use this method to get the token of a managed bot.</summary>
+    /// <param name="userId">User identifier of the managed bot whose token will be returned</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The token as <em>String</em> on success.</returns>
+    public async Task<string> GetManagedBotToken(
+        long userId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetManagedBotToken(userId).ThrowAsApi(this);
+
+    /// <summary>Use this method to revoke the current token of a managed bot and generate a new one.</summary>
+    /// <param name="userId">User identifier of the managed bot whose token will be replaced</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The new token as <em>String</em> on success.</returns>
+    public async Task<string> ReplaceManagedBotToken(
+        long userId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetManagedBotToken(userId, revoke: true).ThrowAsApi(this);
+
     /// <summary>Use this method to change the list of the bot's commands. See <a href="https://core.telegram.org/bots/features#commands">this manual</a> for more details about bot commands.</summary>
     /// <param name="commands">A list of bot commands to be set as the list of the bot's commands. At most 100 commands can be specified.</param>
     /// <param name="scope">An object, describing scope of users for which the commands are relevant. Defaults to <see cref="BotCommandScopeDefault"/>.</param>
@@ -1686,8 +1718,8 @@ public partial class WTelegramBotClient
     /// <param name="chatId">Unique identifier of the target user, chat or username of the channel (in the format <c>@channelusername</c>) that will receive the gift.</param>
     /// <param name="giftId">Identifier of the gift; limited gifts can't be sent to channel chats</param>
     /// <param name="text">Text that will be shown along with the gift; 0-128 characters</param>
-    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see>, and <see cref="MessageEntityType.DateTime">DateTime</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see>, and <see cref="MessageEntityType.DateTime">DateTime</see> are ignored.</param>
     /// <param name="payForUpgrade">Pass <see langword="true"/> to pay for the gift upgrade from the bot's balance, thereby making the upgrade free for the receiver</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SendGift(
@@ -1705,8 +1737,8 @@ public partial class WTelegramBotClient
     /// <param name="monthCount">Number of months the Telegram Premium subscription will be active for the user; must be one of 3, 6, or 12</param>
     /// <param name="starCount">Number of Telegram Stars to pay for the Telegram Premium subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months</param>
     /// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
-    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, and <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see> are ignored.</param>
-    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, and “CustomEmoji” are ignored.</param>
+    /// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see>, and <see cref="MessageEntityType.DateTime">DateTime</see> are ignored.</param>
+    /// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, “CustomEmoji”, and “DateTime” are ignored.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task GiftPremiumSubscription(
         long userId,
@@ -2056,6 +2088,51 @@ public partial class WTelegramBotClient
         int storyId,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).DeleteStory(businessConnectionId, storyId).ThrowAsApi(this);
+
+    /// <summary>Use this method to set the result of an interaction with a <a href="https://core.telegram.org/bots/webapps">Web App</a> and send a corresponding message on behalf of the user to the chat from which the query originated.</summary>
+    /// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="result">An object describing the message to be sent</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="SentWebAppMessage"/> object is returned.</returns>
+    public async Task<SentWebAppMessage> AnswerWebAppQuery(
+        string webAppQueryId,
+        InlineQueryResult result,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var sent = await ThrowIfCancelled(cancellationToken).AnswerWebAppQuery(webAppQueryId, result).ThrowAsApi(this);
+        return new SentWebAppMessage { InlineMessageId = sent };
+    }
+
+    /// <summary>Stores a message that can be sent by a user of a Mini App.</summary>
+    /// <param name="userId">Unique identifier of the target user that can use the prepared message</param>
+    /// <param name="result">An object describing the message to be sent</param>
+    /// <param name="allowUserChats">Pass <see langword="true"/> if the message can be sent to private chats with users</param>
+    /// <param name="allowBotChats">Pass <see langword="true"/> if the message can be sent to private chats with bots</param>
+    /// <param name="allowGroupChats">Pass <see langword="true"/> if the message can be sent to group and supergroup chats</param>
+    /// <param name="allowChannelChats">Pass <see langword="true"/> if the message can be sent to channel chats</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="PreparedInlineMessage"/> object.</returns>
+    public async Task<PreparedInlineMessage> SavePreparedInlineMessage(
+        long userId,
+        InlineQueryResult result,
+        bool allowUserChats = default,
+        bool allowBotChats = default,
+        bool allowGroupChats = default,
+        bool allowChannelChats = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SavePreparedInlineMessage(userId, result, allowUserChats, allowBotChats, allowGroupChats, allowChannelChats).ThrowAsApi(this);
+
+    /// <summary>Stores a keyboard button that can be used by a user within a Mini App.</summary>
+    /// <param name="userId">Unique identifier of the target user that can use the button</param>
+    /// <param name="button">An object describing the button to be saved. The button must be of the type <em>RequestUsers</em>, <em>RequestChat</em>, or <em>RequestManagedBot</em></param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="PreparedKeyboardButton"/> object.</returns>
+    public async Task<PreparedKeyboardButton> SavePreparedKeyboardButton(
+        long userId,
+        KeyboardButton button,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SavePreparedKeyboardButton(userId, button).ThrowAsApi(this);
 
     #endregion Available methods
 
@@ -2582,40 +2659,6 @@ public partial class WTelegramBotClient
         InlineQueryResultsButton? button = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).AnswerInlineQuery(inlineQueryId, results, cacheTime ?? 300, isPersonal, nextOffset, button).ThrowAsApi(this);
-
-    /// <summary>Use this method to set the result of an interaction with a <a href="https://core.telegram.org/bots/webapps">Web App</a> and send a corresponding message on behalf of the user to the chat from which the query originated.</summary>
-    /// <param name="webAppQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="result">An object describing the message to be sent</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns>A <see cref="SentWebAppMessage"/> object is returned.</returns>
-    public async Task<SentWebAppMessage> AnswerWebAppQuery(
-        string webAppQueryId,
-        InlineQueryResult result,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var sent = await ThrowIfCancelled(cancellationToken).AnswerWebAppQuery(webAppQueryId, result).ThrowAsApi(this);
-        return new SentWebAppMessage { InlineMessageId = sent };
-    }
-
-    /// <summary>Stores a message that can be sent by a user of a Mini App.</summary>
-    /// <param name="userId">Unique identifier of the target user that can use the prepared message</param>
-    /// <param name="result">An object describing the message to be sent</param>
-    /// <param name="allowUserChats">Pass <see langword="true"/> if the message can be sent to private chats with users</param>
-    /// <param name="allowBotChats">Pass <see langword="true"/> if the message can be sent to private chats with bots</param>
-    /// <param name="allowGroupChats">Pass <see langword="true"/> if the message can be sent to group and supergroup chats</param>
-    /// <param name="allowChannelChats">Pass <see langword="true"/> if the message can be sent to channel chats</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
-    /// <returns>A <see cref="PreparedInlineMessage"/> object.</returns>
-    public async Task<PreparedInlineMessage> SavePreparedInlineMessage(
-        long userId,
-        InlineQueryResult result,
-        bool allowUserChats = default,
-        bool allowBotChats = default,
-        bool allowGroupChats = default,
-        bool allowChannelChats = default,
-        CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SavePreparedInlineMessage(userId, result, allowUserChats, allowBotChats, allowGroupChats, allowChannelChats).ThrowAsApi(this);
 
     #endregion Inline mode
 
