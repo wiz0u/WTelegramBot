@@ -3,7 +3,7 @@ name: Dev build
 on:
   push:
     branches: [ master ]
-#    paths-ignore: [ '.**', 'Examples/**', '**.md' ]
+    paths-ignore: [ '.**', 'Examples/**', '**.md' ]
   workflow_dispatch:
 
 env:

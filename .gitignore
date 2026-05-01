@@ -3,8 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-launchSettings.json
-
 # User-specific files
 *.rsuser
 *.suo
@@ -363,4 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+############################################################################################################
+launchSettings.json
 /Examples/NativeAOT
+/Examples/BotApiServer/BotApiServer.http
