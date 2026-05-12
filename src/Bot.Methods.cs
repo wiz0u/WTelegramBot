@@ -1,6 +1,7 @@
 using TL;
 using TL.Methods;
 using ChatFullInfo = WTelegram.Types.ChatFullInfo;
+using KeyboardButton = Telegram.Bot.Types.ReplyMarkups.KeyboardButton;
 using Message = WTelegram.Types.Message;
 using MessageEntity = Telegram.Bot.Types.MessageEntity;
 using Update = WTelegram.Types.Update;
@@ -1946,7 +1947,7 @@ public partial class Bot
 	/// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
 	/// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
-	public async Task DeleteBusinessMessages(string businessConnectionId, IEnumerable<int> messageIds)
+	public async Task DeleteBusinessMessages(string businessConnectionId, params IEnumerable<int> messageIds)
 	{
 		await InitComplete();
 		await Client.InvokeWithBusinessConnection(businessConnectionId,
@@ -2315,7 +2316,7 @@ public partial class Bot
 	/// <param name="userId">Unique identifier of the target user that can use the button</param>
 	/// <param name="button">An object describing the button to be saved. The button must be of the type <em>RequestUsers</em>, <em>RequestChat</em>, or <em>RequestManagedBot</em></param>
 	/// <returns>A <see cref="PreparedKeyboardButton"/> object.</returns>
-	public async Task<PreparedKeyboardButton> SavePreparedKeyboardButton(long userId, Telegram.Bot.Types.ReplyMarkups.KeyboardButton button)
+	public async Task<PreparedKeyboardButton> SavePreparedKeyboardButton(long userId, KeyboardButton button)
 	{
 		await InitComplete();
 		var brb = await Client.Bots_RequestWebViewButton(InputUser(userId), MakeKeyboardButton(button));

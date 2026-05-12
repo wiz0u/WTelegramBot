@@ -35,7 +35,11 @@ public static class BotHelpers
 	// Task.WhenAll may lead to unnecessary multiple parallel resolve of the same users/stickerset
 	internal async static Task<TResult[]> WhenAllSequential<TResult>(this IEnumerable<Task<TResult>> tasks)
 	{
-		var result = new List<TResult>();
+#if NETCOREAPP2_1_OR_GREATER
+		var result = new List<TResult>(tasks.TryGetNonEnumeratedCount(out var count) ? count : 4);
+#else
+		var result = new List<TResult>(4); 
+#endif
 		foreach (var task in tasks)
 			result.Add(await task);
 		return [.. result];

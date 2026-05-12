@@ -79,7 +79,7 @@ Some other `WTelegram.Bot` methods (for example, beginning with Input*) and exte
 
 This library is still quite new but I tested it extensively to make sure it covers all of the Bot API successfully.
 
-If you have questions about the (official) Bot API methods from TelegramBotClient, you can ask them in [Telegram.Bot support chat](https://t.me/joinchat/B35YY0QbLfd034CFnvCtCA).
+If you have questions about the (official) Bot API methods from TelegramBotClient, you can ask them in [Telegram.Bot support chat](https://t.me/tgbot_chat).
 
 If your question is more specific to WTelegram.Bot, or an issue with library behaviour, you can ask them in [@WTelegramClient](https://t.me/WTelegramClient).
 

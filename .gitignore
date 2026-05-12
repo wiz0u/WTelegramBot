@@ -366,3 +366,4 @@ FodyWeavers.xsd
 launchSettings.json
 /Examples/NativeAOT
 /Examples/BotApiServer/BotApiServer.http
+tests/
