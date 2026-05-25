@@ -25,7 +25,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to specify a URL and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified URL, containing a JSON-serialized <see cref="Update"/>. In case of an unsuccessful request (a request with response <a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">HTTP status code</a> different from <c>2XY</c>), we will repeat the request and give up after a reasonable amount of attempts.<br/>If you'd like to make sure that the webhook was set by you, you can specify secret data in the parameter <paramref name="secretToken"/>. If specified, the request will contain a header “X-Telegram-Bot-Api-Secret-Token” with the secret token as content.</summary>
     /// <remarks><b>Notes</b><br/><b>1.</b> You will not be able to receive updates using <see cref="WTelegram.Bot.GetUpdates">GetUpdates</see> for as long as an outgoing webhook is set up.<br/><b>2.</b> To use a self-signed certificate, you need to upload your <a href="https://core.telegram.org/bots/self-signed">public key certificate</a> using <paramref name="certificate"/> parameter. Please upload as InputFile, sending a String will not work.<br/><b>3.</b> Ports currently supported <em>for webhooks</em>: <b>443, 80, 88, 8443</b>.<br/>If you're having any trouble setting up webhooks, please check out this <a href="https://core.telegram.org/bots/webhooks">amazing guide to webhooks</a>.<br/></remarks>
-    /// <param name="url">HTTPS URL to send updates to. Use an empty string to remove webhook integration</param>
+    /// <param name="url">HTTPS URL to send updates to. Use an empty string to remove webhook integration.</param>
     /// <param name="certificate">Upload your public key certificate so that the root certificate in use can be checked. See our <a href="https://core.telegram.org/bots/self-signed">self-signed guide</a> for details.</param>
     /// <param name="ipAddress">The fixed IP address which will be used to send webhook requests instead of the IP address resolved through DNS</param>
     /// <param name="maxConnections">The maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery, 1-100. Defaults to <em>40</em>. Use lower values to limit the load on your bot's server, and higher values to increase your bot's throughput.</param>
@@ -105,11 +105,11 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).Close().ThrowAsApi(this);
 
     /// <summary>Use this method to send text messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
@@ -117,7 +117,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -142,8 +142,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendMessage(chatId, text, parseMode, replyParameters, replyMarkup, linkPreviewOptions, messageThreadId ?? 0, entities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or username of the target bot, supergroup or channel in the format <c>@username</c>)</param>
     /// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -169,8 +169,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).ForwardMessage(chatId, fromChatId, messageId, messageThreadId ?? 0, disableNotification, protectContent, videoStartTimestamp, directMessagesTopicId ?? 0, suggestedPostParameters, messageEffectId.LongOrDefault()).ThrowAsApi(this);
 
     /// <summary>Use this method to forward multiple messages of any kind. If some of the specified messages can't be found or forwarded, they are skipped. Service messages and messages with protected content can't be forwarded. Album grouping is kept for forwarded messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or username of the target bot, supergroup or channel in the format <c>@username</c>)</param>
     /// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to forward. The identifiers must be specified in a strictly increasing order.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the messages <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
@@ -194,19 +194,19 @@ public partial class WTelegramBotClient
     }
 
     /// <summary>Use this method to copy messages of any kind. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessage">ForwardMessage</see>, but the copied message doesn't have a link to the original message.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or channel username in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="fromChatId">Unique identifier for the chat where the original message was sent (or username of the target bot, supergroup or channel in the format <c>@username</c>)</param>
     /// <param name="messageId">Message identifier in the chat specified in <paramref name="fromChatId"/></param>
-    /// <param name="caption">New caption for media, 0-1024 characters after entities parsing. If not specified, the original caption is kept</param>
+    /// <param name="caption">New caption for media, 0-1024 characters after entities parsing. If not specified, the original caption is kept.</param>
     /// <param name="parseMode">Mode for parsing entities in the new caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="captionEntities">A list of special entities that appear in the new caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Ignored if a new caption isn't specified.</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="videoStartTimestamp">New start timestamp for the copied video in the message</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
@@ -235,8 +235,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CopyMessage(chatId, fromChatId, messageId, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, allowPaidBroadcast, videoStartTimestamp, directMessagesTopicId ?? 0, suggestedPostParameters, messageEffectId.LongOrDefault()).ThrowAsApi(this);
 
     /// <summary>Use this method to copy messages of any kind. If some of the specified messages can't be found or copied, they are skipped. Service messages, paid media messages, giveaway messages, giveaway winners messages, and invoice messages can't be copied. A quiz <see cref="Poll"/> can be copied only if the value of the field <em>CorrectOptionId</em> is known to the bot. The method is analogous to the method <see cref="WTelegram.Bot.ForwardMessages">ForwardMessages</see>, but the copied messages don't have a link to the original message. Album grouping is kept for copied messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or channel username in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="fromChatId">Unique identifier for the chat where the original messages were sent (or username of the target bot, supergroup or channel in the format <c>@username</c>)</param>
     /// <param name="messageIds">A list of 1-100 identifiers of messages in the chat <paramref name="fromChatId"/> to copy. The identifiers must be specified in a strictly increasing order.</param>
     /// <param name="removeCaption">Pass <see langword="true"/> to copy the messages without their captions</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
@@ -262,12 +262,12 @@ public partial class WTelegramBotClient
     }
 
     /// <summary>Use this method to send photos.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="photo">Photo to send. Pass a FileId as String to send a photo that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a photo from the Internet, or upload a new photo using <see cref="InputFileStream"/>. The photo must be at most 10 MB in size. The photo's width and height must not exceed 10000 in total. Width and height ratio must be at most 20. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Photo caption (may also be used when resending photos by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the photo caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
@@ -276,7 +276,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -302,14 +302,57 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendPhoto(chatId, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
+    /// <summary>Use this method to send live photos.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="livePhoto">Live photo video to send. The video must be no longer than 10 seconds and must not exceed 10 MB in size. Pass a FileId as String to send a video that exists on the Telegram servers (recommended) or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Sending live photos by a URL is currently unsupported.</param>
+    /// <param name="photo">The static photo to send. Pass a FileId as String to send a photo that exists on the Telegram servers (recommended) or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Sending live photos by a URL is currently unsupported.</param>
+    /// <param name="caption">Video caption (may also be used when resending videos by <em>FileId</em>), 0-1024 characters after entities parsing</param>
+    /// <param name="parseMode">Mode for parsing entities in the video caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="replyParameters">Description of the message to reply to</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
+    /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media</param>
+    /// <param name="hasSpoiler">Pass <see langword="true"/> if the video needs to be covered with a spoiler animation</param>
+    /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
+    /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
+    /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
+    /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
+    /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
+    /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>The sent <see cref="Message"/> is returned.</returns>
+    public async Task<Message> SendLivePhoto(
+        ChatId chatId,
+        InputFile livePhoto,
+        InputFile photo,
+        string? caption = default,
+        ParseMode parseMode = default,
+        ReplyParameters? replyParameters = default,
+        ReplyMarkup? replyMarkup = default,
+        int? messageThreadId = default,
+        IEnumerable<MessageEntity>? captionEntities = default,
+        bool showCaptionAboveMedia = default,
+        bool hasSpoiler = default,
+        bool disableNotification = default,
+        bool protectContent = default,
+        string? messageEffectId = default,
+        string? businessConnectionId = default,
+        bool allowPaidBroadcast = default,
+        long? directMessagesTopicId = default,
+        SuggestedPostParameters? suggestedPostParameters = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SendLivePhoto(chatId, livePhoto, photo, caption, parseMode, replyParameters, replyMarkup, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, hasSpoiler, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
+
     /// <summary>Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format.</summary>
     /// <remarks>Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future.<br/>For sending voice messages, use the <see cref="WTelegram.Bot.SendVoice">SendVoice</see> method instead.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="audio">Audio file to send. Pass a FileId as String to send an audio file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get an audio file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Audio caption, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the audio caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="duration">Duration of the audio in seconds</param>
     /// <param name="performer">Performer</param>
     /// <param name="title">Track name</param>
@@ -320,7 +363,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -350,12 +393,12 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to send general files.</summary>
     /// <remarks>Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="document">File to send. Pass a FileId as String to send a file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Document caption (may also be used when resending documents by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the document caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
@@ -364,7 +407,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -392,12 +435,12 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to send video files, Telegram clients support MPEG4 videos (other formats may be sent as <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="video">Video to send. Pass a FileId as String to send a video that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a video from the Internet, or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Video caption (may also be used when resending videos by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the video caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="duration">Duration of sent video in seconds</param>
     /// <param name="width">Video width</param>
     /// <param name="height">Video height</param>
@@ -411,7 +454,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="cover">Cover for the video in the message. Pass a FileId to send a file that exists on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a file from the Internet, or use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="startTimestamp">Start timestamp for the video in the message</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
@@ -448,12 +491,12 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound).</summary>
     /// <remarks>Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="animation">Animation to send. Pass a FileId as String to send an animation that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get an animation from the Internet, or upload a new animation using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Animation caption (may also be used when resending animation by <em>FileId</em>), 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the animation caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="duration">Duration of sent animation in seconds</param>
     /// <param name="width">Animation width</param>
     /// <param name="height">Animation height</param>
@@ -466,7 +509,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -498,12 +541,12 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .OGG file encoded with OPUS, or in .MP3 format, or in .M4A format (other formats may be sent as <see cref="Audio"/> or <see cref="Document"/>).</summary>
     /// <remarks>Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="voice">Audio file to send. Pass a FileId as String to send a file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
     /// <param name="caption">Voice message caption, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the voice message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="duration">Duration of the voice message in seconds</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
@@ -511,7 +554,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -537,10 +580,10 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendVoice(chatId, voice, caption, parseMode, replyParameters, replyMarkup, duration ?? 0, messageThreadId ?? 0, captionEntities, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients support rounded square MPEG4 videos of up to 1 minute long. Use this method to send video messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="videoNote">Video note to send. Pass a FileId as String to send a video note that exists on the Telegram servers (recommended) or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Sending video notes by a URL is currently unsupported</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="videoNote">Video note to send. Pass a FileId as String to send a video note that exists on the Telegram servers (recommended) or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Sending video notes by a URL is currently unsupported.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="duration">Duration of sent video in seconds</param>
     /// <param name="length">Video width and height, i.e. diameter of the video message</param>
     /// <param name="thumbnail">Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should not exceed 320. Ignored if the file is not uploaded using <see cref="InputFileStream"/>. Thumbnails can't be reused and can be only uploaded as a new file, so you can use <see cref="InputFileStream(Stream, string?)"/> with a specific filename. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a></param>
@@ -549,7 +592,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -574,13 +617,13 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendVideoNote(chatId, videoNote, replyParameters, replyMarkup, duration ?? 0, length, thumbnail, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send paid media.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>. If the chat is a channel, all Telegram Star proceeds from this media will be credited to the chat's balance. Otherwise, they will be credited to the bot's balance.</param>
     /// <param name="starCount">The number of Telegram Stars that must be paid to buy access to the media; 1-25000</param>
     /// <param name="media">A array describing the media to be sent; up to 10 items</param>
     /// <param name="caption">Media caption, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the media caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="payload">Bot-defined paid media payload, 0-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
@@ -588,7 +631,7 @@ public partial class WTelegramBotClient
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -614,8 +657,8 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendPaidMedia(chatId, (int)(starCount), media, caption, parseMode, replyParameters, replyMarkup, payload, messageThreadId ?? 0, captionEntities, showCaptionAboveMedia, disableNotification, protectContent, businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
-    /// <summary>Use this method to send a group of photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <summary>Use this method to send a group of photos, live photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="media">A array describing messages to be sent, must include 2-10 items</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
@@ -623,7 +666,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent messages from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the messages will be sent; required if the messages are sent to a direct messages chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An array of <see cref="Message"/> objects that were sent is returned.</returns>
@@ -642,13 +685,13 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendMediaGroup(chatId, media, replyParameters, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0).ThrowAsApi(this);
 
     /// <summary>Use this method to send point on the map.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="latitude">Latitude of the location</param>
     /// <param name="longitude">Longitude of the location</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
-    /// <param name="livePeriod">Period in seconds during which the location will be updated (see <a href="https://telegram.org/blog/live-locations">Live Locations</a>, should be between 60 and 86400, or 0x7FFFFFFF for live locations that can be edited indefinitely.</param>
+    /// <param name="livePeriod">Period in seconds during which the location will be updated (see <a href="https://telegram.org/blog/live-locations">Live Locations</a>, should be between 60 and 86400, or 0x7FFFFFFF for live locations that can be edited indefinitely</param>
     /// <param name="heading">For live locations, a direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
     /// <param name="proximityAlertRadius">For live locations, a maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
@@ -656,7 +699,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -683,13 +726,13 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendLocation(chatId, latitude, longitude, replyParameters, replyMarkup, (int)(horizontalAccuracy ?? 0), livePeriod ?? 0, heading ?? 0, proximityAlertRadius ?? 0, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send information about a venue.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="latitude">Latitude of the venue</param>
     /// <param name="longitude">Longitude of the venue</param>
     /// <param name="title">Name of the venue</param>
     /// <param name="address">Address of the venue</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="foursquareId">Foursquare identifier of the venue</param>
     /// <param name="foursquareType">Foursquare type of the venue, if known. (For example, “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)</param>
     /// <param name="googlePlaceId">Google Places identifier of the venue</param>
@@ -699,7 +742,7 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -728,19 +771,19 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendVenue(chatId, latitude, longitude, title, address, replyParameters, replyMarkup, foursquareId, foursquareType, googlePlaceId, googlePlaceType, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send phone contacts.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="phoneNumber">Contact's phone number</param>
     /// <param name="firstName">Contact's first name</param>
     /// <param name="lastName">Contact's last name</param>
     /// <param name="vcard">Additional data about the contact in the form of a <a href="https://en.wikipedia.org/wiki/VCard">vCard</a>, 0-2048 bytes</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -765,20 +808,25 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendContact(chatId, phoneNumber, firstName, lastName, vcard, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
     /// <summary>Use this method to send a native poll.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). Polls can't be sent to channel direct messages chats.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>. Polls can't be sent to channel direct messages chats.</param>
     /// <param name="question">Poll question, 1-300 characters</param>
-    /// <param name="options">A list of 2-12 answer options</param>
+    /// <param name="options">A list of 1-12 answer options</param>
     /// <param name="isAnonymous"><see langword="true"/>, if the poll needs to be anonymous, defaults to <see langword="true"/></param>
     /// <param name="type">Poll type, <see cref="PollType.Quiz">Quiz</see> or <see cref="PollType.Regular">Regular</see>, defaults to <see cref="PollType.Regular">Regular</see></param>
     /// <param name="allowsMultipleAnswers">Pass <see langword="true"/>, if the poll allows multiple answers, defaults to <see langword="false"/></param>
     /// <param name="correctOptionIds">A list of monotonically increasing 0-based identifiers of the correct answer options, required for polls in quiz mode</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="explanation">Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style poll, 0-200 characters with at most 2 line feeds after entities parsing</param>
     /// <param name="explanationParseMode">Mode for parsing entities in the explanation. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="explanationEntities">A list of special entities that appear in the poll explanation. It can be specified instead of <paramref name="explanationParseMode"/></param>
-    /// <param name="questionParseMode">Mode for parsing entities in the question. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Currently, only custom emoji entities are allowed</param>
-    /// <param name="questionEntities">A list of special entities that appear in the poll question. It can be specified instead of <paramref name="questionParseMode"/></param>
+    /// <param name="explanationEntities">A list of special entities that appear in the poll explanation. It can be specified instead of <paramref name="explanationParseMode"/>.</param>
+    /// <param name="explanationMedia">Media added to the quiz explanation</param>
+    /// <param name="questionParseMode">Mode for parsing entities in the question. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Currently, only custom emoji entities are allowed.</param>
+    /// <param name="questionEntities">A list of special entities that appear in the poll question. It can be specified instead of <paramref name="questionParseMode"/>.</param>
+    /// <param name="description">Description of the poll to be sent, 0-1024 characters after entities parsing</param>
+    /// <param name="descriptionParseMode">Mode for parsing entities in the poll description. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="descriptionEntities">A list of special entities that appear in the poll description, which can be specified instead of <paramref name="descriptionParseMode"/></param>
+    /// <param name="media">Media added to the poll description</param>
     /// <param name="openPeriod">Amount of time in seconds the poll will be active after creation, 5-2628000. Can't be used together with <paramref name="closeDate"/>.</param>
     /// <param name="closeDate">Point in time when the poll will be automatically closed. Must be at least 5 and no more than 2628000 seconds in the future. Can't be used together with <paramref name="openPeriod"/>.</param>
     /// <param name="isClosed">Pass <see langword="true"/> if the poll needs to be immediately closed. This can be useful for poll preview.</param>
@@ -787,14 +835,13 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="allowsRevoting">Pass <see langword="true"/>, if the poll allows to change chosen answer options, defaults to <see langword="false"/> for quizzes and to <see langword="true"/> for regular polls</param>
     /// <param name="shuffleOptions">Pass <see langword="true"/>, if the poll options must be shown in random order</param>
     /// <param name="allowAddingOptions">Pass <see langword="true"/>, if answer options can be added to the poll after creation; not supported for anonymous polls and quizzes</param>
     /// <param name="hideResultsUntilCloses">Pass <see langword="true"/>, if poll results must be shown only after the poll closes</param>
-    /// <param name="description">Description of the poll to be sent, 0-1024 characters after entities parsing</param>
-    /// <param name="descriptionParseMode">Mode for parsing entities in the poll description. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="descriptionEntities">A list of special entities that appear in the poll description, which can be specified instead of <paramref name="descriptionParseMode"/></param>
+    /// <param name="membersOnly">Pass <see langword="true"/>, if voting is limited to users who have been members of the chat where the poll is being sent for more than 24 hours; for channel chats only</param>
+    /// <param name="countryCodes">A list of 0-12 two-letter <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2">ISO 3166-1 alpha-2</a> country codes indicating the countries from which users can vote in the poll; for channel chats only. Use “FT” as a country code to allow users with anonymous numbers to vote. If omitted or empty, then users from any country can participate in the poll.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendPoll(
@@ -810,8 +857,13 @@ public partial class WTelegramBotClient
         string? explanation = default,
         ParseMode explanationParseMode = default,
         IEnumerable<MessageEntity>? explanationEntities = default,
+        InputPollMedia? explanationMedia = default,
         ParseMode questionParseMode = default,
         IEnumerable<MessageEntity>? questionEntities = default,
+        string? description = default,
+        ParseMode descriptionParseMode = default,
+        IEnumerable<MessageEntity>? descriptionEntities = default,
+        InputPollMedia? media = default,
         int? openPeriod = default,
         DateTime? closeDate = default,
         bool isClosed = default,
@@ -825,15 +877,14 @@ public partial class WTelegramBotClient
         bool shuffleOptions = default,
         bool allowAddingOptions = default,
         bool hideResultsUntilCloses = default,
-        string? description = default,
-        ParseMode descriptionParseMode = default,
-        IEnumerable<MessageEntity>? descriptionEntities = default,
+        bool membersOnly = default,
+        IEnumerable<string>? countryCodes = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionIds, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, questionParseMode, questionEntities, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, allowsRevoting, shuffleOptions, allowAddingOptions, hideResultsUntilCloses, description, descriptionParseMode, descriptionEntities).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendPoll(chatId, question, options, isAnonymous, type ?? PollType.Regular, allowsMultipleAnswers, correctOptionIds, replyParameters, replyMarkup, explanation, explanationParseMode, explanationEntities, explanationMedia, questionParseMode, questionEntities, description, descriptionParseMode, descriptionEntities, media, openPeriod, closeDate, isClosed, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, allowsRevoting, shuffleOptions, allowAddingOptions, hideResultsUntilCloses, membersOnly, countryCodes).ThrowAsApi(this);
 
     /// <summary>Use this method to send a checklist on behalf of a connected business account.</summary>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="chatId">Unique identifier for the target chat</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot in the format <c>@username</c></param>
     /// <param name="checklist">An object for the checklist to send</param>
     /// <param name="disableNotification">Sends the message silently. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
@@ -844,7 +895,7 @@ public partial class WTelegramBotClient
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendChecklist(
         string businessConnectionId,
-        long chatId,
+        ChatId chatId,
         InputChecklist checklist,
         bool disableNotification = default,
         bool protectContent = default,
@@ -855,16 +906,16 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendChecklist(businessConnectionId, chatId, checklist, disableNotification, protectContent, messageEffectId.LongOrDefault(), replyParameters, replyMarkup).ThrowAsApi(this);
 
     /// <summary>Use this method to send an animated emoji that will display a random value.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="emoji">Emoji on which the dice throw animation is based. Currently, must be one of “🎲”, “🎯”, “🏀”, “⚽”, “🎳”, or “🎰”. Dice can have values 1-6 for “🎲”, “🎯” and “🎳”, values 1-5 for “🏀” and “⚽”, and values 1-64 for “🎰”. Defaults to “🎲”</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="emoji">Emoji on which the dice throw animation is based. Currently, must be one of “🎲”, “🎯”, “🏀”, “⚽”, “🎳”, or “🎰”. Dice can have values 1-6 for “🎲”, “🎯” and “🎳”, values 1-5 for “🏀” and “⚽”, and values 1-64 for “🎰”. Defaults to “🎲”.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -885,27 +936,27 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).SendDice(chatId, emoji ?? DiceEmoji.Dice, replyParameters, replyMarkup, messageThreadId ?? 0, disableNotification, protectContent, messageEffectId.LongOrDefault(), businessConnectionId, allowPaidBroadcast, directMessagesTopicId ?? 0, suggestedPostParameters).ThrowAsApi(this);
 
-    /// <summary>Use this method to stream a partial message to a user while the message is being generated.</summary>
+    /// <summary>Use this method to stream a partial message to a user while the message is being generated. Note that the streamed draft is ephemeral and acts as a temporary 30-second preview - once the output is finalized, you <b>must</b> call <see cref="WTelegram.Bot.SendMessage">SendMessage</see> with the complete message to persist it in the user's chat.</summary>
     /// <param name="chatId">Unique identifier for the target private chat</param>
-    /// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes of drafts with the same identifier are animated</param>
-    /// <param name="text">Text of the message to be sent, 1-4096 characters after entities parsing</param>
-    /// <param name="messageThreadId">Unique identifier for the target message thread</param>
+    /// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes of drafts with the same identifier are animated.</param>
+    /// <param name="text">Text of the message to be sent, 0-4096 characters after entities parsing. Pass an empty text to show a “Thinking…” placeholder.</param>
     /// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="messageThreadId">Unique identifier for the target message thread</param>
     /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SendMessageDraft(
         long chatId,
         int draftId,
-        string text,
-        int? messageThreadId = default,
+        string? text,
         ParseMode parseMode = default,
+        int? messageThreadId = default,
         IEnumerable<MessageEntity>? entities = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).SendMessageDraft(chatId, draftId, text, messageThreadId, parseMode, entities).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).SendMessageDraft(chatId, draftId, text, parseMode, messageThreadId, entities).ThrowAsApi(this);
 
     /// <summary>Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).<br/>We only recommend using this method when a response from the bot will take a <b>noticeable</b> amount of time to arrive.</summary>
     /// <remarks>Example: The <a href="https://t.me/imagebot">ImageBot</a> needs some time to process a request and upload the image. Instead of sending a text message along the lines of “Retrieving image, please wait…”, the bot may use <see cref="WTelegram.Bot.SendChatAction">SendChatAction</see> with <paramref name="action"/> = <em>UploadPhoto</em>. The user will see a “sending photo” status for the bot.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>). Channel chats and channel direct messages chats aren't supported.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot or supergroup in the format <c>@username</c>. Channel chats and channel direct messages chats aren't supported.</param>
     /// <param name="action">Type of action to broadcast. Choose one, depending on what the user is about to receive: <em>typing</em> for <see cref="WTelegram.Bot.SendMessage">text messages</see>, <em>UploadPhoto</em> for <see cref="WTelegram.Bot.SendPhoto">photos</see>, <em>RecordVideo</em> or <em>UploadVideo</em> for <see cref="WTelegram.Bot.SendVideo">videos</see>, <em>RecordVoice</em> or <em>UploadVoice</em> for <see cref="WTelegram.Bot.SendVoice">voice notes</see>, <em>UploadDocument</em> for <see cref="WTelegram.Bot.SendDocument">general files</see>, <em>ChooseSticker</em> for <see cref="WTelegram.Bot.SendSticker">stickers</see>, <em>FindLocation</em> for <see cref="WTelegram.Bot.SendLocation">location data</see>, <em>RecordVideoNote</em> or <em>UploadVideoNote</em> for <see cref="WTelegram.Bot.SendVideoNote">video notes</see>.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread or topic of a forum; for supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the action will be sent</param>
@@ -919,7 +970,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SendChatAction(chatId, action, messageThreadId ?? 0, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to change the chosen reactions on a message. Service messages of some types can't be reacted to. Automatically forwarded messages from a channel to its discussion group have the same available reactions as messages in the channel. Bots can't use paid reactions.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="messageId">Identifier of the target message. If the message belongs to a media group, the reaction is set to the first non-deleted message in the group instead.</param>
     /// <param name="reaction">A list of reaction types to set on the message. Currently, as non-premium users, bots can set up to one reaction per message. A custom emoji reaction can be used if it is either already present on the message or explicitly allowed by chat administrators. Paid reactions can't be used by bots.</param>
     /// <param name="isBig">Pass <see langword="true"/> to set the reaction with a big animation</param>
@@ -980,7 +1031,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).GetFile(fileId).ThrowAsApi(this);
 
     /// <summary>Use this method to ban a user in a group, a supergroup or a channel. In the case of supergroups and channels, the user will not be able to return to the chat on their own using invite links, etc., unless <see cref="WTelegram.Bot.UnbanChatMember">unbanned</see> first. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="untilDate">Date when the user will be unbanned, in UTC. If user is banned for more than 366 days or less than 30 seconds from the current time they are considered to be banned forever. Applied for supergroups and channels only.</param>
     /// <param name="revokeMessages">Pass <see langword="true"/> to delete all messages from the chat for the user that is being removed. If <see langword="false"/>, the user will be able to see messages in the group that were sent before the user was removed. Always <see langword="true"/> for supergroups and channels.</param>
@@ -994,7 +1045,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).BanChatMember(chatId, userId, untilDate ?? default, revokeMessages).ThrowAsApi(this);
 
     /// <summary>Use this method to unban a previously banned user in a supergroup or channel. The user will <b>not</b> return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. By default, this method guarantees that after the call the user is not a member of the chat, but will be able to join it. So if the user is a member of the chat they will also be <b>removed</b> from the chat. If you don't want this, use the parameter <paramref name="onlyIfBanned"/>.</summary>
-    /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target group or username of the target supergroup or channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="onlyIfBanned">Do nothing if the user is not banned</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1006,11 +1057,11 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).UnbanChatMember(chatId, userId, onlyIfBanned).ThrowAsApi(this);
 
     /// <summary>Use this method to restrict a user in a supergroup. The bot must be an administrator in the supergroup for this to work and must have the appropriate administrator rights. Pass <em>True</em> for all permissions to lift restrictions from a user.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="permissions">An object for new user permissions</param>
     /// <param name="useIndependentChatPermissions">Pass <see langword="true"/> if chat permissions are set independently. Otherwise, the <em>CanSendOtherMessages</em> and <em>CanAddWebPagePreviews</em> permissions will imply the <em>CanSendMessages</em>, <em>CanSendAudios</em>, <em>CanSendDocuments</em>, <em>CanSendPhotos</em>, <em>CanSendVideos</em>, <em>CanSendVideoNotes</em>, and <em>CanSendVoiceNotes</em> permissions; the <em>CanSendPolls</em> permission will imply the <em>CanSendMessages</em> permission.</param>
-    /// <param name="untilDate">Date when restrictions will be lifted for the user, in UTC. If user is restricted for more than 366 days or less than 30 seconds from the current time, they are considered to be restricted forever</param>
+    /// <param name="untilDate">Date when restrictions will be lifted for the user, in UTC. If user is restricted for more than 366 days or less than 30 seconds from the current time, they are considered to be restricted forever.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task RestrictChatMember(
         ChatId chatId,
@@ -1022,7 +1073,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).RestrictChatMember(chatId, userId, permissions.LegacyMode(useIndependentChatPermissions), untilDate).ThrowAsApi(this);
 
     /// <summary>Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Pass <em>False</em> for all boolean parameters to demote a user.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="isAnonymous">Pass <see langword="true"/> if the administrator's presence in the chat is hidden</param>
     /// <param name="canManageChat">Pass <see langword="true"/> if the administrator can access the chat event log, get boost list, see hidden supergroup and channel members, report spam messages, ignore slow mode, and send messages to the chat without paying Telegram Stars. Implied by any other administrator privilege.</param>
@@ -1033,7 +1084,7 @@ public partial class WTelegramBotClient
     /// <param name="canEditStories">Pass <see langword="true"/> if the administrator can edit stories posted by other users, post stories to the chat page, pin chat stories, and access the chat's story archive</param>
     /// <param name="canDeleteStories">Pass <see langword="true"/> if the administrator can delete stories posted by other users</param>
     /// <param name="canManageVideoChats">Pass <see langword="true"/> if the administrator can manage video chats</param>
-    /// <param name="canRestrictMembers">Pass <see langword="true"/> if the administrator can restrict, ban or unban chat members, or access supergroup statistics. For backward compatibility, defaults to <see langword="true"/> for promotions of channel administrators</param>
+    /// <param name="canRestrictMembers">Pass <see langword="true"/> if the administrator can restrict, ban or unban chat members, or access supergroup statistics. For backward compatibility, defaults to <see langword="true"/> for promotions of channel administrators.</param>
     /// <param name="canPromoteMembers">Pass <see langword="true"/> if the administrator can add new administrators with a subset of their own privileges or demote administrators that they have promoted, directly or indirectly (promoted by administrators that were appointed by him)</param>
     /// <param name="canChangeInfo">Pass <see langword="true"/> if the administrator can change chat title, photo and other settings</param>
     /// <param name="canInviteUsers">Pass <see langword="true"/> if the administrator can invite new users to the chat</param>
@@ -1068,27 +1119,27 @@ public partial class WTelegramBotClient
         await ThrowIfCancelled(cancellationToken).PromoteChatMember(chatId, userId, new ChatAdministratorRights
         {
             IsAnonymous = isAnonymous,
-            CanChangeInfo = canChangeInfo,
+            CanManageChat = canManageChat,
             CanPostMessages = canPostMessages,
             CanEditMessages = canEditMessages,
             CanDeleteMessages = canDeleteMessages,
-            CanRestrictMembers = canRestrictMembers,
-            CanInviteUsers = canInviteUsers,
-            CanPinMessages = canPinMessages,
-            CanPromoteMembers = canPromoteMembers,
-            CanManageVideoChats = canManageVideoChats,
-            CanManageChat = canManageChat,
-            CanManageTopics = canManageTopics,
             CanPostStories = canPostStories,
             CanEditStories = canEditStories,
             CanDeleteStories = canDeleteStories,
+            CanManageVideoChats = canManageVideoChats,
+            CanRestrictMembers = canRestrictMembers,
+            CanPromoteMembers = canPromoteMembers,
+            CanChangeInfo = canChangeInfo,
+            CanInviteUsers = canInviteUsers,
+            CanPinMessages = canPinMessages,
+            CanManageTopics = canManageTopics,
             CanManageDirectMessages = canManageDirectMessages,
-            CanManageTags = canManageTags
+            CanManageTags = canManageTags,
         }).ThrowAsApi(this);
     }
 
     /// <summary>Use this method to set a custom title for an administrator in a supergroup promoted by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="customTitle">New custom title for the administrator; 0-16 characters, emoji are not allowed</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1100,7 +1151,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatAdministratorCustomTitle(chatId, userId, customTitle).ThrowAsApi(this);
 
     /// <summary>Use this method to set a tag for a regular member in a group or a supergroup. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTags</em> administrator right.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="tag">New tag for the member; 0-16 characters, emoji are not allowed</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1112,7 +1163,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatMemberTag(chatId, userId, tag).ThrowAsApi(this);
 
     /// <summary>Use this method to ban a channel chat in a supergroup or a channel. Until the chat is <see cref="WTelegram.Bot.UnbanChatSenderChat">unbanned</see>, the owner of the banned chat won't be able to send messages on behalf of <b>any of their channels</b>. The bot must be an administrator in the supergroup or channel for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="senderChatId">Unique identifier of the target sender chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task BanChatSenderChat(
@@ -1122,7 +1173,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to unban a previously banned channel chat in a supergroup or channel. The bot must be an administrator for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="senderChatId">Unique identifier of the target sender chat</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnbanChatSenderChat(
@@ -1132,7 +1183,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).BanUnbanChatSenderChat(chatId, senderChatId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to set default chat permissions for all members. The bot must be an administrator in the group or a supergroup for this to work and must have the <em>CanRestrictMembers</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="permissions">An object for new default chat permissions</param>
     /// <param name="useIndependentChatPermissions">Pass <see langword="true"/> if chat permissions are set independently. Otherwise, the <em>CanSendOtherMessages</em> and <em>CanAddWebPagePreviews</em> permissions will imply the <em>CanSendMessages</em>, <em>CanSendAudios</em>, <em>CanSendDocuments</em>, <em>CanSendPhotos</em>, <em>CanSendVideos</em>, <em>CanSendVideoNotes</em>, and <em>CanSendVoiceNotes</em> permissions; the <em>CanSendPolls</em> permission will imply the <em>CanSendMessages</em> permission.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1145,7 +1196,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to generate a new primary invite link for a chat; any previously generated primary link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
     /// <remarks>Note: Each administrator in a chat generates their own invite links. Bots can't use invite links generated by other administrators. If you want your bot to work with invite links, it will need to generate its own link using <see cref="WTelegram.Bot.ExportChatInviteLink">ExportChatInviteLink</see> or by calling the <see cref="WTelegram.Bot.GetChat">GetChat</see> method. If your bot needs to generate a new primary invite link replacing its previous one, use <see cref="WTelegram.Bot.ExportChatInviteLink">ExportChatInviteLink</see> again.</remarks>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The new invite link as <em>String</em> on success.</returns>
     public async Task<string> ExportChatInviteLink(
@@ -1154,11 +1205,11 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).ExportChatInviteLink(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to create an additional invite link for a chat. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. The link can be revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="name">Invite link name; 0-32 characters</param>
     /// <param name="expireDate">Point in time when the link will expire</param>
     /// <param name="memberLimit">The maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999</param>
-    /// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified</param>
+    /// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The new invite link as <see cref="ChatInviteLink"/> object.</returns>
     public async Task<ChatInviteLink> CreateChatInviteLink(
@@ -1171,12 +1222,12 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CreateChatInviteLink(chatId, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi(this);
 
     /// <summary>Use this method to edit a non-primary invite link created by the bot. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="inviteLink">The invite link to edit</param>
     /// <param name="name">Invite link name; 0-32 characters</param>
     /// <param name="expireDate">Point in time when the link will expire</param>
     /// <param name="memberLimit">The maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999</param>
-    /// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified</param>
+    /// <param name="createsJoinRequest"><see langword="true"/>, if users joining the chat via the link need to be approved by chat administrators. If <see langword="true"/>, <paramref name="memberLimit"/> can't be specified.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited invite link as a <see cref="ChatInviteLink"/> object.</returns>
     public async Task<ChatInviteLink> EditChatInviteLink(
@@ -1190,7 +1241,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditChatInviteLink(chatId, inviteLink, name, expireDate, memberLimit, createsJoinRequest).ThrowAsApi(this);
 
     /// <summary>Use this method to create a <a href="https://telegram.org/blog/superchannels-star-reactions-subscriptions#star-subscriptions">subscription invite link</a> for a channel chat. The bot must have the <em>CanInviteUsers</em> administrator rights. The link can be edited using the method <see cref="WTelegram.Bot.EditChatSubscriptionInviteLink">EditChatSubscriptionInviteLink</see> or revoked using the method <see cref="WTelegram.Bot.RevokeChatInviteLink">RevokeChatInviteLink</see>.</summary>
-    /// <param name="chatId">Unique identifier for the target channel chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target channel chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="subscriptionPeriod">The number of seconds the subscription will be active for before the next payment. Currently, it must always be 2592000 (30 days).</param>
     /// <param name="subscriptionPrice">The amount of Telegram Stars a user must pay initially and after each subsequent subscription period to be a member of the chat; 1-10000</param>
     /// <param name="name">Invite link name; 0-32 characters</param>
@@ -1205,7 +1256,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CreateChatSubscriptionInviteLink(chatId, subscriptionPeriod, subscriptionPrice, name).ThrowAsApi(this);
 
     /// <summary>Use this method to edit a subscription invite link created by the bot. The bot must have the <em>CanInviteUsers</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="inviteLink">The invite link to edit</param>
     /// <param name="name">Invite link name; 0-32 characters</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1218,7 +1269,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditChatSubscriptionInviteLink(chatId, inviteLink, name).ThrowAsApi(this);
 
     /// <summary>Use this method to revoke an invite link created by the bot. If the primary link is revoked, a new link is automatically generated. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier of the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier of the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="inviteLink">The invite link to revoke</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The revoked invite link as <see cref="ChatInviteLink"/> object.</returns>
@@ -1229,7 +1280,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).RevokeChatInviteLink(chatId, inviteLink).ThrowAsApi(this);
 
     /// <summary>Use this method to approve a chat join request. The bot must be an administrator in the chat for this to work and must have the <em>CanInviteUsers</em> administrator right.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task<bool> ApproveChatJoinRequest(
@@ -1239,7 +1290,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to decline a chat join request. The bot must be an administrator in the chat for this to work and must have the <em>CanInviteUsers</em> administrator right.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task<bool> DeclineChatJoinRequest(
@@ -1249,7 +1300,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).HideChatJoinRequest(chatId, userId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="photo">New chat photo, uploaded using <see cref="InputFileStream"/></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetChatPhoto(
@@ -1259,7 +1310,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, photo).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteChatPhoto(
         ChatId chatId,
@@ -1267,7 +1318,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatPhoto(chatId, null).ThrowAsApi(this);
 
     /// <summary>Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="title">New chat title, 1-128 characters</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetChatTitle(
@@ -1277,7 +1328,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatTitle(chatId, title).ThrowAsApi(this);
 
     /// <summary>Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="description">New chat description, 0-255 characters</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetChatDescription(
@@ -1287,7 +1338,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatDescription(chatId, description).ThrowAsApi(this);
 
     /// <summary>Use this method to add a message to the list of pinned messages in a chat. In private chats and channel direct messages chats, all non-service messages can be pinned. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to pin messages in groups and channels respectively.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="messageId">Identifier of a message to pin</param>
     /// <param name="disableNotification">Pass <see langword="true"/> if it is not necessary to send a notification to all chat members about the new pinned message. Notifications are always disabled in channels and private chats.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be pinned</param>
@@ -1301,7 +1352,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId, true, disableNotification, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to remove a message from the list of pinned messages in a chat. In private chats and channel direct messages chats, all messages can be unpinned. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to unpin messages in groups and channels respectively.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="messageId">Identifier of the message to unpin. Required if <paramref name="businessConnectionId"/> is specified. If not specified, the most recent pinned message (by sending date) will be unpinned.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be unpinned</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -1313,7 +1364,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).PinUnpinChatMessage(chatId, messageId ?? default, false, default, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a chat. In private chats and channel direct messages chats, no additional rights are required to unpin all pinned messages. Conversely, the bot must be an administrator with the 'CanPinMessages' right or the 'CanEditMessages' right to unpin all pinned messages in groups and channels respectively.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnpinAllChatMessages(
         ChatId chatId,
@@ -1321,7 +1372,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method for your bot to leave a group, supergroup or channel.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>). Channel direct messages chats aren't supported; leave the corresponding channel instead.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel in the format <c>@username</c>. Channel direct messages chats aren't supported; leave the corresponding channel instead.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task LeaveChat(
         ChatId chatId,
@@ -1329,7 +1380,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).LeaveChat(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get up-to-date information about the chat.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>A <see cref="ChatFullInfo"/> object on success.</returns>
     public async Task<ChatFullInfo> GetChat(
@@ -1337,17 +1388,19 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetChat(chatId).ThrowAsApi(this);
 
-    /// <summary>Use this method to get a list of administrators in a chat, which aren't bots.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <summary>Use this method to get a list of administrators in a chat.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel in the format <c>@username</c></param>
+    /// <param name="returnBots">Pass <see langword="true"/> to additionally receive all bots that are administrators of the chat. By default, bots other than the current bot are omitted.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An Array of <see cref="ChatMember"/> objects.</returns>
     public async Task<ChatMember[]> GetChatAdministrators(
         ChatId chatId,
+        bool returnBots = default,
         CancellationToken cancellationToken = default
-    ) => await ThrowIfCancelled(cancellationToken).GetChatAdministrators(chatId).ThrowAsApi(this);
+    ) => await ThrowIfCancelled(cancellationToken).GetChatAdministrators(chatId, returnBots).ThrowAsApi(this);
 
     /// <summary>Use this method to get the number of members in a chat.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns><em>Int</em> on success.</returns>
     public async Task<int> GetChatMemberCount(
@@ -1356,7 +1409,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).GetChatMemberCount(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to get information about a member of a chat. The method is only guaranteed to work for other users if the bot is an administrator in the chat.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup or channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>A <see cref="ChatMember"/> object on success.</returns>
@@ -1366,8 +1419,19 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetChatMember(chatId, userId).ThrowAsApi(this);
 
+    /// <summary>Use this method to get the last messages from the personal chat (i.e., the chat currently added to their profile) of a given user.</summary>
+    /// <param name="userId">Unique identifier for the target user</param>
+    /// <param name="limit">The maximum number of messages to return; 1-20</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>An array of <see cref="Message"/> objects is returned.</returns>
+    public async Task<Message[]> GetUserPersonalChatMessages(
+        long userId,
+        int limit,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetUserPersonalChatMessages(userId, limit).ThrowAsApi(this);
+
     /// <summary>Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Use the field <em>CanSetStickerSet</em> optionally returned in <see cref="WTelegram.Bot.GetChat">GetChat</see> requests to check if the bot can use this method.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="stickerSetName">Name of the sticker set to be set as the group sticker set</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetChatStickerSet(
@@ -1377,7 +1441,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatStickerSet(chatId, stickerSetName).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate administrator rights. Use the field <em>CanSetStickerSet</em> optionally returned in <see cref="WTelegram.Bot.GetChat">GetChat</see> requests to check if the bot can use this method.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteChatStickerSet(
         ChatId chatId,
@@ -1392,9 +1456,9 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).GetForumTopicIconStickers().ThrowAsApi(this);
 
     /// <summary>Use this method to create a topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator right.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="name">Topic name, 1-128 characters</param>
-    /// <param name="iconColor">Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F)</param>
+    /// <param name="iconColor">Color of the topic icon in RGB format. Currently, must be one of 7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F).</param>
     /// <param name="iconCustomEmojiId">Unique identifier of the custom emoji shown as the topic icon. Use <see cref="WTelegram.Bot.GetForumTopicIconStickers">GetForumTopicIconStickers</see> to get all allowed custom emoji identifiers.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>Information about the created topic as a <see cref="ForumTopic"/> object.</returns>
@@ -1407,10 +1471,10 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CreateForumTopic(chatId, name, iconColor, iconCustomEmojiId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit name and icon of a topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
-    /// <param name="name">New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept</param>
-    /// <param name="iconCustomEmojiId">New unique identifier of the custom emoji shown as the topic icon. Use <see cref="WTelegram.Bot.GetForumTopicIconStickers">GetForumTopicIconStickers</see> to get all allowed custom emoji identifiers. Pass an empty string to remove the icon. If not specified, the current icon will be kept</param>
+    /// <param name="name">New topic name, 0-128 characters. If not specified or empty, the current name of the topic will be kept.</param>
+    /// <param name="iconCustomEmojiId">New unique identifier of the custom emoji shown as the topic icon. Use <see cref="WTelegram.Bot.GetForumTopicIconStickers">GetForumTopicIconStickers</see> to get all allowed custom emoji identifiers. Pass an empty string to remove the icon. If not specified, the current icon will be kept.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditForumTopic(
         ChatId chatId,
@@ -1421,7 +1485,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, messageThreadId, name, iconCustomEmojiId).ThrowAsApi(this);
 
     /// <summary>Use this method to close an open topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task CloseForumTopic(
@@ -1431,7 +1495,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, true).ThrowAsApi(this);
 
     /// <summary>Use this method to reopen a closed topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights, unless it is the creator of the topic.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task ReopenForumTopic(
@@ -1441,7 +1505,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, messageThreadId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a forum topic along with all its messages in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanDeleteMessages</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteForumTopic(
@@ -1451,7 +1515,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).DeleteForumTopic(chatId, messageThreadId).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a forum topic in a forum supergroup chat or a private chat with a user. In the case of a supergroup chat the bot must be an administrator in the chat for this to work and must have the <em>CanPinMessages</em> administrator right in the supergroup.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="messageThreadId">Unique identifier for the target message thread of the forum topic</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnpinAllForumTopicMessages(
@@ -1461,7 +1525,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).UnpinAllMessages(chatId, messageThreadId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit the name of the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="name">New topic name, 1-128 characters</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditGeneralForumTopic(
@@ -1471,7 +1535,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditForumTopic(chatId, 1, name).ThrowAsApi(this);
 
     /// <summary>Use this method to close an open 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task CloseGeneralForumTopic(
         ChatId chatId,
@@ -1479,7 +1543,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, true).ThrowAsApi(this);
 
     /// <summary>Use this method to reopen a closed 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights. The topic will be automatically unhidden if it was hidden.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task ReopenGeneralForumTopic(
         ChatId chatId,
@@ -1487,7 +1551,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).CloseReopenForumTopic(chatId, 1, false).ThrowAsApi(this);
 
     /// <summary>Use this method to hide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights. The topic will be automatically closed if it was open.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task HideGeneralForumTopic(
         ChatId chatId,
@@ -1495,7 +1559,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId).ThrowAsApi(this);
 
     /// <summary>Use this method to unhide the 'General' topic in a forum supergroup chat. The bot must be an administrator in the chat for this to work and must have the <em>CanManageTopics</em> administrator rights.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnhideGeneralForumTopic(
         ChatId chatId,
@@ -1503,7 +1567,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).HideGeneralForumTopic(chatId, false).ThrowAsApi(this);
 
     /// <summary>Use this method to clear the list of pinned messages in a General forum topic. The bot must be an administrator in the chat for this to work and must have the <em>CanPinMessages</em> administrator right in the supergroup.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup (in the format <c>@supergroupusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task UnpinAllGeneralForumTopicMessages(
         ChatId chatId,
@@ -1513,7 +1577,7 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to send answers to callback queries sent from <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboards</a>. The answer will be displayed to the user as a notification at the top of the chat screen or as an alert</summary>
     /// <remarks>Alternatively, the user can be redirected to the specified Game URL. For this option to work, you must first create a game for your bot via <a href="https://t.me/botfather">@BotFather</a> and accept the terms. Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter.</remarks>
     /// <param name="callbackQueryId">Unique identifier for the query to be answered</param>
-    /// <param name="text">Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters</param>
+    /// <param name="text">Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters.</param>
     /// <param name="showAlert">If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat screen. Defaults to <see langword="false"/>.</param>
     /// <param name="url">URL that will be opened by the user's client. If you have created a <see cref="Game"/> and accepted the conditions via <a href="https://t.me/botfather">@BotFather</a>, specify the URL that opens your game - note that this will only work if the query comes from a <see cref="InlineKeyboardButton"><em>CallbackGame</em></see> button.<br/><br/>Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter.</param>
     /// <param name="cacheTime">The maximum amount of time in seconds that the result of the callback query may be cached client-side. Telegram apps will support caching starting in version 3.14. Defaults to 0.</param>
@@ -1527,8 +1591,19 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).AnswerCallbackQuery(callbackQueryId, text, showAlert, url, cacheTime ?? 0).ThrowAsApi(this);
 
+    /// <summary>Use this method to reply to a received guest message.</summary>
+    /// <param name="guestQueryId">Unique identifier for the query to be answered</param>
+    /// <param name="result">An object describing the message to be sent</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="SentGuestMessage"/> object is returned.</returns>
+    public async Task<SentGuestMessage> AnswerGuestQuery(
+        string guestQueryId,
+        InlineQueryResult result,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).AnswerGuestQuery(guestQueryId, result).ThrowAsApi(this);
+
     /// <summary>Use this method to get the list of boosts added to a chat by a user. Requires administrator rights in the chat.</summary>
-    /// <param name="chatId">Unique identifier for the chat or username of the channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the chat or username of the channel in the format <c>@username</c></param>
     /// <param name="userId">Unique identifier of the target user</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>A <see cref="UserChatBoosts"/> object.</returns>
@@ -1565,10 +1640,31 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).GetManagedBotToken(userId, revoke: true).ThrowAsApi(this);
 
+    /// <summary>Use this method to get the access settings of a managed bot.</summary>
+    /// <param name="userId">User identifier of the managed bot whose access settings will be returned</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    /// <returns>A <see cref="BotAccessSettings"/> object on success.</returns>
+    public async Task<BotAccessSettings> GetManagedBotAccessSettings(
+        long userId,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).GetManagedBotAccessSettings(userId).ThrowAsApi(this);
+
+    /// <summary>Use this method to change the access settings of a managed bot.</summary>
+    /// <param name="userId">User identifier of the managed bot whose access settings will be changed</param>
+    /// <param name="isAccessRestricted">Pass <see langword="true"/>, if only selected users can access the bot. The bot's owner can always access it.</param>
+    /// <param name="addedUserIds">A list of up to 10 identifiers of users who will have access to the bot in addition to its owner. Ignored if <paramref name="isAccessRestricted"/> is false.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task SetManagedBotAccessSettings(
+        long userId,
+        bool isAccessRestricted,
+        IEnumerable<long>? addedUserIds,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).SetManagedBotAccessSettings(userId, isAccessRestricted, addedUserIds ?? []).ThrowAsApi(this);
+
     /// <summary>Use this method to change the list of the bot's commands. See <a href="https://core.telegram.org/bots/features#commands">this manual</a> for more details about bot commands.</summary>
     /// <param name="commands">A list of bot commands to be set as the list of the bot's commands. At most 100 commands can be specified.</param>
     /// <param name="scope">An object, describing scope of users for which the commands are relevant. Defaults to <see cref="BotCommandScopeDefault"/>.</param>
-    /// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands</param>
+    /// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetMyCommands(
         IEnumerable<BotCommand> commands,
@@ -1579,7 +1675,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to delete the list of the bot's commands for the given scope and user language. After deletion, <a href="https://core.telegram.org/bots/api#determining-list-of-commands">higher level commands</a> will be shown to affected users.</summary>
     /// <param name="scope">An object, describing scope of users for which the commands are relevant. Defaults to <see cref="BotCommandScopeDefault"/>.</param>
-    /// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands</param>
+    /// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteMyCommands(
         BotCommandScope? scope = default,
@@ -1670,8 +1766,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).RemoveMyProfilePhoto().ThrowAsApi(this);
 
     /// <summary>Use this method to change the bot's menu button in a private chat, or the default menu button.</summary>
-    /// <param name="chatId">Unique identifier for the target private chat. If not specified, default bot's menu button will be changed</param>
-    /// <param name="menuButton">An object for the bot's new menu button. Defaults to <see cref="MenuButtonDefault"/></param>
+    /// <param name="chatId">Unique identifier for the target private chat. If not specified, the bot's default menu button will be changed.</param>
+    /// <param name="menuButton">An object for the bot's new menu button. Defaults to <see cref="MenuButtonDefault"/>.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetChatMenuButton(
         long? chatId = default,
@@ -1680,7 +1776,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).SetChatMenuButton(chatId, menuButton).ThrowAsApi(this);
 
     /// <summary>Use this method to get the current value of the bot's menu button in a private chat, or the default menu button.</summary>
-    /// <param name="chatId">Unique identifier for the target private chat. If not specified, default bot's menu button will be returned</param>
+    /// <param name="chatId">Unique identifier for the target private chat. If not specified, the bot's default menu button will be returned.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns><see cref="MenuButton"/> on success.</returns>
     public async Task<MenuButton> GetChatMenuButton(
@@ -1761,7 +1857,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).VerifyUser(userId, customDescription).ThrowAsApi(this);
 
     /// <summary>Verifies a chat <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> which is represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>). Channel direct messages chats can't be verified.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>. Channel direct messages chats can't be verified.</param>
     /// <param name="customDescription">Custom description for the verification; 0-70 characters. Must be empty if the organization isn't allowed to provide a custom verification description.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task VerifyChat(
@@ -1779,7 +1875,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).RemoveUserVerification(userId).ThrowAsApi(this);
 
     /// <summary>Removes verification from a chat that is currently verified <a href="https://telegram.org/verify#third-party-verification">on behalf of the organization</a> represented by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot or channel in the format <c>@username</c></param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task RemoveChatVerification(
         ChatId chatId,
@@ -1800,7 +1896,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Delete messages on behalf of a business account. Requires the <em>CanDeleteSentMessages</em> business bot right to delete messages sent by the bot itself, or the <em>CanDeleteAllMessages</em> business bot right to delete any message.</summary>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which to delete the messages</param>
-    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. All messages must be from the same chat. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteBusinessMessages(
         string businessConnectionId,
@@ -1904,7 +2000,7 @@ public partial class WTelegramBotClient
     /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
     /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
     /// <param name="offset">Offset of the first entry to return as received from the previous request; use empty string to get the first chunk of results</param>
-    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns><see cref="OwnedGifts"/> on success.</returns>
     public async Task<OwnedGifts> GetBusinessAccountGifts(
@@ -1931,7 +2027,7 @@ public partial class WTelegramBotClient
     /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
     /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
     /// <param name="offset">Offset of the first entry to return as received from the previous request; use an empty string to get the first chunk of results</param>
-    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns><see cref="OwnedGifts"/> on success.</returns>
     public async Task<OwnedGifts> GetUserGifts(
@@ -1948,7 +2044,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).GetUserGifts(userId, excludeUnlimited, excludeLimitedUpgradable, excludeLimitedNonUpgradable, excludeFromBlockchain, excludeUnique, sortByPrice, offset, limit).ThrowAsApi(this);
 
     /// <summary>Returns the gifts owned by a chat.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target channel in the format <c>@username</c></param>
     /// <param name="excludeUnsaved">Pass <see langword="true"/> to exclude gifts that aren't saved to the chat's profile page. Always <see langword="true"/>, unless the bot has the <em>CanPostMessages</em> administrator right in the channel.</param>
     /// <param name="excludeSaved">Pass <see langword="true"/> to exclude gifts that are saved to the chat's profile page. Always <see langword="false"/>, unless the bot has the <em>CanPostMessages</em> administrator right in the channel.</param>
     /// <param name="excludeUnlimited">Pass <see langword="true"/> to exclude gifts that can be purchased an unlimited number of times</param>
@@ -1958,7 +2054,7 @@ public partial class WTelegramBotClient
     /// <param name="excludeUnique">Pass <see langword="true"/> to exclude unique gifts</param>
     /// <param name="sortByPrice">Pass <see langword="true"/> to sort results by gift price instead of send date. Sorting is applied before pagination.</param>
     /// <param name="offset">Offset of the first entry to return as received from the previous request; use an empty string to get the first chunk of results</param>
-    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100</param>
+    /// <param name="limit">The maximum number of gifts to be returned; 1-100. Defaults to 100.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns><see cref="OwnedGifts"/> on success.</returns>
     public async Task<OwnedGifts> GetChatGifts(
@@ -2125,7 +2221,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Stores a keyboard button that can be used by a user within a Mini App.</summary>
     /// <param name="userId">Unique identifier of the target user that can use the button</param>
-    /// <param name="button">An object describing the button to be saved. The button must be of the type <em>RequestUsers</em>, <em>RequestChat</em>, or <em>RequestManagedBot</em></param>
+    /// <param name="button">An object describing the button to be saved. The button must be of the type <em>RequestUsers</em>, <em>RequestChat</em>, or <em>RequestManagedBot</em>.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>A <see cref="PreparedKeyboardButton"/> object.</returns>
     public async Task<PreparedKeyboardButton> SavePreparedKeyboardButton(
@@ -2139,13 +2235,13 @@ public partial class WTelegramBotClient
     #region Updating messages
 
     /// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message to edit</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message to edit.</param>
     /// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2154,41 +2250,41 @@ public partial class WTelegramBotClient
         int messageId,
         string text,
         ParseMode parseMode = default,
-        IEnumerable<MessageEntity>? entities = default,
-        LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        LinkPreviewOptions? linkPreviewOptions = default,
+        IEnumerable<MessageEntity>? entities = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).EditMessageText(chatId, messageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit text and <a href="https://core.telegram.org/bots/api#games">game</a> messages.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
     /// <param name="text">New text of the message, 1-4096 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
-    /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="linkPreviewOptions">Link preview generation options for the message</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageText(
         string inlineMessageId,
         string text,
         ParseMode parseMode = default,
-        IEnumerable<MessageEntity>? entities = default,
-        LinkPreviewOptions? linkPreviewOptions = default,
         InlineKeyboardMarkup? replyMarkup = default,
+        LinkPreviewOptions? linkPreviewOptions = default,
+        IEnumerable<MessageEntity>? entities = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).EditMessageText(inlineMessageId, text, parseMode, entities, linkPreviewOptions, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit captions of messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message to edit</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message to edit.</param>
     /// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2197,38 +2293,38 @@ public partial class WTelegramBotClient
         int messageId,
         string? caption,
         ParseMode parseMode = default,
+        InlineKeyboardMarkup? replyMarkup = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
-        InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).EditMessageCaption(chatId, messageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit captions of messages.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
     /// <param name="caption">New caption of the message, 0-1024 characters after entities parsing</param>
     /// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
     /// <param name="showCaptionAboveMedia">Pass <see langword="true"/>, if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageCaption(
         string inlineMessageId,
         string? caption,
         ParseMode parseMode = default,
+        InlineKeyboardMarkup? replyMarkup = default,
         IEnumerable<MessageEntity>? captionEntities = default,
         bool showCaptionAboveMedia = default,
-        InlineKeyboardMarkup? replyMarkup = default,
         string? businessConnectionId = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).EditMessageCaption(inlineMessageId, caption, parseMode, captionEntities, showCaptionAboveMedia, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
-    /// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message to edit</param>
+    /// <summary>Use this method to edit animation, audio, document, live photo, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo, a live photo, or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message to edit.</param>
     /// <param name="media">An object for a new media content of the message</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2241,10 +2337,10 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).EditMessageMedia(chatId, messageId, media, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
-    /// <summary>Use this method to edit animation, audio, document, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
+    /// <summary>Use this method to edit animation, audio, document, live photo, photo, or video messages, or to add media to text messages. If a message is part of a message album, then it can be edited only to an audio for audio albums, only to a document for document albums and to a photo, a live photo, or a video otherwise. When an inline message is edited, a new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</summary>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
     /// <param name="media">An object for a new media content of the message</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageMedia(
@@ -2256,15 +2352,15 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageMedia(inlineMessageId, media, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message to edit</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message to edit.</param>
     /// <param name="latitude">Latitude of new location</param>
     /// <param name="longitude">Longitude of new location</param>
-    /// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
+    /// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged.</param>
     /// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
     /// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
     /// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2283,14 +2379,14 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(chatId, messageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit live location messages. A location can be edited until its <paramref name="livePeriod"/> expires or editing is explicitly disabled by a call to <see cref="WTelegram.Bot.StopMessageLiveLocation">StopMessageLiveLocation</see>.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
     /// <param name="latitude">Latitude of new location</param>
     /// <param name="longitude">Longitude of new location</param>
-    /// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged</param>
+    /// <param name="livePeriod">New period in seconds during which the location can be updated, starting from the message send date. If 0x7FFFFFFF is specified, then the location can be updated forever. Otherwise, the new value must not exceed the current <paramref name="livePeriod"/> by more than a day, and the live location expiration date must remain within the next 90 days. If not specified, then <paramref name="livePeriod"/> remains unchanged.</param>
     /// <param name="horizontalAccuracy">The radius of uncertainty for the location, measured in meters; 0-1500</param>
     /// <param name="heading">Direction in which the user is moving, in degrees. Must be between 1 and 360 if specified.</param>
     /// <param name="proximityAlertRadius">The maximum distance for proximity alerts about approaching another chat member, in meters. Must be between 1 and 100000 if specified.</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageLiveLocation(
@@ -2307,9 +2403,9 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageLiveLocation(inlineMessageId, latitude, longitude, livePeriod ?? 0, (int)(horizontalAccuracy ?? 0), heading ?? 0, proximityAlertRadius ?? 0, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message with live location to stop</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message with live location to stop.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2322,8 +2418,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).StopMessageLiveLocation(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop updating a live location message before <em>LivePeriod</em> expires.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
-    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
+    /// <param name="replyMarkup">An object for a new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task StopMessageLiveLocation(
@@ -2335,7 +2431,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to edit a checklist on behalf of a connected business account.</summary>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="chatId">Unique identifier for the target chat</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot in the format <c>@username</c></param>
     /// <param name="messageId">Unique identifier for the target message</param>
     /// <param name="checklist">An object for the new checklist</param>
     /// <param name="replyMarkup">An object for the new <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a> for the message</param>
@@ -2343,7 +2439,7 @@ public partial class WTelegramBotClient
     /// <returns>The edited <see cref="Message"/> is returned.</returns>
     public async Task<Message> EditMessageChecklist(
         string businessConnectionId,
-        long chatId,
+        ChatId chatId,
         int messageId,
         InputChecklist checklist,
         InlineKeyboardMarkup? replyMarkup = default,
@@ -2351,9 +2447,9 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageChecklist(businessConnectionId, chatId, messageId, checklist, replyMarkup).ThrowAsApi(this);
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageId">Identifier of the message to edit</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c>.</param>
+    /// <param name="messageId">Identifier of the message to edit.</param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The edited <see cref="Message"/> is returned</returns>
@@ -2366,8 +2462,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(chatId, messageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to edit only the reply markup of messages.</summary>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
-    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
+    /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task EditMessageReplyMarkup(
@@ -2378,9 +2474,9 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).EditMessageReplyMarkup(inlineMessageId, replyMarkup, businessConnectionId).ThrowAsApi(this);
 
     /// <summary>Use this method to stop a poll which was sent by the bot.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="messageId">Identifier of the original message with the poll</param>
-    /// <param name="replyMarkup">An object for a new message <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>.</param>
+    /// <param name="replyMarkup">An object for a new message <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The stopped <see cref="Poll"/> is returned.</returns>
@@ -2395,7 +2491,7 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to approve a suggested post in a direct messages chat. The bot must have the 'CanPostMessages' administrator right in the corresponding channel chat.</summary>
     /// <param name="chatId">Unique identifier for the target direct messages chat</param>
     /// <param name="messageId">Identifier of a suggested post message to approve</param>
-    /// <param name="sendDate">Point in time when the post is expected to be published; omit if the date has already been specified when the suggested post was created. If specified, then the date must be not more than 2678400 seconds (30 days) in the future</param>
+    /// <param name="sendDate">Point in time when the post is expected to be published; omit if the date has already been specified when the suggested post was created. If specified, then the date must be not more than 2678400 seconds (30 days) in the future.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task ApproveSuggestedPost(
         long chatId,
@@ -2417,7 +2513,7 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).DeclineSuggestedPost(chatId, messageId, comment).ThrowAsApi(this);
 
     /// <summary>Use this method to delete a message, including service messages, with the following limitations:<br/>- A message can only be deleted if it was sent less than 48 hours ago.<br/>- Service messages about a supergroup, channel, or forum topic creation can't be deleted.<br/>- A dice message in a private chat can only be deleted if it was sent more than 24 hours ago.<br/>- Bots can delete outgoing messages in private chats, groups, and supergroups.<br/>- Bots can delete incoming messages in private chats.<br/>- Bots granted <em>CanPostMessages</em> permissions can delete outgoing messages in channels.<br/>- If the bot is an administrator of a group, it can delete any message there.<br/>- If the bot has <em>CanDeleteMessages</em> administrator right in a supergroup or a channel, it can delete any message there.<br/>- If the bot has <em>CanManageDirectMessages</em> administrator right in a channel, it can delete any message in the corresponding direct messages chat.<br/>Returns <em>True</em> on success.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="messageId">Identifier of the message to delete</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteMessage(
@@ -2427,8 +2523,8 @@ public partial class WTelegramBotClient
     ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageId).ThrowAsApi(this);
 
     /// <summary>Use this method to delete multiple messages simultaneously. If some of the specified messages can't be found, they are skipped.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
-    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
+    /// <param name="messageIds">A list of 1-100 identifiers of messages to delete. See <see cref="WTelegram.Bot.DeleteMessage">DeleteMessage</see> for limitations on which messages can be deleted.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task DeleteMessages(
         ChatId chatId,
@@ -2436,22 +2532,48 @@ public partial class WTelegramBotClient
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).DeleteMessages(chatId, messageIds.ToArray()).ThrowAsApi(this);
 
+    /// <summary>Use this method to remove a reaction from a message in a group or a supergroup chat. The bot must have the 'CanDeleteMessages' administrator right in the chat.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
+    /// <param name="messageId">Identifier of the target message</param>
+    /// <param name="userId">Identifier of the user whose reaction will be removed, if the reaction was added by a user</param>
+    /// <param name="actorChatId">Identifier of the chat whose reaction will be removed, if the reaction was added by a chat</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteMessageReaction(
+        ChatId chatId,
+        int messageId,
+        long? userId = default,
+        long? actorChatId = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteMessageReaction(chatId, messageId, userId, actorChatId).ThrowAsApi(this);
+
+    /// <summary>Use this method to remove up to 10000 recent reactions in a group or a supergroup chat added by a given user or chat. The bot must have the 'CanDeleteMessages' administrator right in the chat.</summary>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
+    /// <param name="userId">Identifier of the user whose reactions will be removed, if the reactions were added by a user</param>
+    /// <param name="actorChatId">Identifier of the chat whose reactions will be removed, if the reactions were added by a chat</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
+    public async Task DeleteAllMessageReactions(
+        ChatId chatId,
+        long? userId = default,
+        long? actorChatId = default,
+        CancellationToken cancellationToken = default
+    ) => await ThrowIfCancelled(cancellationToken).DeleteAllMessageReactions(chatId, userId, actorChatId).ThrowAsApi(this);
+
     #endregion Updating messages
 
     #region Stickers
 
     /// <summary>Use this method to send static .WEBP, <a href="https://telegram.org/blog/animated-stickers">animated</a> .TGS, or <a href="https://telegram.org/blog/video-stickers-better-reactions">video</a> .WEBM stickers.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="sticker">Sticker to send. Pass a FileId as String to send a file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a .WEBP sticker from the Internet, or upload a new .WEBP, .TGS, or .WEBM sticker using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Video and animated stickers can't be sent via an HTTP URL.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
-    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user</param>
+    /// <param name="replyMarkup">Additional interface options. An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>, <a href="https://core.telegram.org/bots/features#keyboards">custom reply keyboard</a>, instructions to remove a reply keyboard or to force a reply from the user.</param>
     /// <param name="emoji">Emoji associated with the sticker; only for just uploaded stickers</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -2622,7 +2744,7 @@ public partial class WTelegramBotClient
 
     /// <summary>Use this method to set the thumbnail of a custom emoji sticker set.</summary>
     /// <param name="name">Sticker set name</param>
-    /// <param name="customEmojiId">Custom emoji identifier of a sticker from the sticker set; pass an empty string to drop the thumbnail and use the first sticker as the thumbnail.</param>
+    /// <param name="customEmojiId">Custom emoji identifier of a sticker from the sticker set; pass an empty string to drop the thumbnail and use the first sticker as the thumbnail</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetCustomEmojiStickerSetThumbnail(
         string name,
@@ -2665,7 +2787,7 @@ public partial class WTelegramBotClient
     #region Payments
 
     /// <summary>Use this method to send invoices.</summary>
-    /// <param name="chatId">Unique identifier for the target chat or username of the target channel (in the format <c>@channelusername</c>)</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
     /// <param name="title">Product name, 1-32 characters</param>
     /// <param name="description">Product description, 1-255 characters</param>
     /// <param name="payload">Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use it for your internal processes.</param>
@@ -2688,12 +2810,12 @@ public partial class WTelegramBotClient
     /// <param name="isFlexible">Pass <see langword="true"/> if the final price depends on the shipping method. Ignored for payments in <a href="https://t.me/BotNews/90">Telegram Stars</a>.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Pay <c>total price</c>' button will be shown. If not empty, the first button must be a Pay button.</param>
-    /// <param name="startParameter">Unique deep-linking parameter. If left empty, <b>forwarded copies</b> of the sent message will have a <em>Pay</em> button, allowing multiple users to pay directly from the forwarded message, using the same invoice. If non-empty, forwarded copies of the sent message will have a <em>URL</em> button with a deep link to the bot (instead of a <em>Pay</em> button), with the value used as the start parameter</param>
+    /// <param name="startParameter">Unique deep-linking parameter. If left empty, <b>forwarded copies</b> of the sent message will have a <em>Pay</em> button, allowing multiple users to pay directly from the forwarded message, using the same invoice. If non-empty, forwarded copies of the sent message will have a <em>URL</em> button with a deep link to the bot (instead of a <em>Pay</em> button), with the value used as the start parameter.</param>
     /// <param name="messageThreadId">Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only</param>
     /// <param name="disableNotification">Sends the message <a href="https://telegram.org/blog/channels-2-0#silent-messages">silently</a>. Users will receive a notification with no sound.</param>
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
     /// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
@@ -2791,7 +2913,7 @@ public partial class WTelegramBotClient
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task AnswerShippingQuery(
         string shippingQueryId,
-        IEnumerable<ShippingOption>? shippingOptions,
+        IEnumerable<ShippingOption>? shippingOptions = default,
         string? errorMessage = default,
         CancellationToken cancellationToken = default
     ) => await ThrowIfCancelled(cancellationToken).AnswerShippingQuery(shippingQueryId, shippingOptions, errorMessage).ThrowAsApi(this);
@@ -2865,7 +2987,7 @@ public partial class WTelegramBotClient
     #region Games
 
     /// <summary>Use this method to send a game.</summary>
-    /// <param name="chatId">Unique identifier for the target chat. Games can't be sent to channel direct messages chats and channel chats.</param>
+    /// <param name="chatId">Unique identifier for the target chat or username of the target bot in the format <c>@username</c>. Games can't be sent to channel direct messages chats and channel chats.</param>
     /// <param name="gameShortName">Short name of the game, serves as the unique identifier for the game. Set up your games via <a href="https://t.me/botfather">@BotFather</a>.</param>
     /// <param name="replyParameters">Description of the message to reply to</param>
     /// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a>. If empty, one 'Play GameTitle' button will be shown. If not empty, the first button must launch the game.</param>
@@ -2874,11 +2996,11 @@ public partial class WTelegramBotClient
     /// <param name="protectContent">Protects the contents of the sent message from forwarding and saving</param>
     /// <param name="messageEffectId">Unique identifier of the message effect to be added to the message; for private chats only</param>
     /// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message will be sent</param>
-    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance</param>
+    /// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The sent <see cref="Message"/> is returned.</returns>
     public async Task<Message> SendGame(
-        long chatId,
+        ChatId chatId,
         string gameShortName,
         ReplyParameters? replyParameters = default,
         InlineKeyboardMarkup? replyMarkup = default,
@@ -2895,9 +3017,9 @@ public partial class WTelegramBotClient
     /// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
     /// <param name="userId">User identifier</param>
     /// <param name="score">New score, must be non-negative</param>
-    /// <param name="chatId">Unique identifier for the target chat</param>
-    /// <param name="messageId">Identifier of the sent message</param>
-    /// <param name="force">Pass <see langword="true"/> if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters</param>
+    /// <param name="chatId">Unique identifier for the target chat.</param>
+    /// <param name="messageId">Identifier of the sent message.</param>
+    /// <param name="force">Pass <see langword="true"/> if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters.</param>
     /// <param name="disableEditMessage">Pass <see langword="true"/> if the game message should not be automatically edited to include the current scoreboard</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>The <see cref="Message"/> is returned</returns>
@@ -2915,8 +3037,8 @@ public partial class WTelegramBotClient
     /// <remarks>Returns an error, if the new score is not greater than the user's current score in the chat and <paramref name="force"/> is <em>False</em>.</remarks>
     /// <param name="userId">User identifier</param>
     /// <param name="score">New score, must be non-negative</param>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
-    /// <param name="force">Pass <see langword="true"/> if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
+    /// <param name="force">Pass <see langword="true"/> if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters.</param>
     /// <param name="disableEditMessage">Pass <see langword="true"/> if the game message should not be automatically edited to include the current scoreboard</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     public async Task SetGameScore(
@@ -2931,8 +3053,8 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>
     /// <remarks>This method will currently return scores for the target user, plus two of their closest neighbors on each side. Will also return the top three users if the user and their neighbors are not among them. Please note that this behavior is subject to change.</remarks>
     /// <param name="userId">Target user id</param>
-    /// <param name="chatId">Unique identifier for the target chat</param>
-    /// <param name="messageId">Identifier of the sent message</param>
+    /// <param name="chatId">Unique identifier for the target chat.</param>
+    /// <param name="messageId">Identifier of the sent message.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An Array of <see cref="GameHighScore"/> objects.</returns>
     public async Task<GameHighScore[]> GetGameHighScores(
@@ -2945,7 +3067,7 @@ public partial class WTelegramBotClient
     /// <summary>Use this method to get data for high score tables. Will return the score of the specified user and several of their neighbors in a game.</summary>
     /// <remarks>This method will currently return scores for the target user, plus two of their closest neighbors on each side. Will also return the top three users if the user and their neighbors are not among them. Please note that this behavior is subject to change.</remarks>
     /// <param name="userId">Target user id</param>
-    /// <param name="inlineMessageId">Identifier of the inline message</param>
+    /// <param name="inlineMessageId">Identifier of the inline message.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation</param>
     /// <returns>An Array of <see cref="GameHighScore"/> objects.</returns>
     public async Task<GameHighScore[]> GetGameHighScores(

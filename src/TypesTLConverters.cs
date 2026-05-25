@@ -53,6 +53,7 @@ public static class TypesTLConverters
 		user.HasTopicsEnabled = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_view);
 		user.AllowsUsersToCreateTopics = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_can_manage_topics);
 		user.CanManageBots = tlUser.flags2.HasFlag(TL.User.Flags2.bot_can_manage_bots);
+		user.SupportsGuestQueries = tlUser.flags2.HasFlag(TL.User.Flags2.bot_guestchat);
 	}
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
@@ -188,6 +189,7 @@ public static class TypesTLConverters
 					CanAddWebPagePreviews = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.embed_links),
 					CanManageTopics = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
 					CanEditTag = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.edit_rank),
+					CanReactToMessages = !cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_reactions),
 				},
 			_ /*ChannelParticipantLeft*/ => new ChatMemberLeft { User = user, },
 		};
@@ -212,6 +214,7 @@ public static class TypesTLConverters
 		CanPinMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.pin_messages),
 		CanManageTopics = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.manage_topics),
 		CanEditTag = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.edit_rank),
+		CanReactToMessages = !banned_rights.flags.HasFlag(ChatBannedRights.Flags.send_reactions),
 	};
 
 	internal static ChatPermissions LegacyMode(this ChatPermissions permissions, bool? useIndependentChatPermissions)
@@ -243,7 +246,8 @@ public static class TypesTLConverters
 			| (permissions.CanInviteUsers ? 0 : ChatBannedRights.Flags.invite_users)
 			| (permissions.CanPinMessages ? 0 : ChatBannedRights.Flags.pin_messages)
 			| ((permissions.CanManageTopics ?? permissions.CanPinMessages) ? 0 : ChatBannedRights.Flags.manage_topics)
-			| (permissions.CanEditTag? 0 : ChatBannedRights.Flags.edit_rank)
+			| (permissions.CanEditTag ?? permissions.CanPinMessages ? 0 : ChatBannedRights.Flags.edit_rank)
+			| (permissions.CanReactToMessages ?? permissions.CanSendMessages ? 0 : ChatBannedRights.Flags.send_reactions)
 	};
 
 	[return: NotNullIfNotNull(nameof(location))]
@@ -259,25 +263,28 @@ public static class TypesTLConverters
 			HorizontalAccuracy = geo.flags.HasFlag(GeoPoint.Flags.has_accuracy_radius) ? geo.accuracy_radius : null
 		};
 
-	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this TL.ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
-		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => (btn switch
+	internal static Location Location(this TL.MessageMediaGeo mmg)
+	{
+		var location = mmg.geo.Location();
+		if (mmg is MessageMediaGeoLive mmgl)
 		{
-			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
-			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
-			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallbackGame(kbg.text),
-			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPay(kbb.text),
-			KeyboardButtonSwitchInline kbsi => kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ?
-				InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
-				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
-			KeyboardButtonCopy kbco => InlineKeyboardButton.WithCopyText(kbco.text, kbco.copy_text),
-			KeyboardButtonUrlAuth kbua => InlineKeyboardButton.WithLoginUrl(kbua.text, new LoginUrl
-			{
-				Url = kbua.url,
-				ForwardText = kbua.fwd_text,
-			}),
-			KeyboardButtonWebView kbwv => InlineKeyboardButton.WithWebApp(kbwv.text, new WebAppInfo { Url = kbwv.url }),
-			_ => new InlineKeyboardButton(btn.Text),
-		}).WithStyle(btn.Style))));
+			location.LivePeriod = mmgl.period;
+			location.Heading = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_heading) ? mmgl.heading : null;
+			location.ProximityAlertRadius = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_proximity_notification_radius) ? mmgl.proximity_notification_radius : null;
+		}
+		return location;
+	}
+
+	internal static Venue Venue(this TL.MessageMediaVenue mmv) => new()
+	{
+		Location = mmv.geo.Location(),
+		Title = mmv.title,
+		Address = mmv.address,
+		FoursquareId = mmv.provider == "foursquare" ? mmv.venue_id : null,
+		FoursquareType = mmv.provider == "foursquare" ? mmv.venue_type : null,
+		GooglePlaceId = mmv.provider == "gplaces" ? mmv.venue_id : null,
+		GooglePlaceType = mmv.provider == "gplaces" ? mmv.venue_id : null
+	};
 
 	internal static Audio? Audio(this TL.DocumentBase doc, DocumentAttributeAudio? audio = null)
 	{
@@ -329,6 +336,19 @@ public static class TypesTLConverters
 				}.SetFileIds(document.ToFileLocation(), document.dc_id);
 	}
 
+	internal static LivePhoto LivePhoto(this TL.Document document, PhotoSize[]? photo)
+	{
+		var video = document.GetAttribute<DocumentAttributeVideo>();
+		return new LivePhoto
+		{
+			FileSize = document.size,
+			Width = video?.w ?? 0,
+			Height = video?.h ?? 0,
+			Duration = (int)(video?.duration + 0.5 ?? 0.0),
+			MimeType = document.mime_type,
+			Photo = photo
+		}.SetFileIds(document.ToFileLocation(), document.dc_id);
+	}
 	/// <summary>Convert TL.Photo into Bot Types.PhotoSize[]</summary>
 	public static PhotoSize[]? PhotoSizes(this PhotoBase photoBase)
 		=> (photoBase is not Photo photo) ? null : [.. photo.sizes.Select(ps => ps.PhotoSize(photo.ToFileLocation(ps), photo.dc_id))];
@@ -418,6 +438,7 @@ public static class TypesTLConverters
 		return chatPhoto;
 	}
 
+	[return: NotNullIfNotNull(nameof(msg_id))]
 	internal static string? InlineMessageId(this InputBotInlineMessageIDBase? msg_id)
 	{
 		if (msg_id == null) return null;
@@ -758,6 +779,7 @@ public static class TypesTLConverters
 
 	internal static PaidMedia PaidMedia(TL.MessageMedia media) => media switch
 	{
+		MessageMediaPhoto { video: TL.Document video } mmp => new PaidMediaLivePhoto { LivePhoto = video.LivePhoto(mmp.photo.PhotoSizes()) },
 		MessageMediaPhoto mmp => new PaidMediaPhoto { Photo = mmp.photo.PhotoSizes()! },
 		MessageMediaDocument { document: TL.Document document } mmd when mmd.flags.HasFlag(MessageMediaDocument.Flags.video) =>
 			new PaidMediaVideo { Video = document.Video(mmd) },
@@ -925,6 +947,26 @@ public static class TypesTLConverters
 		StarGiftAttributeRarityLegendary => UniqueGiftModelRarity.Legendary,
 		_ => null
 	};
+
+	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this TL.ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
+		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => (btn switch
+		{
+			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
+			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
+			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallbackGame(kbg.text),
+			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPay(kbb.text),
+			KeyboardButtonSwitchInline kbsi => kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ?
+				InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
+				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
+			KeyboardButtonCopy kbco => InlineKeyboardButton.WithCopyText(kbco.text, kbco.copy_text),
+			KeyboardButtonUrlAuth kbua => InlineKeyboardButton.WithLoginUrl(kbua.text, new LoginUrl
+			{
+				Url = kbua.url,
+				ForwardText = kbua.fwd_text,
+			}),
+			KeyboardButtonWebView kbwv => InlineKeyboardButton.WithWebApp(kbwv.text, new WebAppInfo { Url = kbwv.url }),
+			_ => new InlineKeyboardButton(btn.Text),
+		}).WithStyle(btn.Style))));
 
 	internal static T WithStyle<T>(this T ikb, TL.KeyboardButtonStyle? style) where T : IKeyboardButton
 	{

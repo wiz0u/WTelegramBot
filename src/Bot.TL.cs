@@ -177,7 +177,7 @@ public partial class Bot
 	{
 		if (replied?.MessageId > 0)
 		{
-			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId);
+			if (replied.ChatId is not null) peer = await InputPeerChat(replied.ChatId, allowUsersName: true);
 			var msg = await GetMessage(peer, replied.MessageId);
 			if (msg == null && !replied.AllowSendingWithoutReply) throw new WTException("Bad Request: message to reply not found");
 			return msg;
@@ -195,7 +195,7 @@ public partial class Bot
 			else
 			{
 				var targetPeerId = replyToPeer?.ID;
-				replyToPeer = await InputPeerChat(replied.ChatId);
+				replyToPeer = await InputPeerChat(replied.ChatId, allowUsersName: true);
 				if (replyToPeer.ID == targetPeerId) replyToPeer = null;
 			}
 			var monoforum_peer_id = directMessagesTopicId != 0 ? InputPeerUser(directMessagesTopicId) : null;
@@ -425,6 +425,32 @@ public partial class Bot
 		return photo;
 	}
 
+	/// <summary>Return TL structure for the live photo + static photo. Upload the file for InputFileStream</summary>
+	public async Task<TL.InputMedia> InputMediaLivePhoto(InputFile file, InputFile photo, InputPeer peer, bool hasSpoiler = false)
+	{
+		if (file.FileType == FileType.Url || photo.FileType == FileType.Url)
+			throw new WTException("Sending live photos by URL is not supported");
+		var im = await InputMediaPhoto(photo, hasSpoiler);
+		if (file is InputFileId ifi && im is TL.InputMediaPhoto imp)
+		{
+			imp.flags |= TL.InputMediaPhoto.Flags.live_photo;
+			imp.video = await InputDocument(ifi.Id);
+		}
+		else if (file is InputFileStream ifs && im is TL.InputMediaUploadedPhoto imup)
+		{
+			var uploadedFile = await Client.UploadFileAsync(ifs.Content, ifs.FileName, ProgressCallback(ifs));
+			var media = new InputMediaUploadedDocument(uploadedFile, "video/mp4") { flags = hasSpoiler ? TL.InputMediaUploadedDocument.Flags.spoiler : 0 };
+			var messageMedia = await Client.Messages_UploadMedia(peer, media);
+			if (messageMedia is not MessageMediaDocument { document: TL.Document doc })
+				throw new WTException("Unexpected UploadMedia result");
+			imup.flags |= TL.InputMediaUploadedPhoto.Flags.live_photo;
+			imup.video = doc;
+		}
+		else
+			throw new WTException("photo/livePhoto file type mismatch");
+		return im;
+	}
+
 	/// <summary>Return TL structure for the document InputFile. Upload the file for InputFileStream</summary>
 	public async Task<TL.InputMedia> InputMediaDocument(InputFile file, TL.InputPhoto? video_cover = default, int? video_timestamp = default, bool hasSpoiler = false, string? mimeType = null, string? defaultFilename = null)
 	{
@@ -479,6 +505,7 @@ public partial class Bot
 		var tlMedia = media switch
 		{
 			Telegram.Bot.Types.InputMediaPhoto imp => await InputMediaPhoto(media.Media, imp.HasSpoiler),
+			Telegram.Bot.Types.InputMediaLivePhoto imlp => await InputMediaLivePhoto(media.Media, imlp.Photo, peer, imlp.HasSpoiler),
 			Telegram.Bot.Types.InputMediaVideo imv => await InputMediaDocument(media.Media, await UploadMediaPhoto(peer, imv.Cover), imv.StartTimestamp, imv.HasSpoiler),
 			Telegram.Bot.Types.InputMediaAnimation ima => await InputMediaDocument(media.Media, hasSpoiler: ima.HasSpoiler),
 			_ => await InputMediaDocument(media.Media)
@@ -520,6 +547,35 @@ public partial class Bot
 			message = caption,
 			entities = captionEntities?.ToArray(),
 		};
+	}
+
+	internal async Task<TL.InputMedia> InputPollMedia(InputPeer peer, InputMediaType type, object media)
+	{
+		switch (type)
+		{
+			case InputMediaType.Location:
+				var location = (InputMediaLocation)media;
+				return new InputMediaGeoPoint { geo_point = MakeGeoPoint(location.Latitude, location.Longitude, location.HorizontalAccuracy) };
+			case InputMediaType.Sticker:
+				var sticker = (InputMediaSticker)media;
+				var imd = await InputMediaDocument(sticker.Media);
+				if (imd is TL.InputMediaUploadedDocument doc)
+					doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = sticker.Emoji }];
+				return imd;
+			case InputMediaType.Venue:
+				var venue = (Telegram.Bot.Types.InputMediaVenue)media;
+				return new TL.InputMediaVenue
+				{
+					geo_point = new InputGeoPoint { lat = venue.Latitude, lon = venue.Longitude },
+					title = venue.Title,
+					address = venue.Address,
+					provider = venue.GooglePlaceId != null ? "gplaces" : venue.FoursquareId != null ? "foursquare" : null,
+					venue_id = venue.GooglePlaceId ?? venue.FoursquareId,
+					venue_type = venue.GooglePlaceType ?? venue.FoursquareType,
+				};
+			default:
+				return (await InputSingleMedia(peer, (InputMedia)media)).media;
+		}
 	}
 
 	private async Task<InputStickerSetItem> InputStickerSetItem(long userId, InputSticker sticker)
@@ -617,16 +673,20 @@ public partial class Bot
 
 	}
 
-	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, int horizontalAccuracy, int heading, int proximityAlertRadius, int livePeriod = 0)
-	=> new()
+	private static InputGeoPoint MakeGeoPoint(double latitude, double longitude, double? horizontalAccuracy)
+		=> MakeGeoPoint(latitude, longitude, horizontalAccuracy.HasValue ? (int)horizontalAccuracy.Value : 0);
+	private static InputGeoPoint MakeGeoPoint(double latitude, double longitude, int horizontalAccuracy) => new()
 	{
-		geo_point = new InputGeoPoint
-		{
-			lat = latitude,
-			lon = longitude,
-			accuracy_radius = horizontalAccuracy,
-			flags = horizontalAccuracy > 0 ? InputGeoPoint.Flags.has_accuracy_radius : 0
-		},
+		lat = latitude,
+		lon = longitude,
+		accuracy_radius = horizontalAccuracy,
+		flags = horizontalAccuracy > 0 ? InputGeoPoint.Flags.has_accuracy_radius : 0
+	};
+
+	private static InputMediaGeoLive MakeGeoLive(double latitude, double longitude, int horizontalAccuracy,
+		int heading, int proximityAlertRadius, int livePeriod = 0) => new()
+	{
+		geo_point = MakeGeoPoint(latitude, longitude, horizontalAccuracy),
 		period = livePeriod,
 		heading = heading,
 		proximity_notification_radius = proximityAlertRadius,
@@ -787,6 +847,29 @@ public partial class Bot
 						(itmc.LinkPreviewOptions?.IsDisabled == true ? InputBotInlineMessageText.Flags.no_webpage : 0) |
 						(itmc.LinkPreviewOptions?.ShowAboveText == true ? InputBotInlineMessageText.Flags.invert_media : 0)
 			},
+			InputLocationMessageContent ilmc => new InputBotInlineMessageMediaGeo
+			{
+				reply_markup = reply_markup,
+				geo_point = MakeGeoPoint(ilmc.Latitude, ilmc.Longitude, ilmc.HorizontalAccuracy),
+				heading = ilmc.Heading ?? 0,
+				period = ilmc.LivePeriod ?? 0,
+				proximity_notification_radius = ilmc.ProximityAlertRadius ?? 0,
+				flags = (reply_markup != null ? InputBotInlineMessageMediaGeo.Flags.has_reply_markup : 0)
+					| (ilmc.LivePeriod > 0 ? InputBotInlineMessageMediaGeo.Flags.has_period : 0)
+					| (ilmc.Heading.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_heading : 0)
+					| (ilmc.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0)
+			},
+			InputVenueMessageContent ivmc => new InputBotInlineMessageMediaVenue
+			{
+				reply_markup = reply_markup,
+				geo_point = new InputGeoPoint { lat = ivmc.Latitude, lon = ivmc.Longitude },
+				title = ivmc.Title,
+				address = ivmc.Address,
+				provider = ivmc.GooglePlaceId != null ? "gplaces" : ivmc.FoursquareId != null ? "foursquare" : null,
+				venue_id = ivmc.GooglePlaceId ?? ivmc.FoursquareId,
+				venue_type = ivmc.GooglePlaceType ?? ivmc.FoursquareType,
+				flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0
+			},
 			InputContactMessageContent icmc => new InputBotInlineMessageMediaContact
 			{
 				reply_markup = reply_markup,
@@ -795,35 +878,6 @@ public partial class Bot
 				last_name = icmc.LastName,
 				vcard = icmc.Vcard,
 				flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0
-			},
-			InputVenueMessageContent ivmc => new InputBotInlineMessageMediaVenue
-			{
-				reply_markup = reply_markup,
-				geo_point = new InputGeoPoint { lat = ivmc.Latitude, lon = ivmc.Longitude },
-				title = ivmc.Title,
-				address = ivmc.Address,
-				provider = ivmc.GooglePlaceId != null ? "gplaces" : "foursquare",
-				venue_id = ivmc.GooglePlaceId ?? ivmc.FoursquareId,
-				venue_type = ivmc.GooglePlaceType ?? ivmc.FoursquareType,
-				flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0
-			},
-			InputLocationMessageContent ilmc => new InputBotInlineMessageMediaGeo
-			{
-				reply_markup = reply_markup,
-				geo_point = new InputGeoPoint
-				{
-					lat = ilmc.Latitude,
-					lon = ilmc.Longitude,
-					accuracy_radius = (int)(ilmc.HorizontalAccuracy ?? 0),
-					flags = ilmc.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0
-				},
-				heading = ilmc.Heading ?? 0,
-				period = ilmc.LivePeriod ?? 0,
-				proximity_notification_radius = ilmc.ProximityAlertRadius ?? 0,
-				flags = (reply_markup != null ? InputBotInlineMessageMediaGeo.Flags.has_reply_markup : 0)
-					| (ilmc.LivePeriod > 0 ? InputBotInlineMessageMediaGeo.Flags.has_period : 0)
-					| (ilmc.Heading.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_heading : 0)
-					| (ilmc.ProximityAlertRadius.HasValue ? InputBotInlineMessageMediaGeo.Flags.has_proximity_notification_radius : 0)
 			},
 			InputInvoiceMessageContent iimc => new InputBotInlineMessageMediaInvoice
 			{
@@ -859,25 +913,10 @@ public partial class Bot
 			},
 			null => iqr switch
 			{
-				InlineQueryResultContact iqrc => new InputBotInlineMessageMediaContact
-				{
-					reply_markup = reply_markup,
-					phone_number = iqrc.PhoneNumber,
-					first_name = iqrc.FirstName,
-					last_name = iqrc.LastName,
-					vcard = iqrc.Vcard,
-					flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0
-				},
 				InlineQueryResultLocation iqrl => new InputBotInlineMessageMediaGeo
 				{
 					reply_markup = reply_markup,
-					geo_point = new InputGeoPoint
-					{
-						lat = iqrl.Latitude,
-						lon = iqrl.Longitude,
-						accuracy_radius = (int)(iqrl.HorizontalAccuracy ?? 0),
-						flags = iqrl.HorizontalAccuracy.HasValue ? InputGeoPoint.Flags.has_accuracy_radius : 0
-					},
+					geo_point = MakeGeoPoint(iqrl.Latitude, iqrl.Longitude, iqrl.HorizontalAccuracy),
 					heading = iqrl.Heading ?? 0,
 					period = iqrl.LivePeriod ?? 0,
 					proximity_notification_radius = iqrl.ProximityAlertRadius ?? 0,
@@ -892,10 +931,19 @@ public partial class Bot
 					geo_point = new InputGeoPoint { lat = iqrv.Latitude, lon = iqrv.Longitude },
 					title = iqrv.Title,
 					address = iqrv.Address,
-					provider = iqrv.GooglePlaceId != null ? "gplaces" : "foursquare",
+					provider = iqrv.GooglePlaceId != null ? "gplaces" : iqrv.FoursquareId != null ? "foursquare" : null,
 					venue_id = iqrv.GooglePlaceId ?? iqrv.FoursquareId,
 					venue_type = iqrv.GooglePlaceType ?? iqrv.FoursquareType,
 					flags = reply_markup != null ? InputBotInlineMessageMediaVenue.Flags.has_reply_markup : 0
+				},
+				InlineQueryResultContact iqrc => new InputBotInlineMessageMediaContact
+				{
+					reply_markup = reply_markup,
+					phone_number = iqrc.PhoneNumber,
+					first_name = iqrc.FirstName,
+					last_name = iqrc.LastName,
+					vcard = iqrc.Vcard,
+					flags = reply_markup != null ? InputBotInlineMessageMediaContact.Flags.has_reply_markup : 0
 				},
 				_ => new InputBotInlineMessageMediaAuto
 				{

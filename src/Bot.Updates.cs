@@ -51,6 +51,12 @@ public partial class Bot
 					},
 					TLUpdate = update
 				};
+			case UpdateBotGuestChatQuery ubgcq:
+				if (NotAllowed(UpdateType.GuestMessage)) return null;
+				message = await MakeMessageAndReply(ubgcq.message);
+				if (message == null) return null;
+				message.GuestQueryId = ubgcq.query_id.ToString();
+				return new Update { GuestMessage = message, TLUpdate = update };
 			case UpdateBotInlineSend ubis:
 				if (NotAllowed(UpdateType.ChosenInlineResult)) return null;
 				return new Update
@@ -464,7 +470,7 @@ public partial class Bot
 					Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
 					Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
 					Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia,
-					Checklist = ext.Checklist
+					Checklist = ext.Checklist, LivePhoto = ext.LivePhoto
 				};
 			}
 			if (reply_to.quote_text != null)
@@ -510,7 +516,9 @@ public partial class Bot
 					PaidStarCount = message.paid_message_stars.NullIfNegative(),
 					DirectMessagesTopic = message.saved_peer_id is PeerUser pu ? new DirectMessagesTopic { TopicId = pu.user_id, User = User(pu.user_id) } : null,
 					IsPaidPost = (message.flags2 & (TL.Message.Flags2.paid_suggested_post_stars | TL.Message.Flags2.paid_suggested_post_ton)) != 0,
-					SuggestedPostInfo = message.suggested_post.SuggestedPostInfo()
+					SuggestedPostInfo = message.suggested_post.SuggestedPostInfo(),
+					GuestBotCallerUser = await UserFromPeer(message.guestchat_via_from),
+					GuestBotCallerChat = await ChatFromPeer(message.guestchat_via_from),
 				};
 				if (message.fwd_from is { } fwd)
 				{
@@ -651,7 +659,7 @@ public partial class Bot
 				else
 				{
 					msg.Document = document.Document(thumb);
-					if (document.GetAttribute<DocumentAttributeAnimated>() != null)
+					if (document.GetAttribute<DocumentAttributeAnimated>() is { })
 						msg.Animation = MakeAnimation(msg.Document!, document.GetAttribute<DocumentAttributeVideo>());
 				}
 				break;
@@ -659,18 +667,11 @@ public partial class Bot
 				if (mmp.flags.HasFlag(MessageMediaPhoto.Flags.spoiler)) msg.HasMediaSpoiler = true;
 				msg.ShowCaptionAboveMedia = invert_media;
 				msg.Photo = photo.PhotoSizes();
+				if (mmp.video is TL.Document lpVideo)
+					msg.LivePhoto = lpVideo.LivePhoto(msg.Photo);
 				break;
 			case MessageMediaVenue mmv:
-				msg.Venue = new Venue
-				{
-					Location = mmv.geo.Location(),
-					Title = mmv.title,
-					Address = mmv.address,
-					FoursquareId = mmv.provider == "foursquare" ? mmv.venue_id : null,
-					FoursquareType = mmv.provider == "foursquare" ? mmv.venue_type : null,
-					GooglePlaceId = mmv.provider == "gplaces" ? mmv.venue_id : null,
-					GooglePlaceType = mmv.provider == "gplaces" ? mmv.venue_id : null
-				};
+				msg.Venue = mmv.Venue();
 				break;
 			case MessageMediaContact mmc:
 				msg.Contact = new Telegram.Bot.Types.Contact
@@ -682,19 +683,14 @@ public partial class Bot
 					Vcard = mmc.vcard,
 				};
 				break;
-			case MessageMediaGeoLive mmgl:
-				msg.Location = mmgl.geo.Location();
-				msg.Location.LivePeriod = mmgl.period;
-				msg.Location.Heading = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_heading) ? mmgl.heading : null;
-				msg.Location.ProximityAlertRadius = mmgl.flags.HasFlag(MessageMediaGeoLive.Flags.has_proximity_notification_radius) ? mmgl.proximity_notification_radius : null;
-				break;
 			case MessageMediaGeo mmg:
-				msg.Location = mmg.geo.Location();
+				msg.Location = mmg.Location();
 				break;
 			case MessageMediaPoll { poll: TL.Poll poll, results: TL.PollResults pollResults }:
 				msg.Poll = await MakePoll(poll, pollResults);
 				msg.Poll.Description = text;
 				msg.Poll.DescriptionEntities = MakeEntities(entities);
+				msg.Poll.Media = await ToPollMedia(media);
 				return msg;
 			case MessageMediaDice mmd:
 				msg.Dice = new Dice { Emoji = mmd.emoticon, Value = mmd.value };
@@ -778,6 +774,43 @@ public partial class Bot
 		if (text != "") msg.Caption = text;
 		msg.CaptionEntities = MakeEntities(entities);
 		return msg;
+	}
+
+	internal async Task<PollMedia?> ToPollMedia(MessageMedia? media)
+	{
+		if (media == null) return null;
+		var pm = new PollMedia();
+		switch (media)
+		{
+			case MessageMediaDocument { document: TL.Document document } mmd:
+				var thumb = document.LargestThumbSize;
+				if (mmd.flags.HasFlag(MessageMediaDocument.Flags.video))
+					pm.Video = document.Video(mmd);
+				else if (document.GetAttribute<DocumentAttributeAudio>() is { } audio)
+					pm.Audio = document.Audio(audio);
+				else if (document.GetAttribute<DocumentAttributeSticker>() is { } sticker)
+					pm.Sticker = await MakeSticker(document, sticker);
+				else if (document.GetAttribute<DocumentAttributeAnimated>() is { })
+					pm.Animation = MakeAnimation(pm.Document!, document.GetAttribute<DocumentAttributeVideo>());
+				else
+					pm.Document = document.Document(thumb);
+				break;
+			case MessageMediaPhoto { photo: TL.Photo photo } mmp:
+				if (mmp.video is TL.Document lpVideo)
+					pm.LivePhoto = lpVideo.LivePhoto(photo.PhotoSizes());
+				else
+					pm.Photo = photo.PhotoSizes();
+				break;
+			case MessageMediaVenue mmv:
+				pm.Venue = mmv.Venue();
+				break;
+			case MessageMediaGeo mmg:
+				pm.Location = mmg.Location();
+				break;
+			default:
+				return null;
+		}
+		return pm;
 	}
 
 	private async Task<object?> MakeServiceMessage(MessageService msgSvc, Message msg)
@@ -995,6 +1028,7 @@ public partial class Bot
 				AdditionDate = pa.date.NullIfDefault(),
 				AddedByUser = await UserFromPeer(pa.added_by),
 				AddedByChat = await ChatFromPeer(pa.added_by),
+				Media = await ToPollMedia(pa.media)
 			})),
 			TotalVoterCount = pollResults.total_voters,
 			IsClosed = poll.flags.HasFlag(TL.Poll.Flags.closed),
@@ -1007,17 +1041,21 @@ public partial class Bot
 			OpenPeriod = poll.close_period.NullIfZero(),
 			CloseDate = poll.close_date.NullIfDefault(),
 			AllowsRevoting = !poll.flags.HasFlag(TL.Poll.Flags.revoting_disabled),
+			ExplanationMedia = await ToPollMedia(pollResults.solution_media),
+			MembersOnly = poll.flags.HasFlag(TL.Poll.Flags.subscribers_only),
+			CountryCodes = poll.countries_iso2
 		};
 	}
 
-	private TL.PollAnswer MakePollAnswer(InputPollOption ipo, int index)
+	private async Task<TL.InputPollAnswer> MakePollAnswer(InputPollOption ipo, InputPeer peer)
 	{
 		var text = ipo.Text;
 		var entities = ApplyParse(ipo.TextParseMode, ref text, ipo.TextEntities);
 		return new()
 		{
 			text = new() { text = text, entities = entities },
-			option = index.ToString()
+			media = ipo.Media != null ? await InputPollMedia(peer, ipo.Media.Type, ipo.Media) : null,
+			flags = ipo.Media != null ? TL.InputPollAnswer.Flags.has_media : 0
 		};
 	}
 }
