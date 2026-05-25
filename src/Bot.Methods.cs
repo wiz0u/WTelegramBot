@@ -140,12 +140,12 @@ public partial class Bot
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true, linkPreviewOptions?.IsDisabled == true),
-				peer, text, replyToMessage, businessConnectionId);
+				peer, text, replyToMessage, replyMarkup, businessConnectionId);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true),
-				peer, text, replyToMessage, businessConnectionId);
+				peer, text, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to forward messages of any kind. Service messages and messages with protected content can't be forwarded.</summary>
@@ -236,7 +236,7 @@ public partial class Bot
 			: Messages_SendMedia(null, peer, inputMedia, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
 				messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
-		var postedMsg = await PostedMsg(task, peer, text);
+		var postedMsg = await PostedMsg(task, peer, text, replyMarkup: replyMarkup);
 		return postedMsg;
 	}
 
@@ -336,7 +336,7 @@ public partial class Bot
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
-			peer, caption, replyToMessage, businessConnectionId);
+			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send live photos.</summary>
@@ -373,7 +373,7 @@ public partial class Bot
 		var media = await InputMediaLivePhoto(livePhoto, photo, peer, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
-			peer, caption, replyToMessage, businessConnectionId);
+			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	private async Task<Message> SendDoc(ChatId chatId, InputFile file, string? caption, ParseMode parseMode,
@@ -397,7 +397,7 @@ public partial class Bot
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
-			peer, caption, replyToMessage, businessConnectionId);
+			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format.</summary>
@@ -680,7 +680,7 @@ public partial class Bot
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), entities, 0, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
-			peer, caption, replyToMessage, businessConnectionId);
+			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send a group of photos, live photos, videos, documents or audios as an album. Documents and audio files can be only grouped in an album with messages of the same type.</summary>
@@ -760,7 +760,7 @@ public partial class Bot
 			: new TL.InputMediaGeoPoint { geo_point = MakeGeoPoint(latitude, longitude, horizontalAccuracy) };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send information about a venue.</summary>
@@ -804,7 +804,7 @@ public partial class Bot
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send phone contacts.</summary>
@@ -842,7 +842,7 @@ public partial class Bot
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send a native poll.</summary>
@@ -932,7 +932,7 @@ public partial class Bot
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, imp, description, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), deEntities, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send a checklist on behalf of a connected business account.</summary>
@@ -955,7 +955,7 @@ public partial class Bot
 		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, false, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to send an animated emoji that will display a random value.</summary>
@@ -983,7 +983,7 @@ public partial class Bot
 		var media = new InputMediaDice { emoticon = emoji };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to stream a partial message to a user while the message is being generated. Note that the streamed draft is ephemeral and acts as a temporary 30-second preview - once the output is finalized, you <b>must</b> call <see cref="WTelegram.Bot.SendMessage">SendMessage</see> with the complete message to persist it in the user's chat.</summary>
@@ -2734,7 +2734,7 @@ public partial class Bot
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to get a sticker set.</summary>
@@ -3018,7 +3018,7 @@ public partial class Bot
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, null);
 		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage);
+			peer, null, replyToMessage, replyMarkup);
 	}
 
 	/// <summary>Use this method to create a link for an invoice.</summary>
@@ -3164,7 +3164,7 @@ public partial class Bot
 		var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
 			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, disableNotification, protectContent, allowPaidBroadcast, false),
-			peer, null, replyToMessage, businessConnectionId);
+			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to set the score of the specified user in a game message.</summary>

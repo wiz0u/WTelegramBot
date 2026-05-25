@@ -53,7 +53,8 @@ public partial class Bot
 				};
 			case UpdateBotGuestChatQuery ubgcq:
 				if (NotAllowed(UpdateType.GuestMessage)) return null;
-				message = await MakeMessageAndReply(ubgcq.message);
+				var reference_message = ubgcq.message.ReplyTo is MessageReplyHeader { reply_to_msg_id: { } rmid } ? ubgcq.reference_messages?.FirstOrDefault(m => m.ID == rmid) : null;
+				message = await MakeMessageAndReply(ubgcq.message, await MakeMessage(reference_message));
 				if (message == null) return null;
 				message.GuestQueryId = ubgcq.query_id.ToString();
 				return new Update { GuestMessage = message, TLUpdate = update };
@@ -396,7 +397,7 @@ public partial class Bot
 	};
 
 	/// <summary>Handle UpdatesBase returned by various Client API and build the returned Bot Message</summary>
-	protected async Task<Message> PostedMsg(Task<UpdatesBase> updatesTask, InputPeer peer, string? text = null, Message? replyToMessage = null, string? bConnId = null)
+	protected async Task<Message> PostedMsg(Task<UpdatesBase> updatesTask, InputPeer peer, string? text = null, Message? replyToMessage = null, ReplyMarkup? replyMarkup = null, string? bConnId = null)
 	{
 		var updates = await updatesTask;
 		updates.UserOrChat(_collector);
@@ -407,7 +408,8 @@ public partial class Bot
 				From = await UserOrResolve(BotId),
 				Date = sent.date,
 				Chat = await ChatFromPeer(peer)!,
-				ReplyToMessage = replyToMessage
+				ReplyToMessage = replyToMessage,
+				ReplyMarkup = replyMarkup as InlineKeyboardMarkup
 			}, text, sent.entities, sent.media);
 		foreach (var update in updates.UpdateList)
 		{

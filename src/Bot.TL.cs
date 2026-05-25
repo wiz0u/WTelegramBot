@@ -135,10 +135,12 @@ public partial class Bot
 		var style = btn.KeyboardButtonStyle();
 		return btn switch
 		{
-			{ Url: { } } => new KeyboardButtonUrl { text = btn.Text, url = btn.Url, style = style, flags = style == null ? 0 : KeyboardButtonUrl.Flags.has_style },
+			{ Url: { } } => btn.Url.StartsWith("tg://user?id=", StringComparison.OrdinalIgnoreCase) && long.TryParse(btn.Url[13..], out var userId)
+				? new InputKeyboardButtonUserProfile { text = btn.Text, user_id = InputUser(userId), style = style, flags = style == null ? 0 : InputKeyboardButtonUserProfile.Flags.has_style }
+				: new KeyboardButtonUrl { text = btn.Text, url = btn.Url, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
 			{ CallbackData: { } } => new KeyboardButtonCallback { text = btn.Text, data = Encoding.UTF8.GetBytes(btn.CallbackData), style = style, flags = style == null ? 0 : KeyboardButtonCallback.Flags.has_style },
-			{ CallbackGame: { } } => new KeyboardButtonGame { text = btn.Text, style = style, flags = style == null ? 0 : KeyboardButtonGame.Flags.has_style },
-			{ Pay: true } => new KeyboardButtonBuy { text = btn.Text, style = style, flags = style == null ? 0 : KeyboardButtonBuy.Flags.has_style },
+			{ CallbackGame: { } } => new KeyboardButtonGame { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
+			{ Pay: true } => new KeyboardButtonBuy { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
 			{ SwitchInlineQuery: { } } => new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery, style = style, flags = style == null ? 0 : KeyboardButtonSwitchInline.Flags.has_style },
 			{ SwitchInlineQueryCurrentChat: { } } => new KeyboardButtonSwitchInline
 			{

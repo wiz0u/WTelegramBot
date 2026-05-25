@@ -572,6 +572,20 @@ public static class TypesTLConverters
 		ShippingAddress = pri.shipping_address.ShippingAddress()
 	};
 
+	internal static SwitchInlineQueryChosenChat SwitchInlineQueryChosenChat(this InlineQueryPeerType[] peer_types, string query)
+	{
+		var result = new SwitchInlineQueryChosenChat { Query  = query };
+		foreach (var peer_type in peer_types)
+			switch (peer_type)
+			{
+				case InlineQueryPeerType.PM: result.AllowUserChats = true; break;
+				case InlineQueryPeerType.BotPM: result.AllowBotChats = true; break;
+				case InlineQueryPeerType.Chat or InlineQueryPeerType.Megagroup: result.AllowGroupChats = true; break;
+				case InlineQueryPeerType.Broadcast: result.AllowChannelChats = true; break;
+			}
+		return result;
+	}
+
 	internal static InlineQueryPeerType[] InlineQueryPeerTypes(this SwitchInlineQueryChosenChat swiqcc)
 		=> InlineQueryPeerTypes(swiqcc.AllowUserChats, swiqcc.AllowBotChats, swiqcc.AllowGroupChats, swiqcc.AllowChannelChats);
 
@@ -955,8 +969,9 @@ public static class TypesTLConverters
 			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
 			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallbackGame(kbg.text),
 			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPay(kbb.text),
-			KeyboardButtonSwitchInline kbsi => kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ?
-				InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
+			KeyboardButtonSwitchInline kbsi =>
+				kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ? InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
+				kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.has_peer_types) ? InlineKeyboardButton.WithSwitchInlineQueryChosenChat(kbsi.text, kbsi.peer_types.SwitchInlineQueryChosenChat(kbsi.query)) :
 				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
 			KeyboardButtonCopy kbco => InlineKeyboardButton.WithCopyText(kbco.text, kbco.copy_text),
 			KeyboardButtonUrlAuth kbua => InlineKeyboardButton.WithLoginUrl(kbua.text, new LoginUrl
@@ -964,6 +979,7 @@ public static class TypesTLConverters
 				Url = kbua.url,
 				ForwardText = kbua.fwd_text,
 			}),
+			KeyboardButtonUserProfile kbup => InlineKeyboardButton.WithUrl(kbup.text, $"tg://user?id={kbup.user_id}"),
 			KeyboardButtonWebView kbwv => InlineKeyboardButton.WithWebApp(kbwv.text, new WebAppInfo { Url = kbwv.url }),
 			_ => new InlineKeyboardButton(btn.Text),
 		}).WithStyle(btn.Style))));
