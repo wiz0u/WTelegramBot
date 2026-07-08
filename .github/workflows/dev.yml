@@ -5,18 +5,21 @@ on:
     branches: [ master ]
     paths-ignore: [ '.**', 'Examples/**', '**.md' ]
   workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes'
 
 env:
   PROJECT_PATH: src/WTelegramBot.csproj
   CONFIGURATION: Release
-  PACKAGES_PATH: src/bin/Release
-  RELEASE_NOTES: ${{ github.event.head_commit.message }}
+  PACKAGES_PATH: packages
+  RELEASE_NOTES: ${{ inputs.release_notes || github.event.head_commit.message }}
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     permissions:
       id-token: write  # enable GitHub OIDC token issuance for this job
-    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -24,26 +27,27 @@ jobs:
     - name: Determine version
       run: |
         git fetch --depth=30 --tags
-        DESCR_TAG=$(git describe --tags)
+        DESCR_TAG=$(git describe --tags --long)   # get the last tag-commits_since-sha
         COMMITS=${DESCR_TAG#*-}
-        COMMITS=${COMMITS%-*}
-        LAST_TAG=${DESCR_TAG%%-*}
-        NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))-dev.$COMMITS
-        RELEASE_VERSION=${{vars.RELEASE_VERSION}}-dev.$COMMITS
-        if [[ "$RELEASE_VERSION" > "$NEXT_VERSION" ]] then VERSION=$RELEASE_VERSION; else VERSION=$NEXT_VERSION; fi
+        COMMITS=${COMMITS%-*}                     # extract the number of commits since the last tag
+        LAST_TAG=${DESCR_TAG%%-*}                 # extract the last tag
+        NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))-dev.$COMMITS   # increment the last number and add a dev suffix with the number of commits
+        RELEASE_VERSION=${{vars.RELEASE_VERSION}}-dev.$COMMITS          # construct the dev version if we were to respect the RELEASE_VERSION variable
+        VERSION=`echo -e "$RELEASE_VERSION\n$NEXT_VERSION" | sort -V | tail -n1`  # pick the higher version among the two
         echo Last tag: $LAST_TAG · Next version: $NEXT_VERSION · Release version: $RELEASE_VERSION · Build version: $VERSION
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+
     # - name: Setup .NET
     #   uses: actions/setup-dotnet@v4
     #   with:
     #     dotnet-version: 9.0.x
-    - name: Build
+    - name: Pack
       run: |
         RELEASE_NOTES=${RELEASE_NOTES//$'\n'/%0A}
         RELEASE_NOTES=${RELEASE_NOTES//\"/%22}
         RELEASE_NOTES=${RELEASE_NOTES//,/%2C}
         RELEASE_NOTES=${RELEASE_NOTES//;/%3B}
-        dotnet build $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION -p:ReleaseNotes="$RELEASE_NOTES"
+        dotnet pack $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION -p:ReleaseNotes="$RELEASE_NOTES" --output $PACKAGES_PATH
     # - name: Upload artifact
     #   uses: actions/upload-artifact@v4
     #   with:

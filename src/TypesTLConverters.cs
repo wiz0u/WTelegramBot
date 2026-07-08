@@ -54,6 +54,7 @@ public static class TypesTLConverters
 		user.AllowsUsersToCreateTopics = tlUser.flags2.HasFlag(TL.User.Flags2.bot_forum_can_manage_topics);
 		user.CanManageBots = tlUser.flags2.HasFlag(TL.User.Flags2.bot_can_manage_bots);
 		user.SupportsGuestQueries = tlUser.flags2.HasFlag(TL.User.Flags2.bot_guestchat);
+		user.SupportsJoinRequestQueries = tlUser.flags2.HasFlag(TL.User.Flags2.bot_guard);
 	}
 
 	/// <summary>Convert TL.Chat to Bot Types.Chat</summary>
@@ -304,7 +305,18 @@ public static class TypesTLConverters
 		}.SetFileIds(document.ToFileLocation(), document.dc_id);
 	}
 
-	internal static Video Video(this TL.Document document, MessageMediaDocument mmd)
+	internal static Voice? Voice(this TL.Document document, DocumentAttributeAudio? audio = null)
+	{
+		audio ??= document.GetAttribute<DocumentAttributeAudio>();
+		return new Voice
+		{
+			FileSize = document.size,
+			Duration = (int)(audio?.duration + 0.5 ?? 0.0),
+			MimeType = document.mime_type
+		}.SetFileIds(document.ToFileLocation(), document.dc_id);
+	}
+
+	internal static Video Video(this TL.Document document, MessageMediaDocument? mmd)
 	{
 		var thumb = document.LargestThumbSize;
 		var video = document.GetAttribute<DocumentAttributeVideo>();
@@ -313,16 +325,16 @@ public static class TypesTLConverters
 			FileSize = document.size,
 			Width = video?.w ?? 0,
 			Height = video?.h ?? 0,
-			Duration = (int)(video?.duration + 0.5 ?? 0.0),
+			Duration = (int)(Math.Ceiling(video?.duration ?? 0.0)),
 			Thumbnail = thumb?.PhotoSize(document.ToFileLocation(thumb), document.dc_id),
 			FileName = document.Filename,
 			MimeType = document.mime_type,
-			Cover = mmd.video_cover?.PhotoSizes(),
-			StartTimestamp = mmd.video_timestamp.NullIfZero(),
-			Qualities = mmd.alt_documents?.VideoQualities().ToArray()
+			Cover = mmd?.video_cover?.PhotoSizes(),
+			StartTimestamp = mmd?.video_timestamp.NullIfZero(),
+			Qualities = mmd?.alt_documents?.VideoQualities().ToArray()
 		}.SetFileIds(document.ToFileLocation(), document.dc_id);
 	}
-	
+
 	internal static IEnumerable<VideoQuality> VideoQualities(this TL.DocumentBase[] alt_document)
 	{
 		foreach (var alt_doc in alt_document)
@@ -344,7 +356,7 @@ public static class TypesTLConverters
 			FileSize = document.size,
 			Width = video?.w ?? 0,
 			Height = video?.h ?? 0,
-			Duration = (int)(video?.duration + 0.5 ?? 0.0),
+			Duration = (int)(Math.Ceiling(video?.duration ?? 0.0)),
 			MimeType = document.mime_type,
 			Photo = photo
 		}.SetFileIds(document.ToFileLocation(), document.dc_id);
@@ -1009,4 +1021,57 @@ public static class TypesTLConverters
 		};
 		return style;
 	}
+
+	internal static InputRichMessageBase ToInputRichMessage(this InputRichMessage richMessage)
+	{
+		if (richMessage.Html != null)
+		{
+			var html = richMessage.Html;
+			List<InputRichFile>? files = ParseHtml(ref html);
+			return new InputRichMessageHTML
+			{
+				html = html,
+				files = files?.ToArray(),
+				flags = (richMessage.IsRtl ? InputRichMessageHTML.Flags.rtl : 0)
+					| (files != null ? InputRichMessageHTML.Flags.has_files : 0)
+					| (richMessage.SkipEntityDetection ? InputRichMessageHTML.Flags.noautolink : 0)
+			};
+		}
+		else if (richMessage.Markdown != null)
+			return new InputRichMessageMarkdown
+			{
+				markdown = richMessage.Markdown,
+				flags = (richMessage.IsRtl ? InputRichMessageMarkdown.Flags.rtl : 0)
+					| (richMessage.SkipEntityDetection ? InputRichMessageMarkdown.Flags.noautolink : 0)
+			};
+		else throw new RpcException(500, $"Invalid InputRichMessage");
+	}
+
+	private static List<InputRichFile>? ParseHtml(ref string html)
+	{
+		List<InputRichFile>? files = null;
+		for (int index = -1; (index = html.IndexOf("?file_id=", index + 1)) > 16;)
+		{
+			if (string.Compare(html, index - 16, " src=\"tg://", 0, 11, StringComparison.Ordinal) != 0) continue;
+			var type = html[(index - 5)..index];
+			if (type is not "photo" and not "video" and not "audio") continue;
+			var end = html.IndexOf('"', index + 9);
+			if (end < 0) continue;
+			var fileId = html[(index + 9)..end];
+			try { FromBase64(fileId); } catch (Exception) { continue; }
+			files ??= [];
+			var newId = "file" + files.Count;
+			if (type is "photo") files.Add(new InputRichFilePhoto { id = newId, photo = WTelegram.Bot.InputPhoto(fileId)});
+			else files.Add(new InputRichFileDocument { id = newId, document = WTelegram.Bot.InputDocument(fileId) });
+			html = $"{html[..(index + 1)]}id={newId}{html[end..]}";
+		}
+		return files;
+	}
+
+	internal static TL.InputRichMessage ToInputRichMessage(this TL.RichMessage richMessage) => new()
+	{
+		blocks = richMessage.blocks,
+		documents = [.. richMessage.documents.Select(d => (InputDocument)d)],
+		photos = [.. richMessage.photos.Select(p => (InputPhoto)p)],
+	};
 }

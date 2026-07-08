@@ -14,7 +14,7 @@ run-name: '📌 Release build ${{ inputs.version }}'
 env:
   PROJECT_PATH: src/WTelegramBot.csproj
   CONFIGURATION: Release
-  PACKAGES_PATH: src/bin/Release
+  PACKAGES_PATH: packages
   RELEASE_NOTES: ${{ inputs.release_notes }}
   VERSION: ${{ inputs.version }}
 
@@ -32,11 +32,11 @@ jobs:
       if: ${{ env.VERSION == '' }}
       run: |
         git fetch --depth=100 --tags
-        DESCR_TAG=$(git describe --tags)
-        LAST_TAG=${DESCR_TAG%%-*}
-        NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))
-        RELEASE_VERSION=${{vars.RELEASE_VERSION}}
-        if [[ "$RELEASE_VERSION" > "$NEXT_VERSION" ]] then VERSION=$RELEASE_VERSION; else VERSION=$NEXT_VERSION; fi
+        DESCR_TAG=$(git describe --tags --long)   # get the last tag-commits_since-sha
+        LAST_TAG=${DESCR_TAG%%-*}                 # extract the last tag
+        NEXT_VERSION=${LAST_TAG%.*}.$((${LAST_TAG##*.} + 1))    # increment the last number
+        RELEASE_VERSION=${{vars.RELEASE_VERSION}}   # construct the version if we were to respect the RELEASE_VERSION variable
+        VERSION=`echo -e "$RELEASE_VERSION\n$NEXT_VERSION" | sort -V | tail -n1`  # pick the higher version among the two
         echo Last tag: $LAST_TAG · Next version: $NEXT_VERSION · Release version: $RELEASE_VERSION · Build version: $VERSION
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
@@ -44,7 +44,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - name: Build
+    - name: Pack
       run: |
         RELEASE_NOTES=${RELEASE_NOTES//|/%0A}
         RELEASE_NOTES=${RELEASE_NOTES// - /%0A- }
@@ -54,7 +54,7 @@ jobs:
         RELEASE_NOTES=${RELEASE_NOTES//\"/%22}
         RELEASE_NOTES=${RELEASE_NOTES//,/%2C}
         RELEASE_NOTES=${RELEASE_NOTES//;/%3B}
-        dotnet build $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION -p:ReleaseNotes="$RELEASE_NOTES"
+        dotnet pack $PROJECT_PATH --configuration $CONFIGURATION -p:Version=$VERSION -p:ReleaseNotes="$RELEASE_NOTES" --output $PACKAGES_PATH
     # - name: Upload artifact
     #   uses: actions/upload-artifact@v4
     #   with:

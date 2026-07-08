@@ -1,4 +1,4 @@
-[![Bot API 10.0](https://img.shields.io/badge/Bot_API-10.0-blueviolet)](https://core.telegram.org/bots/api)
+[![Bot API 10.1](https://img.shields.io/badge/Bot_API-10.1-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)
 [![Donate](https://img.shields.io/badge/Help_this_project:-Donate-ff4444)](https://www.buymeacoffee.com/wizou)
@@ -13,7 +13,7 @@ The library is built on top of [WTelegramClient](https://wiz0u.github.io/WTelegr
 
 Using class `WTelegram.Bot` you have access to a clean set of developer-friendly methods to easily access the Bot API
 
-You can also call Client API methods that are possible for bots but not accessible from Bot API!
+You can also call Client API methods that are possible for bots but not accessible from Bot API!  
 Some examples:
 - Fetch past messages of group/channel
 - Get group/channel members list

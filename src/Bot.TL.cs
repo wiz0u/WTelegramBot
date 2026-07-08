@@ -375,14 +375,13 @@ public partial class Bot
 		throw new WTException("Unrecognized InputFileStream type");
 	}
 
-	private async Task<InputDocument> InputDocument(string fileId)
+	internal static InputDocument InputDocument(string fileId)
 	{
-		await InitComplete();
 		var location = (InputDocumentFileLocation)fileId.ParseFileId().location;
 		return new InputDocument { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
 	}
 
-	private static InputPhoto InputPhoto(string fileId)
+	internal static InputPhoto InputPhoto(string fileId)
 	{
 		var location = (InputPhotoFileLocation)fileId.ParseFileId().location;
 		return new InputPhoto { id = location.id, access_hash = location.access_hash, file_reference = location.file_reference };
@@ -436,7 +435,7 @@ public partial class Bot
 		if (file is InputFileId ifi && im is TL.InputMediaPhoto imp)
 		{
 			imp.flags |= TL.InputMediaPhoto.Flags.live_photo;
-			imp.video = await InputDocument(ifi.Id);
+			imp.video = InputDocument(ifi.Id);
 		}
 		else if (file is InputFileStream ifs && im is TL.InputMediaUploadedPhoto imup)
 		{
@@ -461,7 +460,7 @@ public partial class Bot
 			case FileType.Id:
 				return new TL.InputMediaDocument
 				{
-					id = await InputDocument(((InputFileId)file).Id),
+					id = InputDocument(((InputFileId)file).Id),
 					video_cover = video_cover,
 					video_timestamp = video_timestamp ?? 0,
 					flags = (hasSpoiler ? TL.InputMediaDocument.Flags.spoiler : 0)
@@ -575,6 +574,8 @@ public partial class Bot
 					venue_id = venue.GooglePlaceId ?? venue.FoursquareId,
 					venue_type = venue.GooglePlaceType ?? venue.FoursquareType,
 				};
+			case InputMediaType.Link:
+				return new TL.InputMediaWebPage { url = ((InputMediaLink)media).Url };
 			default:
 				return (await InputSingleMedia(peer, (InputMedia)media)).media;
 		}
@@ -742,7 +743,7 @@ public partial class Bot
 		if (cached != null)
 		{
 			cached.type ??= result.Type.ToString().ToLower();
-			cached.document = await InputDocument(cached.id); // above, we used the id to store the fileId
+			cached.document = InputDocument(cached.id); // above, we used the id to store the fileId
 			cached.id = result.Id;
 			cached.flags = (cached.title != null ? InputBotInlineResultDocument.Flags.has_title : 0)
 				| (cached.description != null ? InputBotInlineResultDocument.Flags.has_description : 0);
@@ -848,6 +849,12 @@ public partial class Bot
 						(entities != null ? InputBotInlineMessageText.Flags.has_entities : 0) |
 						(itmc.LinkPreviewOptions?.IsDisabled == true ? InputBotInlineMessageText.Flags.no_webpage : 0) |
 						(itmc.LinkPreviewOptions?.ShowAboveText == true ? InputBotInlineMessageText.Flags.invert_media : 0)
+			},
+			InputRichMessageContent irmc => new InputBotInlineMessageRichMessage
+			{
+				reply_markup = reply_markup,
+				rich_message = irmc.RichMessage.ToInputRichMessage(),
+				flags = reply_markup != null ? InputBotInlineMessageRichMessage.Flags.has_reply_markup : 0
 			},
 			InputLocationMessageContent ilmc => new InputBotInlineMessageMediaGeo
 			{
@@ -1032,12 +1039,14 @@ public partial class Bot
 	}
 
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
-		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post,
-		bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
+		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, InputRichMessageBase? rich_message,
+		long effect, SuggestedPostParameters? suggested_post, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		var query = new TL.Methods.Messages_SendMessage
 		{
-			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0) | (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0)),
+			flags = (TL.Methods.Messages_SendMessage.Flags)((reply_to != null ? 0x1 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0)
+				| (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)
+				| (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0) | (rich_message != null ? 0x800000 : 0)),
 			peer = peer,
 			reply_to = reply_to,
 			message = message,
@@ -1046,6 +1055,7 @@ public partial class Bot
 			entities = entities,
 			effect = effect,
 			suggested_post = suggested_post.SuggestedPost(),
+			rich_message = rich_message,
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
@@ -1084,33 +1094,38 @@ public partial class Bot
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	Task<UpdatesBase> Messages_EditMessage(string? bConnId, InputPeer peer, int id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, DateTime? schedule_date = null, int? quick_reply_shortcut_id = null, bool no_webpage = false, bool invert_media = false)
+	Task<UpdatesBase> Messages_EditMessage(string? bConnId, InputPeer peer, int id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, TL.InputRichMessageBase? rich_message = null, DateTime? schedule_date = null, int? quick_reply_shortcut_id = null, bool no_webpage = false, bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_EditMessage
 		{
-			flags = (TL.Methods.Messages_EditMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (schedule_date != null ? 0x8000 : 0) | (quick_reply_shortcut_id != null ? 0x20000 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
+			flags = (TL.Methods.Messages_EditMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0)
+				| (entities != null ? 0x8 : 0) | (rich_message != null ? 0x800000 : 0) | (schedule_date != null ? 0x8000 : 0)
+				| (quick_reply_shortcut_id != null ? 0x20000 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
 			peer = peer,
 			id = id,
 			message = message,
 			media = media,
 			reply_markup = reply_markup,
 			entities = entities,
+			rich_message = rich_message,
 			schedule_date = schedule_date.GetValueOrDefault(),
 			quick_reply_shortcut_id = quick_reply_shortcut_id.GetValueOrDefault(),
 		};
 		return bConnId is null ? Client.Invoke(query) : Client.InvokeWithBusinessConnection(bConnId, query);
 	}
 
-	async Task<bool> Messages_EditInlineBotMessage(string? bConnId, InputBotInlineMessageIDBase id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, bool no_webpage = false, bool invert_media = false)
+	async Task<bool> Messages_EditInlineBotMessage(string? bConnId, InputBotInlineMessageIDBase id, string? message = null, TL.InputMedia? media = null, TL.ReplyMarkup? reply_markup = null, TL.MessageEntity[]? entities = null, TL.InputRichMessageBase? rich_message = null, bool no_webpage = false, bool invert_media = false)
 	{
 		var query = new TL.Methods.Messages_EditInlineBotMessage
 		{
-			flags = (TL.Methods.Messages_EditInlineBotMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0) | (entities != null ? 0x8 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
+			flags = (TL.Methods.Messages_EditInlineBotMessage.Flags)((message != null ? 0x800 : 0) | (media != null ? 0x4000 : 0) | (reply_markup != null ? 0x4 : 0)
+				| (entities != null ? 0x8 : 0) | (rich_message != null ? 0x800000 : 0) | (no_webpage ? 0x2 : 0) | (invert_media ? 0x10000 : 0)),
 			id = id,
 			message = message,
 			media = media,
 			reply_markup = reply_markup,
 			entities = entities,
+			rich_message = rich_message,
 		};
 		var dcClient = await Client.GetClientForDC(id.DcId);
 		return bConnId is null ? await dcClient.Invoke(query) : await dcClient.InvokeWithBusinessConnection(bConnId, query);

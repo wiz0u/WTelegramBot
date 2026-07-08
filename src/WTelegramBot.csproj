@@ -7,7 +7,6 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>WTelegram</RootNamespace>
     <Deterministic>true</Deterministic>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -15,7 +14,7 @@
     <PackageId>WTelegramBot</PackageId>
     <Authors>Wizou</Authors>
     <VersionPrefix>0.0.0</VersionPrefix>
-    <VersionSuffix>botapi.10.0</VersionSuffix>
+    <VersionSuffix>botapi.10.1</VersionSuffix>
     <Description>Telegram Bot API (local server) library providing more extended features
 
 Release Notes:
@@ -55,7 +54,7 @@ $(ReleaseNotes)</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Telegram.Bot" Version="22.10.0.*" />
-    <PackageReference Include="WTelegramClient" Version="4.4.5.*" />
+    <PackageReference Include="Telegram.Bot" Version="22.10.1.*" />
+    <PackageReference Include="WTelegramClient" Version="4.4.7.*" />
   </ItemGroup>
 </Project>
