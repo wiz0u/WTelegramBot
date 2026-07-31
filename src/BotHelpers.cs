@@ -22,6 +22,7 @@ public static class BotHelpers
 		[".mov"] = "video/quicktime",
 		[".avi"] = "video/x-msvideo",
 		[".aac"] = "audio/aac",
+		[".m4a"] = "audio/mp4",
 		[".mid"] = "audio/midi",
 		[".midi"] = "audio/midi",
 		[".ogg"] = "audio/ogg",
