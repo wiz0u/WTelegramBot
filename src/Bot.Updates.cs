@@ -102,6 +102,30 @@ public partial class Bot
 					},
 					TLUpdate = update
 				};
+			case UpdateEphemeralBotCallbackQuery uebcq:
+				if (NotAllowed(UpdateType.CallbackQuery)) return null;
+				return new Update
+				{
+					CallbackQuery = new CallbackQuery
+					{
+						Id = uebcq.query_id.ToString(),
+						From = await UserOrResolve(uebcq.user_id),
+						Message = await MakeEphemeralAndReply(uebcq.message),
+						ChatInstance = "0",
+						Data = uebcq.data.NullOrUtf8(),
+					},
+					TLUpdate = update
+				};
+			case UpdateNewEphemeralMessage unem:
+				if (unem.message.flags.HasFlag(EphemeralMessage.Flags.out_)) return null;
+				if (NotAllowed(UpdateType.Message)) return null;
+				message = await MakeEphemeralAndReply(unem.message);
+				if (message == null) return null;
+				return new Update { Message = message, TLUpdate = update };
+			case UpdateEditEphemeralMessage ueem:
+				if (ueem.message.flags.HasFlag(EphemeralMessage.Flags.out_)) return null;
+				if (NotAllowed(UpdateType.Message)) return null;
+				return new Update { EditedMessage = await MakeEphemeralAndReply(ueem.message), TLUpdate = update };
 			case UpdateChannelParticipant uchp:
 				if (NotAllowed((uchp.new_participant ?? uchp.prev_participant)?.UserId == BotId ? UpdateType.MyChatMember : UpdateType.ChatMember)) return null;
 				return MakeUpdate(new ChatMemberUpdated
@@ -299,6 +323,24 @@ public partial class Bot
 					},
 					TLUpdate = update
 				};
+			case UpdateBotStarsSubscription ubss:
+				if (NotAllowed(UpdateType.Subscription)) return null;
+				return new Update
+				{
+					Subscription = new BotSubscriptionUpdated
+					{
+						User = await UserOrResolve(ubss.user_id),
+						InvoicePayload = Encoding.UTF8.GetString(ubss.payload),
+						State = ubss.flags switch
+						{
+							UpdateBotStarsSubscription.Flags.canceled => "canceled",
+							UpdateBotStarsSubscription.Flags.restored => "active",
+							UpdateBotStarsSubscription.Flags.payment_failed => "failed",
+							_ => null!
+						}
+					},
+					TLUpdate = update
+				};
 			//TL.UpdateDraftMessage seems used to update ourself user info
 			default:
 				return null;
@@ -420,6 +462,7 @@ public partial class Bot
 				case UpdateNewScheduledMessage { message: { } schedMsg }: return (await MakeMessageAndReply(schedMsg, replyToMessage))!;
 				case UpdateEditMessage { message: { } editMsg }: return (await MakeMessageAndReply(editMsg, replyToMessage))!;
 				case UpdateBotNewBusinessMessage { message: { } bizMsg }: return (await MakeMessageAndReply(bizMsg, replyToMessage, bConnId))!;
+				case UpdateNewEphemeralMessage { message: { } message }: return (await MakeEphemeralAndReply(message, replyToMessage))!;
 			}
 		}
 		throw new WTException("Failed to retrieve sent message");
@@ -450,47 +493,53 @@ public partial class Bot
 		var msg = await MakeMessage(msgBase);
 		if (msg == null) return null;
 		msg.BusinessConnectionId = bConnId;
-		if (msgBase?.ReplyTo == null) return msg;
-		if (msgBase.ReplyTo is MessageReplyHeader reply_to)
+		return await FillReply(msg, msgBase!.ReplyTo, reply_to => replyToMessage != null && reply_to.reply_to_msg_id == replyToMessage.Id
+																	? Task.FromResult((Message?)replyToMessage) : GetRepliedMessage(msgBase, true));
+	}
+
+	private async Task<Message?> FillReply(Message msg, MessageReplyHeaderBase replyTo, Func<MessageReplyHeader, Task<Message?>> fetchReplied)
+	{
+		switch (replyTo)
 		{
-			if (replyToMessage != null && reply_to.reply_to_msg_id == replyToMessage.Id)
-				msg.ReplyToMessage = replyToMessage;
-			else if (reply_to.reply_from == null)
-				msg.ReplyToMessage = await GetRepliedMessage(msgBase, true);
-			if (reply_to.todo_item_id != 0) msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
-			if (reply_to.poll_option != null) msg.ReplyToPollOptionId = reply_to.poll_option;
-			if (reply_to.reply_from?.date > default(DateTime))
-			{
-				var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
-				msg.ExternalReply = new ExternalReplyInfo
+			case MessageReplyHeader reply_to:
+				if (reply_to.reply_from == null)
+					msg.ReplyToMessage = await fetchReplied(reply_to);
+				if (reply_to.todo_item_id != 0) msg.ReplyToChecklistTaskId = reply_to.todo_item_id;
+				if (reply_to.poll_option != null) msg.ReplyToPollOptionId = reply_to.poll_option;
+				if (reply_to.reply_from?.date > default(DateTime))
 				{
-					MessageId = reply_to.reply_to_msg_id,
-					Chat = await ChatFromPeer(reply_to.reply_to_peer_id),
-					HasMediaSpoiler = ext.HasMediaSpoiler,
-					LinkPreviewOptions = ext.LinkPreviewOptions,
-					Origin = (await MakeOrigin(reply_to.reply_from))!,
-					Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
-					Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
-					Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
-					Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia,
-					Checklist = ext.Checklist, LivePhoto = ext.LivePhoto
-				};
-			}
-			if (reply_to.quote_text != null)
-				msg.Quote = new TextQuote
+					var ext = await FillTextAndMedia(new Message(), null, null!, reply_to.reply_media);
+					msg.ExternalReply = new ExternalReplyInfo
+					{
+						MessageId = reply_to.reply_to_msg_id,
+						Chat = await ChatFromPeer(reply_to.reply_to_peer_id),
+						HasMediaSpoiler = ext.HasMediaSpoiler,
+						LinkPreviewOptions = ext.LinkPreviewOptions,
+						Origin = (await MakeOrigin(reply_to.reply_from))!,
+						Animation = ext.Animation, Audio = ext.Audio, Contact = ext.Contact, Dice = ext.Dice, Document = ext.Document,
+						Game = ext.Game, Giveaway = ext.Giveaway, GiveawayWinners = ext.GiveawayWinners, Invoice = ext.Invoice,
+						Location = ext.Location, Photo = ext.Photo, Poll = ext.Poll, Sticker = ext.Sticker, Story = ext.Story,
+						Venue = ext.Venue, Video = ext.Video, VideoNote = ext.VideoNote, Voice = ext.Voice, PaidMedia = ext.PaidMedia,
+						Checklist = ext.Checklist, LivePhoto = ext.LivePhoto
+					};
+				}
+				if (reply_to.quote_text != null)
+					msg.Quote = new TextQuote
+					{
+						Text = reply_to.quote_text,
+						Entities = MakeEntities(reply_to.quote_entities),
+						Position = reply_to.quote_offset,
+						IsManual = reply_to.flags.HasFlag(MessageReplyHeader.Flags.quote)
+					};
+				break;
+			case MessageReplyStoryHeader mrsh:
+				msg.ReplyToStory = new Story
 				{
-					Text = reply_to.quote_text,
-					Entities = MakeEntities(reply_to.quote_entities),
-					Position = reply_to.quote_offset,
-					IsManual = reply_to.flags.HasFlag(MessageReplyHeader.Flags.quote)
+					Chat = await ChatFromPeer(mrsh.peer, true),
+					Id = mrsh.story_id
 				};
+				break;
 		}
-		else if (msgBase.ReplyTo is MessageReplyStoryHeader mrsh)
-			msg.ReplyToStory = new Story
-			{
-				Chat = await ChatFromPeer(mrsh.peer, true),
-				Id = mrsh.story_id
-			};
 		return msg;
 	}
 	
@@ -594,6 +643,32 @@ public partial class Bot
 						break;
 				}
 		}
+	}
+
+	private async Task<Message> MakeEphemeralAndReply(EphemeralMessage message, Message? replyToMessage = null)
+	{
+		var msg = new Message
+		{
+			//TLMessage = message,
+			Id = 0,
+			EphemeralMessageId = message.id,
+			ReceiverUser = User(message.receiver_id),
+			From = await UserFromPeer(message.from_id),
+			//SenderChat = await ChatFromPeer(message.from_id),
+			Date = message.date,
+			Chat = await ChatFromPeer(message.peer_id, allowUser: true),
+			ReplyMarkup = message.reply_markup.InlineKeyboardMarkup(),
+		};
+		await FillTextAndMedia(msg, message.message, message.entities, message.media, false);
+		await FillReply(msg, message.reply_to, async reply_to => {
+			if (replyToMessage != null && reply_to.reply_to_msg_id == replyToMessage.Id)
+				return replyToMessage;
+			var chat = await ChatFromPeer(message.peer_id);
+			return await GetMessage(chat!, reply_to.flags.HasFlag(MessageReplyHeader.Flags.reply_to_ephemeral) ? -reply_to.reply_to_msg_id : reply_to.reply_to_msg_id);
+		});
+		lock (CachedMessages)
+			CachedMessages[(message.peer_id.ID, -message.id)] = msg;
+		return msg;
 	}
 
 	private async Task<MessageOrigin?> MakeOrigin(MessageFwdHeader fwd)
@@ -996,6 +1071,8 @@ public partial class Bot
 				OptionText = answer.text.text,
 				OptionTextEntities = MakeEntities(answer.text.entities)
 			},
+			MessageActionChangeCommunity macc2 => macc2.community_id == 0 ? msg.CommunityChatRemoved = new()
+				: msg.CommunityChatAdded = new() { Community = new() { Id = macc2.community_id, Name = Chat(macc2.community_id)?.Title! } },
 			_ => null,
 		};
 	}
@@ -1089,7 +1166,13 @@ public partial class Bot
 			PageBlockPullquote pb => new RichBlockPullQuotation { Text = RichText(pb.text), Credit = RichText(pb.caption) },
 			PageBlockCollage pb => new RichBlockCollage { Blocks = [.. pb.items.Select(RichBlock)], Caption = RichBlockCaption(pb.caption) },
 			PageBlockSlideshow pb => new RichBlockSlideshow { Blocks = [.. pb.items.Select(RichBlock)], Caption = RichBlockCaption(pb.caption) },
-			PageBlockTable pb => RichBlockTable(pb),
+			PageBlockTable pb => new RichBlockTable
+			{
+				IsBordered = pb.flags.HasFlag(PageBlockTable.Flags.bordered),
+				IsStriped = pb.flags.HasFlag(PageBlockTable.Flags.striped),
+				Caption = RichText(pb.title)!,
+				Cells = [.. pb.rows.Select(r => r.cells.Select(RichBlockTableCell).ToArray())]
+			},
 			PageBlockDetails pb => new RichBlockDetails { Summary = RichText(pb.title), Blocks = [.. pb.blocks.Select(RichBlock)], IsOpen = pb.flags.HasFlag(PageBlockDetails.Flags.open) },
 			PageBlockMap pb => new RichBlockMap { Location = pb.geo.Location(), Zoom = pb.zoom, Width = pb.w, Height = pb.h, Caption = RichBlockCaption(pb.caption) },
 			PageBlockHeading1 pb => new RichBlockSectionHeading { Text = RichText(pb.text), Size = 1 },
@@ -1240,14 +1323,6 @@ public partial class Bot
 		}
 
 		RichBlock[] RichBlockPara(TL.RichText text) => [new RichBlockParagraph { Text = RichText(text) }];
-
-		RichBlockTable RichBlockTable(PageBlockTable pb) => new()
-		{
-			IsBordered = pb.flags.HasFlag(PageBlockTable.Flags.bordered),
-			IsStriped = pb.flags.HasFlag(PageBlockTable.Flags.striped),
-			Caption = RichText(pb.title)!,
-			Cells = [.. pb.rows.Select(r => r.cells.Select(RichBlockTableCell).ToArray())]
-		};
 
 		RichBlockTableCell RichBlockTableCell(PageTableCell cell) => new()
 		{

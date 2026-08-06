@@ -81,6 +81,7 @@ public static class TypesTLConverters
 			Title = chat.Title,
 			AccessHash = chForbidden.access_hash
 		},
+		TL.Community community => new() { TLInfo = chat, Id = chat.ID, Type = 0, Title = chat.Title },
 		_ => new() { TLInfo = chat, Id = -chat.ID, Type = ChatType.Group, Title = chat.Title }
 	};
 
@@ -255,13 +256,23 @@ public static class TypesTLConverters
 	internal static ChatLocation? ChatLocation(this ChannelLocation? location)
 		=> location == null ? null : new ChatLocation { Location = Location(location.geo_point), Address = location.address };
 
+	[return: NotNullIfNotNull(nameof(location))]
+	internal static GeoPoint? GeoPoint(this Location? location)
+		=> location == null ? null : new GeoPoint
+		{
+			flags = location.HorizontalAccuracy != null ? TL.GeoPoint.Flags.has_accuracy_radius : 0,
+			lon = location.Longitude,
+			lat = location.Latitude,
+			accuracy_radius = (int)(location.HorizontalAccuracy ?? 0.0)
+		};
+
 	[return: NotNullIfNotNull(nameof(geo))]
 	internal static Location? Location(this GeoPoint? geo)
 		=> geo == null ? null : new Location
 		{
 			Longitude = geo.lon,
 			Latitude = geo.lat,
-			HorizontalAccuracy = geo.flags.HasFlag(GeoPoint.Flags.has_accuracy_radius) ? geo.accuracy_radius : null
+			HorizontalAccuracy = geo.flags.HasFlag(TL.GeoPoint.Flags.has_accuracy_radius) ? geo.accuracy_radius : null
 		};
 
 	internal static Location Location(this TL.MessageMediaGeo mmg)
@@ -560,9 +571,9 @@ public static class TypesTLConverters
 		=> [.. prices.Select(p => new TL.LabeledPrice { label = p.Label, amount = p.Amount })];
 
 	internal static TL.BotCommand BotCommand(this BotCommand bc)
-		=> new() { command = bc.Command.StartsWith("/") ? bc.Command[1..] : bc.Command, description = bc.Description };
+		=> new() { command = bc.Command.StartsWith("/") ? bc.Command[1..] : bc.Command, description = bc.Description, flags = bc.IsEphemeral ? TL.BotCommand.Flags.ephemeral : 0 };
 	internal static BotCommand BotCommand(this TL.BotCommand bc)
-		=> new() { Command = bc.command, Description = bc.description };
+		=> new() { Command = bc.command, Description = bc.description, IsEphemeral = bc.flags.HasFlag(TL.BotCommand.Flags.ephemeral) };
 
 	[return: NotNullIfNotNull(nameof(pa))]
 	internal static Payments.ShippingAddress? ShippingAddress(this PostAddress? pa) => pa == null ? null : new()
@@ -1022,32 +1033,7 @@ public static class TypesTLConverters
 		return style;
 	}
 
-	internal static InputRichMessageBase ToInputRichMessage(this InputRichMessage richMessage)
-	{
-		if (richMessage.Html != null)
-		{
-			var html = richMessage.Html;
-			List<InputRichFile>? files = ParseHtml(ref html);
-			return new InputRichMessageHTML
-			{
-				html = html,
-				files = files?.ToArray(),
-				flags = (richMessage.IsRtl ? InputRichMessageHTML.Flags.rtl : 0)
-					| (files != null ? InputRichMessageHTML.Flags.has_files : 0)
-					| (richMessage.SkipEntityDetection ? InputRichMessageHTML.Flags.noautolink : 0)
-			};
-		}
-		else if (richMessage.Markdown != null)
-			return new InputRichMessageMarkdown
-			{
-				markdown = richMessage.Markdown,
-				flags = (richMessage.IsRtl ? InputRichMessageMarkdown.Flags.rtl : 0)
-					| (richMessage.SkipEntityDetection ? InputRichMessageMarkdown.Flags.noautolink : 0)
-			};
-		else throw new RpcException(500, $"Invalid InputRichMessage");
-	}
-
-	private static List<InputRichFile>? ParseHtml(ref string html)
+	internal static InputRichFile[]? ParseRichHtmlFileIds(ref string html)
 	{
 		List<InputRichFile>? files = null;
 		for (int index = -1; (index = html.IndexOf("?file_id=", index + 1)) > 16;)
@@ -1065,7 +1051,7 @@ public static class TypesTLConverters
 			else files.Add(new InputRichFileDocument { id = newId, document = WTelegram.Bot.InputDocument(fileId) });
 			html = $"{html[..(index + 1)]}id={newId}{html[end..]}";
 		}
-		return files;
+		return files?.ToArray();
 	}
 
 	internal static TL.InputRichMessage ToInputRichMessage(this TL.RichMessage richMessage) => new()

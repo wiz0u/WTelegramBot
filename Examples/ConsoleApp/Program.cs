@@ -13,11 +13,12 @@ using Telegram.Bot.Types.ReplyMarkups;
 int apiId = int.Parse(Environment.GetEnvironmentVariable("ApiId")!);
 string apiHash = Environment.GetEnvironmentVariable("ApiHash")!;
 string botToken = Environment.GetEnvironmentVariable("BotToken")!;
+long botId = long.Parse(botToken.Split(':')[0]);
 
 WTelegram.Helpers.Log = (lvl, str) => System.Diagnostics.Debug.WriteLine(str);
 
 // Using SQLite DB for storage. Other DBs below (remember to add/uncomment the adequate PackageReference in .csproj)
-using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@"Data Source=WTelegramBot.sqlite");
+using var connection = new Microsoft.Data.Sqlite.SqliteConnection(@$"Data Source=WTelegramBot.{botId}.sqlite");
 //SQL Server:	using var connection = new Microsoft.Data.SqlClient.SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=PATH_TO.mdf;Integrated Security=True;Connect Timeout=60");
 //MySQL:    	using var connection = new MySql.Data.MySqlClient.MySqlConnection(@"Data Source=...");
 //PosgreSQL:	using var connection = new Npgsql.NpgsqlConnection(@"Host=...");

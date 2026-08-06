@@ -79,4 +79,12 @@ public static class BotHelpers
 			}
 		}
 	}
+
+	internal static T AddAndReturn<T>(this List<T> list, T item)
+	{
+		list.Add(item);
+		return item;
+	}
+
+	internal static long LongOrDefault(this string? s) => s == null ? 0 : long.Parse(s);
 }

@@ -14,7 +14,7 @@
     <PackageId>WTelegramBot</PackageId>
     <Authors>Wizou</Authors>
     <VersionPrefix>0.0.0</VersionPrefix>
-    <VersionSuffix>botapi.10.1</VersionSuffix>
+    <VersionSuffix>botapi.10.2</VersionSuffix>
     <Description>Telegram Bot API (local server) library providing more extended features
 
 Release Notes:
@@ -54,7 +54,7 @@ $(ReleaseNotes)</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Telegram.Bot" Version="22.10.1.*" />
-    <PackageReference Include="WTelegramClient" Version="4.4.7.*" />
+    <PackageReference Include="Telegram.Bot" Version="*" />
+    <PackageReference Include="WTelegramClient" Version="*" />
   </ItemGroup>
 </Project>
