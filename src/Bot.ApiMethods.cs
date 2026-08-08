@@ -1069,7 +1069,7 @@ public partial class Bot
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		reaction ??= [];
-		var updates = await Client.Messages_SendReaction(peer, messageId, [.. reaction.Select(TypesTLConverters.Reaction)], big: isBig);
+		var updates = await Client.Messages_SendReaction(peer, messageId, [.. reaction.Select(Converters.Reaction)], big: isBig);
 	}
 
 	/// <summary>Use this method to get a list of profile pictures for a user.</summary>
@@ -1551,7 +1551,7 @@ public partial class Bot
 				{
 					/*chatReactionsNone*/
 					null => [],
-					ChatReactionsSome crs => [.. crs.reactions.Select(TypesTLConverters.ReactionType)],
+					ChatReactionsSome crs => [.. crs.reactions.Select(Converters.ReactionType)],
 					/*chatReactionsAll*/
 					_ => null,
 				},
@@ -1853,7 +1853,7 @@ public partial class Bot
 		return new BotAccessSettings
 		{
 			IsAccessRestricted = bas.flags.HasFlag(Bots_AccessSettings.Flags.restricted),
-			AddedUsers = bas.add_users?.OfType<TL.User>().Select(TypesTLConverters.User).ToArray()!
+			AddedUsers = bas.add_users?.OfType<TL.User>().Select(Converters.User).ToArray()!
 		};
 	}
 
@@ -1874,7 +1874,7 @@ public partial class Bot
 	/// <param name="languageCode">A two-letter ISO 639-1 language code. If empty, commands will be applied to all users from the given scope, for whose language there are no dedicated commands.</param>
 	public async Task SetMyCommands(IEnumerable<BotCommand> commands, BotCommandScope? scope = default, string? languageCode = default)
 	{
-		await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, [.. commands.Select(TypesTLConverters.BotCommand)]);
+		await Client.Bots_SetBotCommands(await BotCommandScope(scope), languageCode, [.. commands.Select(Converters.BotCommand)]);
 	}
 
 	/// <summary>Use this method to delete the list of the bot's commands for the given scope and user language. After deletion, <a href="https://core.telegram.org/bots/api#determining-list-of-commands">higher level commands</a> will be shown to affected users.</summary>
@@ -1892,7 +1892,7 @@ public partial class Bot
 	public async Task<BotCommand[]> GetMyCommands(BotCommandScope? scope = default, string? languageCode = default)
 	{
 		var commands = await Client.Bots_GetBotCommands(await BotCommandScope(scope), languageCode);
-		return [.. commands.Select(TypesTLConverters.BotCommand)];
+		return [.. commands.Select(Converters.BotCommand)];
 	}
 
 	/// <summary>Use this method to change the bot's name, short description (bio) or description (shown in empty chat).</summary>
@@ -2403,7 +2403,7 @@ public partial class Bot
 		var tlMedia = await GetStoryMedia(content);
 		//tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 		var updates = await Client.Stories_SendStory(peer, tlMedia, [new InputPrivacyValueAllowAll()], Helpers.RandomLong(), caption, entities, activePeriod,
-			areas?.Select(TypesTLConverters.MediaArea).ToArray(), pinned: postToChatPage, noforwards: protectContent);
+			areas?.Select(Converters.MediaArea).ToArray(), pinned: postToChatPage, noforwards: protectContent);
 		updates.UserOrChat(_collector);
 		return new Story()
 		{
@@ -2452,7 +2452,7 @@ public partial class Bot
 		var tlMedia = await GetStoryMedia(content);
 		//tlMedia = (await Client.Messages_UploadMedia(peer, tlMedia)).ToInputMedia();
 		var updates = await Client.Stories_EditStory(peer, storyId, tlMedia, caption, entities, [new InputPrivacyValueAllowAll()],
-			areas?.Select(TypesTLConverters.MediaArea).ToArray());
+			areas?.Select(Converters.MediaArea).ToArray());
 		updates.UserOrChat(_collector);
 		return new Story()
 		{
@@ -3157,7 +3157,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var botResult = await InputBotInlineResult(result);
-		var peer_types = TypesTLConverters.InlineQueryPeerTypes(allowUserChats, allowBotChats, allowGroupChats, allowChannelChats);
+		var peer_types = Converters.InlineQueryPeerTypes(allowUserChats, allowBotChats, allowGroupChats, allowChannelChats);
 		var prepared = await Client.Messages_SavePreparedInlineMessage(botResult, InputUser(userId), peer_types);
 		return new PreparedInlineMessage { Id = prepared.id, ExpirationDate = prepared.expire_date };
 	}
@@ -3327,7 +3327,7 @@ public partial class Bot
 	{
 		await InitComplete();
 		var peer = InputPeerUser(userId);
-		await Client.Users_SetSecureValueErrors(peer, [.. errors.Select(TypesTLConverters.SecureValueError)]);
+		await Client.Users_SetSecureValueErrors(peer, [.. errors.Select(Converters.SecureValueError)]);
 	}
 	#endregion Telegram Passport
 

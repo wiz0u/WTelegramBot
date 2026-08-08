@@ -5,7 +5,7 @@ using WTelegram;
 namespace Telegram.Bot.Types;
 
 /// <summary>Extension methods for converting between Client API and Bot API</summary>
-public static class TypesTLConverters
+public static class Converters
 {
 	const long ZERO_CHANNEL_ID = -1000000000000;
 
