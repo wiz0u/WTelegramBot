@@ -298,15 +298,15 @@ public partial class Bot : IDisposable
 	}
 
 	/// <summary>Obtain a InputUser from username, or null if resolve failed</summary>
-	public async Task<InputUser?> InputUser(string username)
+	public InputUser? InputUser(string username)
 	{
 		username = username.TrimStart('@');
 		lock (_users)
 			if (_users.SearchCache(user => user.Username?.Equals(username, StringComparison.OrdinalIgnoreCase) == true) is User user)
 				return user;
 		try
-		{
-			var resolved = await Client.Contacts_ResolveUsername(username);
+		{   // this is rare so it's ok to run a detached task and block on it, we don't want to make InputUser async for this rare case
+			var resolved = Task.Run(() => Client.Contacts_ResolveUsername(username)).GetAwaiter().GetResult();
 			if (resolved.User is { } resolvedUser)
 				lock (_users)
 					return _users[resolvedUser.id] = resolvedUser.User();

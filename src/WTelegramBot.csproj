@@ -14,7 +14,7 @@
     <PackageId>WTelegramBot</PackageId>
     <Authors>Wizou</Authors>
     <VersionPrefix>0.0.0</VersionPrefix>
-    <VersionSuffix>botapi.10.2</VersionSuffix>
+    <VersionSuffix>botapi.10.3</VersionSuffix>
     <Description>Telegram Bot API (local server) library providing more extended features
 
 Release Notes:

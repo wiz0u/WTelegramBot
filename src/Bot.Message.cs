@@ -58,7 +58,7 @@ public partial class Bot
 				if (message.edit_date != default) msg.EditDate = message.edit_date;
 				if (message.flags.HasFlag(TL.Message.Flags.noforwards)) msg.HasProtectedContent = true;
 				if (message.grouped_id != 0) msg.MediaGroupId = message.grouped_id.ToString();
-				if (message.rich_message != null) return CacheMessage(FillRichMessage(msg, message.rich_message), msgBase);
+				if (message.rich_message != null) { msg.RichMessage = RichMessage(message.rich_message); return CacheMessage(msg, msgBase); }
 				return CacheMessage(await FillTextAndMedia(msg, message.message, message.entities, message.media, message.flags.HasFlag(TL.Message.Flags.invert_media)), msgBase);
 			case TL.MessageService msgSvc:
 				msg = new WTelegram.Types.Message
@@ -401,7 +401,10 @@ public partial class Bot
 				TransferStarCount = masgu.transfer_stars.NullIfNegative(),
 				NextTransferDate = masgu.can_transfer_at.NullIfDefault(),
 				LastResaleAmount = masgu.resale_amount?.Amount.NullIfNegative(),
-				LastResaleCurrency = masgu.resale_amount?.Currency()
+				LastResaleCurrency = masgu.resale_amount?.Currency(),
+				IsPrivate = masgu.flags.HasFlag(MessageActionStarGiftUnique.Flags.name_hidden),
+				Text = masgu.message?.text,
+				Entities = MakeEntities(masgu.message?.entities),
 			},
 			MessageActionPaidMessagesPrice mapmp => msg.Chat.Type == ChatType.Channel
 			? msg.DirectMessagePriceChanged = new DirectMessagePriceChanged { DirectMessageStarCount = mapmp.stars, AreDirectMessagesEnabled = mapmp.flags.HasFlag(MessageActionPaidMessagesPrice.Flags.broadcast_messages_allowed) }
@@ -455,6 +458,8 @@ public partial class Bot
 			},
 			MessageActionChangeCommunity macc2 => macc2.community_id == 0 ? msg.CommunityChatRemoved = new()
 				: msg.CommunityChatAdded = new() { Community = new() { Id = macc2.community_id, Name = Chat(macc2.community_id)?.Title! } },
+			MessageActionChatJoinedViaCommunity macjvc =>
+				msg.CommunityChatJoined = new() { Community = new() { Id = macjvc.community_id, Name = Chat(macjvc.community_id)?.Title! } },
 			_ => null,
 		};
 	}

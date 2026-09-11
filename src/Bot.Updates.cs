@@ -341,6 +341,18 @@ public partial class Bot
 					},
 					TLUpdate = update
 				};
+			case UpdateUserTyping uut when uut.action is SendMessageStopDraftAction smsda:
+				if (NotAllowed(UpdateType.StoppedMessageGeneration)) return null;
+				return new Update
+				{
+					StoppedMessageGeneration = new MessageGenerationStopped
+					{
+						Chat = (await UserOrResolve(uut.user_id)).Chat(),
+						MessageThreadId = uut.flags.HasFlag(UpdateUserTyping.Flags.has_top_msg_id) ? uut.top_msg_id : null,
+						DraftId = smsda.random_id,
+					},
+					TLUpdate = update
+				};
 			//TL.UpdateDraftMessage seems used to update ourself user info
 			default:
 				return null;

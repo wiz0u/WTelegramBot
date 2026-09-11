@@ -9,19 +9,19 @@ namespace WTelegram;
 
 public partial class Bot
 {
-	private Message? FillRichMessage(Message msg, TL.RichMessage rich_message)
+	/// <summary>Fill a Message object, converting TL.RichMessage content to Bot API msg.RichMessage</summary>
+	public Telegram.Bot.Types.RichMessage RichMessage(TL.RichMessage rich_message)
 	{
 		TextUrl? hasLink = null;
 		HashSet<string>? refs = null;
 		var blocks = rich_message.blocks.Select(RichBlock).ToArray();
 		if (refs != null && hasLink != null) // 2nd pass to fix RichTextReferenceLink
 			blocks = [.. rich_message.blocks.Select(RichBlock)];
-		msg.RichMessage = new()
+		return new()
 		{
 			IsRtl = rich_message.flags.HasFlag(TL.RichMessage.Flags.rtl),
 			Blocks = blocks
 		};
-		return msg;
 
 		RichBlock RichBlock(PageBlock block) => block switch
 		{
@@ -33,7 +33,9 @@ public partial class Bot
 			PageBlockList pb => new RichBlockList { Items = [.. pb.items.Select(RichBlockListItem)] },
 			PageBlockOrderedList pb when (pb.flags.HasFlag(PageBlockOrderedList.Flags.has_start) ? pb.start : 1) is var start
 				=> new RichBlockList { Items = [.. pb.items.Select((oi, idx) => RichBlockListItemO(oi, pb, start + idx))] },
-			PageBlockBlockquote pb => new RichBlockBlockQuotation { Blocks = RichBlockPara(pb.text), Credit = RichText(pb.caption) },
+			PageBlockBlockquote pb =>  pb.flags.HasFlag(PageBlockBlockquote.Flags.collapsed)
+				? new RichBlockExpandableBlockQuotation { Text = RichText(pb.text), Credit = RichText(pb.caption) }
+				: new RichBlockBlockQuotation { Blocks = RichBlockPara(pb.text), Credit = RichText(pb.caption) },
 			PageBlockBlockquoteBlocks pb => new RichBlockBlockQuotation { Blocks = [.. pb.blocks.Select(RichBlock)], Credit = RichText(pb.caption) },
 			PageBlockPullquote pb => new RichBlockPullQuotation { Text = RichText(pb.text), Credit = RichText(pb.caption) },
 			PageBlockCollage pb => new RichBlockCollage { Blocks = [.. pb.items.Select(RichBlock)], Caption = RichBlockCaption(pb.caption) },
@@ -42,6 +44,7 @@ public partial class Bot
 			{
 				IsBordered = pb.flags.HasFlag(PageBlockTable.Flags.bordered),
 				IsStriped = pb.flags.HasFlag(PageBlockTable.Flags.striped),
+				IsCompact = pb.flags.HasFlag(PageBlockTable.Flags.compact),
 				Caption = RichText(pb.title)!,
 				Cells = [.. pb.rows.Select(r => r.cells.Select(RichBlockTableCell).ToArray())]
 			},
@@ -70,6 +73,15 @@ public partial class Bot
 				=> audio.flags.HasFlag(DocumentAttributeAudio.Flags.voice)
 					? new RichBlockVoiceNote { VoiceNote = doc?.Voice(audio)!, Caption = RichBlockCaption(pb.caption) }
 					: new RichBlockAudio { Audio = doc?.Audio(audio)!, Caption = RichBlockCaption(pb.caption) },
+			PageBlockDocument pb when rich_message.documents.FirstOrDefault(d => d.ID == pb.document_id) is TL.Document doc
+				=> new RichBlockDocument { Document = doc.Document()!, Caption = RichBlockCaption(pb.caption) },
+			PageBlockButtonRow pb => new RichBlockButtons 
+			{
+				Align = pb.flags.HasFlag(PageBlockButtonRow.Flags.align_left) ? RichBlockTableCellAlign.Left :
+					pb.flags.HasFlag(PageBlockButtonRow.Flags.align_center) ? RichBlockTableCellAlign.Center :
+					pb.flags.HasFlag(PageBlockButtonRow.Flags.align_right) ? RichBlockTableCellAlign.Right : null,
+				Buttons = [.. pb.buttons.Select(b => b.type.RichMessageButton(RichText(b.text)).WithStyle(b.style))],
+			},
 			_ => null!
 		};
 
@@ -104,6 +116,7 @@ public partial class Bot
 			TextAnchor t => t.text == null ? new RichTextAnchor { Name = t.name }
 				: new RichTextReference { Name = (refs ??= []).Add(t.name) ? t.name : t.name, Text = RichText(t.text) },
 			TextUrl t => t.url.StartsWith("#") ? MakeLink(hasLink = t) : new RichTextUrl { Text = RichText(t.text), Url = t.url },
+			TextButton t => new RichTextButton { Button = t.type.RichMessageButton(RichText(t.text)).WithStyle(t.style) },
 			_ => null,
 		};
 

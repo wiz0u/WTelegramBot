@@ -65,9 +65,9 @@ public static class Converters
 		Channel channel => new()
 		{
 			TLInfo = chat,
-			Id = ZERO_CHANNEL_ID - chat.ID,
+			Id = ZERO_CHANNEL_ID - channel.id,
 			Type = channel.IsChannel ? ChatType.Channel : ChatType.Supergroup,
-			Title = chat.Title,
+			Title = channel.title,
 			Username = channel.MainUsername,
 			IsForum = channel.flags.HasFlag(Channel.Flags.forum),
 			IsDirectMessages = channel.flags2.HasFlag(Channel.Flags2.monoforum),
@@ -76,12 +76,12 @@ public static class Converters
 		ChannelForbidden chForbidden => new()
 		{
 			TLInfo = chat,
-			Id = ZERO_CHANNEL_ID - chat.ID,
+			Id = ZERO_CHANNEL_ID - chForbidden.id,
 			Type = chForbidden.IsChannel ? ChatType.Channel : ChatType.Supergroup,
-			Title = chat.Title,
+			Title = chForbidden.title,
 			AccessHash = chForbidden.access_hash
 		},
-		TL.Community community => new() { TLInfo = chat, Id = chat.ID, Type = 0, Title = chat.Title },
+		TL.Community community => new() { TLInfo = chat, Id = community.id, Type = 0, Title = community.title },
 		_ => new() { TLInfo = chat, Id = -chat.ID, Type = ChatType.Group, Title = chat.Title }
 	};
 
@@ -132,7 +132,8 @@ public static class Converters
 				CanPromoteMembers = false,
 				CanManageVideoChats = true,
 				//CanPostStories, CanEditStories, CanDeleteStories, CanManageDirectMessages: set only for channels
-				CanManageTags = true
+				CanManageTags = true,
+				CanSendWelcomeMessages = true,
 			},
 			ChatParticipant => new ChatMemberMember { User = user, Tag = participant.Rank },
 			_ => new ChatMemberLeft { User = user }
@@ -166,6 +167,7 @@ public static class Converters
 				CanDeleteStories = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 				CanManageDirectMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
 				CanManageTags = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_ranks),
+				CanSendWelcomeMessages = cpa.admin_rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_welcome_messages),
 			},
 			ChannelParticipantBanned cpb =>
 				cpb.banned_rights.flags.HasFlag(ChatBannedRights.Flags.view_messages)
@@ -537,7 +539,8 @@ public static class Converters
 			| (rights.CanEditStories ? TL.ChatAdminRights.Flags.edit_stories : 0)
 			| (rights.CanDeleteStories ? TL.ChatAdminRights.Flags.delete_stories : 0)
 			| (rights.CanManageDirectMessages ? TL.ChatAdminRights.Flags.manage_direct_messages : 0)
-			| (rights.CanManageTags ?? rights.CanPinMessages ? TL.ChatAdminRights.Flags.manage_ranks : 0)
+			| (rights.CanManageTags ? TL.ChatAdminRights.Flags.manage_ranks : 0)
+			| (rights.CanSendWelcomeMessages ? TL.ChatAdminRights.Flags.manage_welcome_messages : 0)
 		};
 
 	internal static ChatAdministratorRights ChatAdministratorRights(this ChatAdminRights? rights)
@@ -560,6 +563,7 @@ public static class Converters
 			CanDeleteStories = rights.flags.HasFlag(TL.ChatAdminRights.Flags.delete_stories),
 			CanManageDirectMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_direct_messages),
 			CanManageTags = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_ranks),
+			CanSendWelcomeMessages = rights.flags.HasFlag(TL.ChatAdminRights.Flags.manage_welcome_messages),
 		};
 
 	[return: NotNullIfNotNull(nameof(maskPosition))]
@@ -986,28 +990,44 @@ public static class Converters
 	};
 
 	internal static InlineKeyboardMarkup? InlineKeyboardMarkup(this TL.ReplyMarkup? reply_markup) => reply_markup is not ReplyInlineMarkup rim ? null :
-		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => (btn switch
-		{
-			KeyboardButtonUrl kbu => InlineKeyboardButton.WithUrl(kbu.text, kbu.url),
-			KeyboardButtonCallback kbc => InlineKeyboardButton.WithCallbackData(kbc.text, Encoding.UTF8.GetString(kbc.data)),
-			KeyboardButtonGame kbg => InlineKeyboardButton.WithCallbackGame(kbg.text),
-			KeyboardButtonBuy kbb => InlineKeyboardButton.WithPay(kbb.text),
-			KeyboardButtonSwitchInline kbsi =>
-				kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.same_peer) ? InlineKeyboardButton.WithSwitchInlineQueryCurrentChat(kbsi.text, kbsi.query) :
-				kbsi.flags.HasFlag(KeyboardButtonSwitchInline.Flags.has_peer_types) ? InlineKeyboardButton.WithSwitchInlineQueryChosenChat(kbsi.text, kbsi.peer_types.SwitchInlineQueryChosenChat(kbsi.query)) :
-				InlineKeyboardButton.WithSwitchInlineQuery(kbsi.text, kbsi.query),
-			KeyboardButtonCopy kbco => InlineKeyboardButton.WithCopyText(kbco.text, kbco.copy_text),
-			KeyboardButtonUrlAuth kbua => InlineKeyboardButton.WithLoginUrl(kbua.text, new LoginUrl
-			{
-				Url = kbua.url,
-				ForwardText = kbua.fwd_text,
-			}),
-			KeyboardButtonUserProfile kbup => InlineKeyboardButton.WithUrl(kbup.text, $"tg://user?id={kbup.user_id}"),
-			KeyboardButtonWebView kbwv => InlineKeyboardButton.WithWebApp(kbwv.text, new WebAppInfo { Url = kbwv.url }),
-			_ => new InlineKeyboardButton(btn.Text),
-		}).WithStyle(btn.Style))));
+		new InlineKeyboardMarkup(rim.rows.Select(row => row.buttons.Select(btn => btn.type.InlineKeyboardButton(btn.text).WithStyle(btn.style))))
+		{ ForceReply = rim.flags.HasFlag(TL.ReplyInlineMarkup.Flags.force_reply) };
 
-	internal static T WithStyle<T>(this T ikb, TL.KeyboardButtonStyle? style) where T : IKeyboardButton
+	internal static InlineKeyboardButton InlineKeyboardButton(this TL.InlineButtonType? ibt, string text) => ibt switch
+	{
+		InlineButtonTypeUrl btu => new(text) { Url = btu.url },
+		InlineButtonTypeCallback btc => new(text) { CallbackData = Encoding.UTF8.GetString(btc.data) },
+		InlineButtonTypeGame => new(text) { CallbackGame = new() },
+		InlineButtonTypeBuy => new(text) { Pay = true },
+		InlineButtonTypeSwitchInline btsi =>
+			btsi.flags.HasFlag(InlineButtonTypeSwitchInline.Flags.same_peer) ? new(text) { SwitchInlineQueryCurrentChat = btsi.query } :
+			btsi.flags.HasFlag(InlineButtonTypeSwitchInline.Flags.has_peer_types) ? new(text) { SwitchInlineQueryChosenChat = btsi.peer_types.SwitchInlineQueryChosenChat(btsi.query) } :
+			new(text) { SwitchInlineQuery = btsi.query },
+		InlineButtonTypeCopy btco => new(text) { CopyText = btco.copy_text },
+		InlineButtonTypeUrlAuth btua => new(text) { LoginUrl = new() { Url = btua.url, ForwardText = btua.fwd_text } },
+		InlineButtonTypeUserProfile btup => new(text) { Url = $"tg://user?id={btup.user_id}" },
+		InlineButtonTypeWebView btwv => new(text) { WebApp = new(btwv.url) },
+		InlineButtonTypeDisabled => new(text) { Disabled = new() },
+		_ => new(text),
+	};
+
+	internal static RichMessageButton RichMessageButton(this TL.InlineButtonType? ibt, RichText text) => ibt switch
+	{
+		InlineButtonTypeUrl btu => new(text) { Url = btu.url },
+		InlineButtonTypeCallback btc => new(text) { CallbackData = Encoding.UTF8.GetString(btc.data) },
+		InlineButtonTypeSwitchInline btsi =>
+			btsi.flags.HasFlag(InlineButtonTypeSwitchInline.Flags.same_peer) ? new(text) { SwitchInlineQueryCurrentChat = btsi.query } :
+			btsi.flags.HasFlag(InlineButtonTypeSwitchInline.Flags.has_peer_types) ? new(text) { SwitchInlineQueryChosenChat = btsi.peer_types.SwitchInlineQueryChosenChat(btsi.query) } :
+			new(text) { SwitchInlineQuery = btsi.query },
+		InlineButtonTypeCopy btco => new(text) { CopyText = btco.copy_text },
+		InlineButtonTypeUrlAuth btua => new(text) { LoginUrl = new() { Url = btua.url, ForwardText = btua.fwd_text } },
+		InlineButtonTypeUserProfile btup => new(text) { Url = $"tg://user?id={btup.user_id}" },
+		InlineButtonTypeWebView btwv => new(text) { WebApp = new(btwv.url) },
+		InlineButtonTypeDisabled => new(text) { Disabled = new() },
+		_ => new(text),
+	};
+
+	internal static InlineKeyboardButton WithStyle(this InlineKeyboardButton ikb, TL.KeyboardButtonStyle? style)
 	{
 		if (style != null)
 		{
@@ -1018,6 +1038,28 @@ public static class Converters
 		}
 		return ikb;
 	}
+
+	internal static RichMessageButton WithStyle(this RichMessageButton rmb, TL.RichButtonStyle? style)
+	{
+		if (style != null)
+			rmb.Style = style.flags.HasFlag(TL.RichButtonStyle.Flags.bg_primary) ? RichMessageButtonStyle.Primary :
+						style.flags.HasFlag(TL.RichButtonStyle.Flags.bg_danger) ? RichMessageButtonStyle.Danger :
+						style.flags.HasFlag(TL.RichButtonStyle.Flags.bg_success) ? RichMessageButtonStyle.Success :
+						style.flags.HasFlag(TL.RichButtonStyle.Flags.link) ? RichMessageButtonStyle.Link : null;
+		return rmb;
+	}
+
+	internal static TL.RichButtonStyle? RichButtonStyle(this RichMessageButtonStyle? style) => style == null ? null : new TL.RichButtonStyle
+	{
+		flags = style.Value switch
+		{
+			RichMessageButtonStyle.Danger => TL.RichButtonStyle.Flags.bg_danger,
+			RichMessageButtonStyle.Primary => TL.RichButtonStyle.Flags.bg_primary,
+			RichMessageButtonStyle.Success => TL.RichButtonStyle.Flags.bg_success,
+			RichMessageButtonStyle.Link => TL.RichButtonStyle.Flags.link,
+			_ => 0
+		}
+	};
 
 	internal static TL.KeyboardButtonStyle? KeyboardButtonStyle(this IKeyboardButton btn)
 	{
@@ -1038,15 +1080,16 @@ public static class Converters
 		List<InputRichFile>? files = null;
 		for (int index = -1; (index = html.IndexOf("?file_id=", index + 1)) > 16;)
 		{
-			if (string.Compare(html, index - 16, " src=\"tg://", 0, 11, StringComparison.Ordinal) != 0) continue;
-			var type = html[(index - 5)..index];
-			if (type is not "photo" and not "video" and not "audio") continue;
+			int slash = html.LastIndexOf('/', index, 10);
+			if (slash < 14 || string.Compare(html, slash - 10, " src=\"tg://", 0, 11, StringComparison.Ordinal) != 0) continue;
+			var type = html[(slash + 1)..index];
+			if (type is not "photo" and not "video" and not "document" and not "audio") continue;
 			var end = html.IndexOf('"', index + 9);
 			if (end < 0) continue;
 			var fileId = html[(index + 9)..end];
 			try { FromBase64(fileId); } catch (Exception) { continue; }
 			files ??= [];
-			var newId = "file" + files.Count;
+            var newId = $"file{files.Count}";
 			if (type is "photo") files.Add(new InputRichFilePhoto { id = newId, photo = WTelegram.Bot.InputPhoto(fileId)});
 			else files.Add(new InputRichFileDocument { id = newId, document = WTelegram.Bot.InputDocument(fileId) });
 			html = $"{html[..(index + 1)]}id={newId}{html[end..]}";

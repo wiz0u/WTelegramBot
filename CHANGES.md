@@ -17,7 +17,7 @@ Migration effort for existing code should be minimal.
 Example of changes:
 ```csharp
 === In your .csproj ===
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.*" />
     <PackageReference Include="WTelegramBot" Version="7.7.1"/>
 
 === In your code ===

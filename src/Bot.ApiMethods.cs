@@ -125,15 +125,14 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendMessage(ChatId chatId, string text, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? entities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
@@ -142,12 +141,12 @@ public partial class Bot
 		var media = linkPreviewOptions.InputMediaWebPage();
 		if (media == null)
 			return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, null, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId,
+				await MakeReplyMarkup(replyMarkup), tlEntities, null, messageEffectId, suggestedPostParameters, ephemeralMessageParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true, linkPreviewOptions?.IsDisabled == true),
 				peer, text, replyToMessage, replyMarkup, businessConnectionId);
 		else
 			return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, text, Helpers.RandomLong(), reply_to,
-				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId,
+				await MakeReplyMarkup(replyMarkup), tlEntities, messageEffectId, suggestedPostParameters, ephemeralMessageParameters,
 				disableNotification, protectContent, allowPaidBroadcast, linkPreviewOptions?.ShowAboveText == true),
 				peer, text, replyToMessage, replyMarkup, businessConnectionId);
 	}
@@ -236,10 +235,10 @@ public partial class Bot
 		var task = inputMedia == null
 			? Messages_SendMessage(null, peer, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities, null,
-				messageEffectId, suggestedPostParameters, null, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
+				messageEffectId, suggestedPostParameters, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia, true)
 			: Messages_SendMedia(null, peer, inputMedia, text, Helpers.RandomLong(), reply_to,
 				await MakeReplyMarkup(replyMarkup) ?? msg.reply_markup, caption != null ? entities : msg.entities,
-				messageEffectId, suggestedPostParameters, null, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
+				messageEffectId, suggestedPostParameters, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia);
 		var postedMsg = await PostedMsg(task, peer, text, replyMarkup: replyMarkup);
 		return postedMsg;
 	}
@@ -289,9 +288,9 @@ public partial class Bot
 			var rich_message = msg.rich_message?.ToInputRichMessage();
 			var task = msg.media == null
 				? Messages_SendMessage(null, peer, msg.message, random_id++, reply_to,
-					null, msg.entities, rich_message, 0, null, null, null, disableNotification, protectContent, false, false, true)
+					null, msg.entities, rich_message, 0, null, null, disableNotification, protectContent, false, false, true)
 				: Messages_SendMedia(null, peer, msg.media.ToInputMedia(), msg.message, random_id++, reply_to,
-					null, msg.entities, 0, null, null, null, disableNotification, protectContent, false, msg.flags.HasFlag(TL.Message.Flags.invert_media));
+					null, msg.entities, 0, null, null, disableNotification, protectContent, false, msg.flags.HasFlag(TL.Message.Flags.invert_media));
 			var postedMsg = await PostedMsg(task, peer);
 			sentMsgs.Add(postedMsg);
 		}
@@ -327,15 +326,14 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendPhoto(ChatId chatId, InputFile photo, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
@@ -343,7 +341,7 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = await InputMediaPhoto(photo, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -366,15 +364,14 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLivePhoto(ChatId chatId, InputFile livePhoto, InputFile photo, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default,
 		bool hasSpoiler = default, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
 		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
-		SuggestedPostParameters? suggestedPostParameters = default, long? receiverUserId = default, string? callbackQueryId = default)
+		SuggestedPostParameters? suggestedPostParameters = default, EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption, captionEntities);
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
@@ -382,7 +379,7 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = await InputMediaLivePhoto(livePhoto, photo, peer, hasSpoiler);
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -390,7 +387,7 @@ public partial class Bot
 		ReplyParameters? replyParameters, ReplyMarkup? replyMarkup, InputFile? thumbnail,
 		int messageThreadId, IEnumerable<MessageEntity>? captionEntities, bool disableNotification,
 		bool protectContent, long messageEffectId, string? businessConnectionId, bool allowPaidBroadcast,
-		long directMessagesTopicId, SuggestedPostParameters? suggestedPostParameters, long? receiverUserId, string? callbackQueryId,
+		long directMessagesTopicId, SuggestedPostParameters? suggestedPostParameters, EphemeralMessageParameters? ephemeralMessageParameters,
 		Action<InputMediaUploadedDocument>? prepareDoc, string? defaultFilename = null, bool showCaptionAboveMedia = false,
 		bool hasSpoiler = false, InputFile? cover = default, int? startTimestamp = default)
 	{
@@ -406,7 +403,7 @@ public partial class Bot
 			await SetDocThumb(doc, thumbnail);
 		}
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -431,8 +428,7 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAudio(ChatId chatId, InputFile audio, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
@@ -440,11 +436,11 @@ public partial class Bot
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, audio, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, 
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 				duration = duration, performer = performer, title = title,
 				flags = DocumentAttributeAudio.Flags.has_title | DocumentAttributeAudio.Flags.has_performer }]);
@@ -469,19 +465,18 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendDocument(ChatId chatId, InputFile document, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, InputFile? thumbnail = default,
 		int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default, bool disableContentTypeDetection = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, document, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast, 
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			{ if (disableContentTypeDetection) doc.flags |= InputMediaUploadedDocument.Flags.force_file; }, "document");
 	}
 
@@ -511,8 +506,7 @@ public partial class Bot
 	/// <param name="startTimestamp">Start timestamp for the video in the message</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideo(ChatId chatId, InputFile video, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
@@ -520,12 +514,11 @@ public partial class Bot
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool supportsStreaming = default, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
 		string? businessConnectionId = default, bool allowPaidBroadcast = default, InputFile? cover = default, int? startTimestamp = default,
-		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default, long? receiverUserId = default,
-		string? callbackQueryId = default)
+		long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default, EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, video, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
 				duration = duration, h = height, w = width,
 				flags = supportsStreaming ? DocumentAttributeVideo.Flags.supports_streaming : 0 }],
@@ -555,8 +548,7 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendAnimation(ChatId chatId, InputFile animation, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
@@ -564,11 +556,11 @@ public partial class Bot
 		IEnumerable<MessageEntity>? captionEntities = default, bool showCaptionAboveMedia = default, bool hasSpoiler = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, animation, caption, parseMode, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			{
 				doc.attributes ??= [];
 				if (doc.mime_type == "video/mp4")
@@ -599,19 +591,18 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVoice(ChatId chatId, InputFile voice, string? caption = default, ParseMode parseMode = default,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, voice, caption, parseMode, replyParameters, replyMarkup, null, messageThreadId,
 			captionEntities, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			{
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeAudio {
 					duration = duration, flags = DocumentAttributeAudio.Flags.voice }];
@@ -619,7 +610,7 @@ public partial class Bot
 			});
 	}
 
-	/// <summary>As of <a href="https://telegram.org/blog/video-messages-and-telescope">v.4.0</a>, Telegram clients support rounded square MPEG4 videos of up to 1 minute long. Use this method to send video messages.</summary>
+	/// <summary>Use this method to send a rounded square MPEG4 video of up to 1 minute long.</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target bot, supergroup or channel in the format <c>@username</c></param>
 	/// <param name="videoNote">Video note to send. Pass a FileId as String to send a video note that exists on the Telegram servers (recommended) or upload a new video using <see cref="InputFileStream"/>. <a href="https://core.telegram.org/bots/api#sending-files">More information on Sending Files »</a>. Sending video notes by a URL is currently unsupported.</param>
 	/// <param name="replyParameters">Description of the message to reply to</param>
@@ -635,19 +626,18 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVideoNote(ChatId chatId, InputFile videoNote,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int duration = 0, int? length = default, InputFile? thumbnail = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		return await SendDoc(chatId, videoNote, default, default, replyParameters, replyMarkup, thumbnail, messageThreadId,
 			default, disableNotification, protectContent, messageEffectId, businessConnectionId, allowPaidBroadcast,
-			directMessagesTopicId, suggestedPostParameters, receiverUserId, callbackQueryId, doc =>
+			directMessagesTopicId, suggestedPostParameters, ephemeralMessageParameters, doc =>
 			{
 				doc.flags |= InputMediaUploadedDocument.Flags.nosound_video;
 				doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeVideo {
@@ -674,7 +664,7 @@ public partial class Bot
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
-	public async Task<Message> SendPaidMedia(ChatId chatId, int starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
+	public async Task<Message> SendPaidMedia(ChatId chatId, long starCount, IEnumerable<InputPaidMedia> media, string? caption = default,
 		ParseMode parseMode = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		string? payload = default, int messageThreadId = 0, IEnumerable<MessageEntity>? captionEntities = default,
 		bool showCaptionAboveMedia = default, bool disableNotification = default, bool protectContent = default,
@@ -707,7 +697,7 @@ public partial class Bot
 			payload = payload
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, impm, caption, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), entities, 0, suggestedPostParameters, null, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
+			await MakeReplyMarkup(replyMarkup), entities, 0, suggestedPostParameters, null, disableNotification, protectContent, allowPaidBroadcast, showCaptionAboveMedia),
 			peer, caption, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -774,15 +764,14 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendLocation(ChatId chatId, double latitude, double longitude,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int horizontalAccuracy = 0,
 		int livePeriod = 0, int heading = 0, int proximityAlertRadius = 0, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -790,7 +779,7 @@ public partial class Bot
 		TL.InputMedia media = livePeriod > 0 ? MakeGeoLive(latitude, longitude, horizontalAccuracy, heading, proximityAlertRadius, livePeriod)
 			: new TL.InputMediaGeoPoint { geo_point = MakeGeoPoint(latitude, longitude, horizontalAccuracy) };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -814,15 +803,14 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendVenue(ChatId chatId, double latitude, double longitude, string title, string address,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, string? foursquareId = default,
 		string? foursquareType = default, string? googlePlaceId = default, string? googlePlaceType = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
 		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
-		long? receiverUserId = default, string? callbackQueryId = default)
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -837,7 +825,7 @@ public partial class Bot
 			venue_type = googlePlaceType ?? foursquareType,
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -857,14 +845,13 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendContact(ChatId chatId, string phoneNumber, string firstName, string? lastName = default,
 		string? vcard = default, ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
 		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
-		SuggestedPostParameters? suggestedPostParameters = default, long? receiverUserId = default, string? callbackQueryId = default)
+		SuggestedPostParameters? suggestedPostParameters = default, EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -877,7 +864,7 @@ public partial class Bot
 			vcard = vcard
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -967,7 +954,7 @@ public partial class Bot
 				| (media != null ? InputMediaPoll.Flags.has_attached_media : 0)
 		};
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, imp, description, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), deEntities, messageEffectId, null, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), deEntities, messageEffectId, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -990,7 +977,7 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, peer, 0);
 		var media = new InputMediaTodo { todo = MakeToDoList(checklist) };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, null, disableNotification, protectContent, false, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, disableNotification, protectContent, false, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -1018,19 +1005,22 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		var media = new InputMediaDice { emoticon = emoji };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to stream a partial message to a user while the message is being generated. Note that the streamed draft is ephemeral and acts as a temporary 30-second preview - once the output is finalized, you <b>must</b> call <see cref="WTelegram.Bot.SendMessage">SendMessage</see> with the complete message to persist it in the user's chat.</summary>
 	/// <param name="chatId">Unique identifier for the target private chat</param>
-	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes to drafts with the same identifier are animated.</param>
+	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes to drafts with the same identifier are animated. Otherwise, the draft is replaced without animation.</param>
 	/// <param name="text">Text of the message to be sent, 0-4096 characters after entities parsing. Pass an empty text to show a “Thinking…” placeholder.</param>
 	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread</param>
 	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	public async Task SendMessageDraft(long chatId, int draftId, string? text = default, ParseMode parseMode = default,
-		int? messageThreadId = default, IEnumerable<MessageEntity>? entities = default)
+	/// <param name="canStop">Pass <see langword="true"/> to show the user a button to stop further drafts. The bot will receive an <see cref="Update"/> “StoppedMessageGeneration” if the user presses the button.</param>
+	/// <param name="keepOnStop">Pass <see langword="true"/> to keep the draft in the chat when the button is pressed. The draft will still disappear after a short time or if the bot sends a message. To fully preserve the partial draft, the bot should send it as a new message.</param>
+	public async Task SendMessageDraft(long chatId, long draftId, string? text = default, ParseMode parseMode = default,
+		int? messageThreadId = default, IEnumerable<MessageEntity>? entities = default, bool canStop = default,
+		bool keepOnStop = default)
 	{
 		text ??= "";
 		await InitComplete();
@@ -1038,6 +1028,7 @@ public partial class Bot
 		var tlEntities = ApplyParse(parseMode, ref text!, entities);
 		await Client.Messages_SetTyping(peer, new SendMessageTextDraftAction
 		{
+			flags = (canStop ? SendMessageTextDraftAction.Flags.can_stop : 0) | (keepOnStop ? SendMessageTextDraftAction.Flags.keep_on_stop : 0),
 			random_id = draftId,
 			text = new TextWithEntities { text = text, entities = tlEntities }
 		}, messageThreadId);
@@ -1790,7 +1781,7 @@ public partial class Bot
 	/// <param name="text">Text of the notification. If not specified, nothing will be shown to the user, 0-200 characters.</param>
 	/// <param name="showAlert">If <see langword="true"/>, an alert will be shown by the client instead of a notification at the top of the chat screen. Defaults to <see langword="false"/>.</param>
 	/// <param name="url">URL that will be opened by the user's client. If you have created a <see cref="Game"/> and accepted the conditions via <a href="https://t.me/botfather">@BotFather</a>, specify the URL that opens your game - note that this will only work if the query comes from a <see cref="InlineKeyboardButton"><em>CallbackGame</em></see> button.<br/><br/>Otherwise, you may use links like <c>t.me/your_bot?start=XXXX</c> that open your bot with a parameter.</param>
-	/// <param name="cacheTime">The maximum amount of time in seconds that the result of the callback query may be cached client-side. Telegram apps will support caching starting in version 3.14. Defaults to 0.</param>
+	/// <param name="cacheTime">The maximum amount of time in seconds that the result of the callback query may be cached client-side. Defaults to 0.</param>
 	public async Task AnswerCallbackQuery(string callbackQueryId, string? text = default, bool showAlert = default,
 		string? url = default, int cacheTime = 0)
 	{
@@ -2044,8 +2035,8 @@ public partial class Bot
 	/// <param name="text">Text that will be shown along with the service message about the subscription; 0-128 characters</param>
 	/// <param name="textParseMode">Mode for parsing entities in the text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details. Entities other than <see cref="MessageEntityType.Bold">Bold</see>, <see cref="MessageEntityType.Italic">Italic</see>, <see cref="MessageEntityType.Underline">Underline</see>, <see cref="MessageEntityType.Strikethrough">Strikethrough</see>, <see cref="MessageEntityType.Spoiler">Spoiler</see>, <see cref="MessageEntityType.CustomEmoji">CustomEmoji</see>, and <see cref="MessageEntityType.DateTime">DateTime</see> are ignored.</param>
 	/// <param name="textEntities">A list of special entities that appear in the gift text. It can be specified instead of <paramref name="textParseMode"/>. Entities other than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”, “CustomEmoji”, and “DateTime” are ignored.</param>
-	public async Task GiftPremiumSubscription(long userId, int monthCount, int starCount, string? text = default, ParseMode textParseMode = default,
-		IEnumerable<MessageEntity>? textEntities = default)
+	public async Task GiftPremiumSubscription(long userId, int monthCount, long starCount, string? text = default,
+		ParseMode textParseMode = default, IEnumerable<MessageEntity>? textEntities = default)
 	{
 		await InitComplete();
 		var entities = ApplyParse(textParseMode, ref text!, textEntities);
@@ -2202,7 +2193,7 @@ public partial class Bot
 	/// <summary>Transfers Telegram Stars from the business account balance to the bot's balance. Requires the <em>CanTransferStars</em> business bot right.</summary>
 	/// <param name="businessConnectionId">Unique identifier of the business connection</param>
 	/// <param name="starCount">Number of Telegram Stars to transfer; 1-10000</param>
-	public async Task TransferBusinessAccountStars(string businessConnectionId, int starCount)
+	public async Task TransferBusinessAccountStars(string businessConnectionId, long starCount)
 	{
 		/*var peer = */await GetBusinessPeer(businessConnectionId);
 		var invoice = new InputInvoiceBusinessBotTransferStars { bot = TL.InputUser.Self, stars = starCount };
@@ -2334,7 +2325,7 @@ public partial class Bot
 	/// <param name="keepOriginalDetails">Pass <see langword="true"/> to keep the original gift text, sender and receiver in the upgraded gift</param>
 	/// <param name="starCount">The amount of Telegram Stars that will be paid for the upgrade from the business account balance. If <c>gift.PrepaidUpgradeStarCount &gt; 0</c>, then pass 0, otherwise, the <em>CanTransferStars</em> business bot right is required and <c>gift.UpgradeStarCount</c> must be passed.</param>
 	public async Task UpgradeGift(string businessConnectionId, string ownedGiftId, bool keepOriginalDetails = default,
-		int? starCount = default)
+		long starCount = default)
 	{
 		var stargift = await InputSavedStarGift(ownedGiftId);
 		if (starCount != 0)
@@ -2361,7 +2352,7 @@ public partial class Bot
 	/// <param name="ownedGiftId">Unique identifier of the regular gift that should be transferred</param>
 	/// <param name="newOwnerChatId">Unique identifier of the chat which will own the gift. The chat must be active in the last 24 hours.</param>
 	/// <param name="starCount">The amount of Telegram Stars that will be paid for the transfer from the business account balance. If positive, then the <em>CanTransferStars</em> business bot right is required.</param>
-	public async Task TransferGift(string businessConnectionId, string ownedGiftId, long newOwnerChatId, int? starCount = default)
+	public async Task TransferGift(string businessConnectionId, string ownedGiftId, long newOwnerChatId, long starCount = default)
 	{
 		var peer = await InputPeerChat(newOwnerChatId);
 		var stargift = await InputSavedStarGift(ownedGiftId);
@@ -2493,7 +2484,7 @@ public partial class Bot
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="richMessage">New rich content of the message; required if <paramref name="text"/> isn't specified. Direct upload of new files isn't supported when an inline message is edited.</param>
+	/// <param name="richMessage">New rich content of the message; required if <paramref name="text"/> isn't specified. Direct upload of new files and explicit upload of files by a URL isn't supported when an inline message is edited.</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
 	/// <returns>The edited <see cref="Message"/> is returned</returns>
 	public async Task<Message> EditMessageText(ChatId chatId, int messageId, string? text = default, ParseMode parseMode = default,
@@ -2514,7 +2505,7 @@ public partial class Bot
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	/// <param name="richMessage">New rich content of the message; required if <paramref name="text"/> isn't specified. Direct upload of new files isn't supported when an inline message is edited.</param>
+	/// <param name="richMessage">New rich content of the message; required if <paramref name="text"/> isn't specified. Direct upload of new files and explicit upload of files by a URL isn't supported when an inline message is edited.</param>
 	/// <param name="businessConnectionId">Unique identifier of the business connection on behalf of which the message to be edited was sent</param>
 	public async Task EditMessageText(string inlineMessageId, string? text = default, ParseMode parseMode = default,
 		InlineKeyboardMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default, IEnumerable<MessageEntity>? entities = default,
@@ -2714,31 +2705,32 @@ public partial class Bot
 		return await MakePoll(ump.poll, ump.results);
 	}
 
-	/// <summary>Use this method to edit an ephemeral text message. Note that it is not guaranteed that the user will receive the message edit event, especially if they are offline</summary>
+	/// <summary>Use this method to edit an ephemeral text or rich message. Note that it is not guaranteed that the user will receive the message edit event, especially if they are offline</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
 	/// <param name="receiverUserId">Identifier of the user who received the message</param>
 	/// <param name="ephemeralMessageId">Identifier of the ephemeral message to edit</param>
-	/// <param name="text">New text of the message, 1-4096 characters after entity parsing</param>
+	/// <param name="text">New text of the message, 1-4096 characters after entity parsing; required if <paramref name="richMessage"/> isn't specified</param>
 	/// <param name="parseMode">Mode for parsing entities in the message text. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	/// <param name="linkPreviewOptions">Link preview generation options for the message</param>
 	/// <param name="entities">A list of special entities that appear in message text, which can be specified instead of <paramref name="parseMode"/></param>
-	public async Task EditEphemeralMessageText(ChatId chatId, long receiverUserId, int ephemeralMessageId, string text,
+	/// <param name="richMessage">New rich content of the message; required if <paramref name="text"/> isn't specified</param>
+	public async Task EditEphemeralMessageText(ChatId chatId, long receiverUserId, int ephemeralMessageId, string? text = default,
 		ParseMode parseMode = default, InlineKeyboardMarkup? replyMarkup = default, LinkPreviewOptions? linkPreviewOptions = default,
-		IEnumerable<MessageEntity>? entities = default)
+		IEnumerable<MessageEntity>? entities = default, InputRichMessage? richMessage = default)
 	{
-		var tlEntities = ApplyParse(parseMode, ref text!, entities);
+		var tlEntities = ApplyParse(parseMode, ref text, entities);
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var media = linkPreviewOptions.InputMediaWebPage();
 		await Client.Ephemeral_EditMessage(peer, InputUser(receiverUserId), ephemeralMessageId, text, tlEntities,
-			await MakeReplyMarkup(replyMarkup), media);
+			await MakeReplyMarkup(replyMarkup), media, await InputRichMessage(richMessage, peer));
 	}
 
 	/// <summary>Use this method to edit the media of an ephemeral message. Note that it is not guaranteed that the user will receive the message edit event, especially if they are offline</summary>
 	/// <param name="chatId">Unique identifier for the target chat or username of the target supergroup in the format <c>@username</c></param>
 	/// <param name="receiverUserId">Identifier of the user who received the message</param>
 	/// <param name="ephemeralMessageId">Identifier of the ephemeral message to edit</param>
-	/// <param name="media">An object for the new media content of the message. A new file can't be uploaded; use a previously uploaded file via its FileId or specify a URL.</param>
+	/// <param name="media">An object for the new media content of the message</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	public async Task EditEphemeralMessageMedia(ChatId chatId, long receiverUserId, int ephemeralMessageId, InputMedia media,
 		InlineKeyboardMarkup? replyMarkup = default)
@@ -2757,13 +2749,15 @@ public partial class Bot
 	/// <param name="parseMode">Mode for parsing entities in the message caption. See <a href="https://core.telegram.org/bots/api#formatting-options">formatting options</a> for more details.</param>
 	/// <param name="replyMarkup">An object for an <a href="https://core.telegram.org/bots/features#inline-keyboards">inline keyboard</a></param>
 	/// <param name="captionEntities">A list of special entities that appear in the caption, which can be specified instead of <paramref name="parseMode"/></param>
+	/// <param name="showCaptionAboveMedia">Pass <see langword="true"/> if the caption must be shown above the message media. Supported only for animation, photo and video messages.</param>
 	public async Task EditEphemeralMessageCaption(ChatId chatId, long receiverUserId, int ephemeralMessageId, string? caption = default,
-		ParseMode parseMode = default, InlineKeyboardMarkup? replyMarkup = default, IEnumerable<MessageEntity>? captionEntities = default)
+		ParseMode parseMode = default, InlineKeyboardMarkup? replyMarkup = default, IEnumerable<MessageEntity>? captionEntities = default,
+		bool showCaptionAboveMedia = default)
 	{
 		var entities = ApplyParse(parseMode, ref caption!, captionEntities);
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		await Client.Ephemeral_EditMessage(peer, InputUser(receiverUserId), ephemeralMessageId, caption, entities,
-			await MakeReplyMarkup(replyMarkup), null);
+			await MakeReplyMarkup(replyMarkup), null, invert_media: showCaptionAboveMedia);
 	}
 
 	/// <summary>Use this method to edit only the reply markup of an ephemeral message. Note that it is not guaranteed that the user will receive the message edit event, especially if they are offline</summary>
@@ -2857,14 +2851,13 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
-	/// <param name="receiverUserId">For outgoing ephemeral messages, unique identifier of the user who will receive the message; for group and supergroup chats only. It is not guaranteed that the user will receive the message, especially if they are offline. See <a href="https://core.telegram.org/bots/api#ephemeral-messages-and-commands">ephemeral message sending</a> for more details.</param>
-	/// <param name="callbackQueryId">For outgoing ephemeral messages, identifier of the callback query which triggered the message if any</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendSticker(ChatId chatId, InputFile sticker,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, string? emoji = default,
 		int messageThreadId = 0, bool disableNotification = default, bool protectContent = default, long messageEffectId = 0,
 		string? businessConnectionId = default, bool allowPaidBroadcast = default, long directMessagesTopicId = 0,
-		SuggestedPostParameters? suggestedPostParameters = default, long? receiverUserId = default, string? callbackQueryId = default)
+		SuggestedPostParameters? suggestedPostParameters = default, EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
@@ -2873,7 +2866,7 @@ public partial class Bot
 		if (media is TL.InputMediaUploadedDocument doc)
 			doc.attributes = [.. doc.attributes ?? [], new DocumentAttributeSticker { alt = emoji }];
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, receiverUserId, callbackQueryId, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, suggestedPostParameters, ephemeralMessageParameters, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 
@@ -3077,32 +3070,38 @@ public partial class Bot
 	/// <param name="allowPaidBroadcast">Pass <see langword="true"/> to allow up to 1000 messages per second, ignoring <a href="https://core.telegram.org/bots/faq#how-can-i-message-all-of-my-bot-39s-subscribers-at-once">broadcasting limits</a> for a fee of 0.1 Telegram Stars per message. The relevant Stars will be withdrawn from the bot's balance.</param>
 	/// <param name="directMessagesTopicId">Identifier of the direct messages topic to which the message will be sent; required if the message is sent to a direct messages chat</param>
 	/// <param name="suggestedPostParameters">An object containing the parameters of the suggested post to send; for direct messages chats only. If the message is sent as a reply to another suggested post, then that suggested post is automatically declined.</param>
+	/// <param name="ephemeralMessageParameters">An object containing the parameters of the ephemeral message to send</param>
 	/// <returns>The sent <see cref="Message"/> is returned.</returns>
 	public async Task<Message> SendRichMessage(ChatId chatId, InputRichMessage richMessage,
 		ReplyParameters? replyParameters = default, ReplyMarkup? replyMarkup = default, int messageThreadId = 0,
 		bool disableNotification = default, bool protectContent = default, long messageEffectId = 0, string? businessConnectionId = default,
-		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default)
+		bool allowPaidBroadcast = default, long directMessagesTopicId = 0, SuggestedPostParameters? suggestedPostParameters = default,
+		EphemeralMessageParameters? ephemeralMessageParameters = default)
 	{
 		var peer = await InputPeerChat(chatId, allowUsersName: true);
 		var replyToMessage = await GetReplyToMessage(peer, replyParameters);
 		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId, directMessagesTopicId);
 		return await PostedMsg(Messages_SendMessage(businessConnectionId, peer, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, await InputRichMessage(richMessage, peer), messageEffectId, suggestedPostParameters, null, null,
+			await MakeReplyMarkup(replyMarkup), null, await InputRichMessage(richMessage, peer), messageEffectId, suggestedPostParameters, ephemeralMessageParameters,
 			disableNotification, protectContent, allowPaidBroadcast, false, true),
 			peer, "", replyToMessage, replyMarkup, businessConnectionId);
 	}
 
 	/// <summary>Use this method to stream a partial rich message to a user while the message is being generated. Note that the streamed draft is ephemeral and acts as a temporary 30-second preview - once the output is finalized, you <b>must</b> call <see cref="WTelegram.Bot.SendRichMessage">SendRichMessage</see> with the complete message to persist it in the user's chat.</summary>
 	/// <param name="chatId">Unique identifier for the target private chat</param>
-	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes to drafts with the same identifier are animated.</param>
-	/// <param name="richMessage">The partial message to be streamed. Direct upload of new files isn't supported.</param>
+	/// <param name="draftId">Unique identifier of the message draft; must be non-zero. Changes to drafts with the same identifier are animated. Otherwise, the draft is replaced without animation.</param>
+	/// <param name="richMessage">The partial message to be streamed. Direct upload of new files and explicit upload of files by a URL isn't supported.</param>
 	/// <param name="messageThreadId">Unique identifier for the target message thread</param>
-	public async Task SendRichMessageDraft(long chatId, int draftId, InputRichMessage richMessage, int messageThreadId = 0)
+	/// <param name="canStop">Pass <see langword="true"/> to show the user a button to stop further drafts. The bot will receive an <see cref="Update"/> “StoppedMessageGeneration” if the user presses the button.</param>
+	/// <param name="keepOnStop">Pass <see langword="true"/> to keep the draft in the chat when the button is pressed. The draft will still disappear after a short time or if the bot sends a message. To fully preserve the partial draft, the bot should send it as a new message.</param>
+	public async Task SendRichMessageDraft(long chatId, long draftId, InputRichMessage richMessage, int messageThreadId = 0,
+		bool canStop = default, bool keepOnStop = default)
 	{
 		await InitComplete();
 		var peer = await InputPeerChat(chatId, allowUsersName: false);
 		await Client.Messages_SetTyping(peer, new InputSendMessageRichMessageDraftAction
 		{
+			flags = (canStop ? InputSendMessageRichMessageDraftAction.Flags.can_stop : 0) | (keepOnStop ? InputSendMessageRichMessageDraftAction.Flags.keep_on_stop : 0),
 			random_id = draftId,
 			rich_message = await InputRichMessage(richMessage, peer),
 		}, messageThreadId);
@@ -3209,7 +3208,7 @@ public partial class Bot
 			providerData, photoUrl, photoSize, photoWidth, photoHeight, needName, needPhoneNumber, needEmail, needShippingAddress,
 			sendPhoneNumberToProvider, sendEmailToProvider, isFlexible, null);
 		return await PostedMsg(Messages_SendMedia(null, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup);
 	}
 
@@ -3355,7 +3354,7 @@ public partial class Bot
 		var reply_to = await MakeReplyTo(replyParameters, peer, messageThreadId);
 		var media = new InputMediaGame { id = new InputGameShortName { bot_id = TL.InputUser.Self, short_name = gameShortName } };
 		return await PostedMsg(Messages_SendMedia(businessConnectionId, peer, media, null, Helpers.RandomLong(), reply_to,
-			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
+			await MakeReplyMarkup(replyMarkup), null, messageEffectId, null, null, disableNotification, protectContent, allowPaidBroadcast, false),
 			peer, null, replyToMessage, replyMarkup, businessConnectionId);
 	}
 

@@ -96,23 +96,26 @@ public partial class Bot
 				InputRichBlockList irb => await PageBlockList(irb),
 				InputRichBlockPullQuotation irb => new PageBlockPullquote { text = TLRichText(irb.Text), caption = TLRichText(irb.Credit) },
 				InputRichBlockBlockQuotation irb => new PageBlockBlockquoteBlocks { blocks = await Task.WhenAll(irb.Blocks.Select(PageBlock)), caption = TLRichText(irb.Credit) },
+				InputRichBlockExpandableBlockQuotation irb => new PageBlockBlockquote { text = TLRichText(irb.Text), caption = TLRichText(irb.Credit), flags = PageBlockBlockquote.Flags.collapsed },
 				InputRichBlockCollage irb => new PageBlockCollage { items = await Task.WhenAll(irb.Blocks.Select(PageBlock)), caption = PageCaption(irb.Caption) },
 				InputRichBlockSlideshow irb => new PageBlockSlideshow { items = await Task.WhenAll(irb.Blocks.Select(PageBlock)), caption = PageCaption(irb.Caption) },
 				InputRichBlockTable irb => new PageBlockTable
 				{
-					flags = (irb.IsBordered ? PageBlockTable.Flags.bordered : 0) | (irb.IsStriped ? PageBlockTable.Flags.striped : 0),
+					flags = (irb.IsBordered ? PageBlockTable.Flags.bordered : 0) | (irb.IsStriped ? PageBlockTable.Flags.striped : 0) | (irb.IsCompact ? PageBlockTable.Flags.compact : 0),
 					title = TLRichText(irb.Caption),
 					rows = [.. irb.Cells.Select(r => new PageTableRow { cells = [.. r.Select(PageTableCell)] })]
 				},
 				InputRichBlockDetails irb => new PageBlockDetails { title = TLRichText(irb.Summary), blocks = await Task.WhenAll(irb.Blocks.Select(PageBlock)), flags = irb.IsOpen ? PageBlockDetails.Flags.open : 0 },
-				InputRichBlockMap irb => new PageBlockMap { geo = irb.Location.GeoPoint(), zoom = irb.Zoom, w = irb.Width, h = irb.Height, caption = PageCaption(irb.Caption) },
-				InputRichBlockSectionHeading irb => irb.Size switch {
+				InputRichBlockMap irb => new PageBlockMap { geo = irb.Location.GeoPoint(), zoom = irb.Zoom ?? 0, w = irb.Width, h = irb.Height, caption = PageCaption(irb.Caption) },
+				InputRichBlockSectionHeading irb => irb.Size switch
+				{
 					1 => new PageBlockHeading1 { text = TLRichText(irb.Text) },
 					2 => new PageBlockHeading2 { text = TLRichText(irb.Text) },
 					3 => new PageBlockHeading3 { text = TLRichText(irb.Text) },
 					4 => new PageBlockHeading4 { text = TLRichText(irb.Text) },
 					5 => new PageBlockHeading5 { text = TLRichText(irb.Text) },
-					_ => new PageBlockHeading6 { text = TLRichText(irb.Text) }},
+					_ => new PageBlockHeading6 { text = TLRichText(irb.Text) }
+				},
 				InputRichBlockMathematicalExpression irb => new PageBlockMath { source = irb.Expression },
 				InputRichBlockThinking irb => new PageBlockThinking { text = TLRichText(irb.Text) },
 				InputRichBlockPhoto irb => new PageBlockPhoto { photo_id = await AddMedia(irb.Photo), caption = PageCaption(irb.Caption), flags = irb.Photo.HasSpoiler ? PageBlockPhoto.Flags.spoiler : 0 },
@@ -120,6 +123,12 @@ public partial class Bot
 				InputRichBlockAnimation irb => new PageBlockVideo { video_id = await AddMedia(irb.Animation), caption = PageCaption(irb.Caption), flags = irb.Animation.HasSpoiler ? PageBlockVideo.Flags.spoiler : 0 },
 				InputRichBlockVoiceNote irb => new PageBlockAudio { audio_id = await AddMedia(irb.VoiceNote), caption = PageCaption(irb.Caption) },
 				InputRichBlockAudio irb => new PageBlockAudio { audio_id = await AddMedia(irb.Audio), caption = PageCaption(irb.Caption) },
+				InputRichBlockDocument irb => new PageBlockDocument { document_id = await AddMedia(irb.Document), caption = PageCaption(irb.Caption) },
+				InputRichBlockButtons irb => new PageBlockButtonRow
+				{
+					flags = irb.Align switch { RichBlockTableCellAlign.Left => PageBlockButtonRow.Flags.align_left, RichBlockTableCellAlign.Center => PageBlockButtonRow.Flags.align_center, RichBlockTableCellAlign.Right => PageBlockButtonRow.Flags.align_right, _ => 0 },
+					buttons = [.. irb.Buttons.Select(b => new TL.PageButton { text = TLRichText(b.Text), type = MakeButtonType(b), style = b.Style.RichButtonStyle(), flags = b.Style == null ? 0 : TL.PageButton.Flags.has_style })],
+				},
 				_ => null!
 			};
 
@@ -153,8 +162,9 @@ public partial class Bot
 				RichTextBotCommand t => new TextBotCommand { text = TLRichText(t.Text) ?? new TextPlain { text = '/' + t.BotCommand } },
 				RichTextBankCardNumber t => new TextBankCard { text = TLRichText(t.Text) ?? new TextPlain { text = t.BankCardNumber } },
 				RichTextDateTime t => new TextDate { text = TLRichText(t.Text), date = t.UnixTime, flags = (TextDate.Flags)TL.HtmlText.ToDateFlags(t.DateTimeFormat) },
-				RichTextAnchor t => new TextAnchor {  name = t.Name },
+				RichTextAnchor t => new TextAnchor { name = t.Name },
 				RichTextReference t => new TextAnchor { text = TLRichText(t.Text), name = t.Name },
+				RichTextButton t => new TextButton { text = TLRichText(t.Button.Text), type = MakeButtonType(t.Button), style = t.Button.Style.RichButtonStyle(), flags = t.Button.Style == null ? 0 : TL.TextButton.Flags.has_style },
 				_ => null,
 			};
 

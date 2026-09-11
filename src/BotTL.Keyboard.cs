@@ -21,26 +21,26 @@ public partial class Bot
 				| (rkm.IsPersistent ? TL.ReplyKeyboardMarkup.Flags.persistent : 0)
 				| (rkm.ResizeKeyboard ? TL.ReplyKeyboardMarkup.Flags.resize : 0)
 				| (rkm.OneTimeKeyboard ? TL.ReplyKeyboardMarkup.Flags.single_use : 0)
-				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0),
+				| (rkm.InputFieldPlaceholder != null ? TL.ReplyKeyboardMarkup.Flags.has_placeholder : 0)
+				| (rkm.ForceReply ? TL.ReplyKeyboardMarkup.Flags.force_reply : 0),
 			placeholder = rkm.InputFieldPlaceholder,
 			rows = [.. rkm.Keyboard.Select(row => new KeyboardButtonRow { buttons = [.. row.Select(MakeKeyboardButton)] })]
 		},
 		InlineKeyboardMarkup ikm => new ReplyInlineMarkup
 		{
-			rows = await ikm.InlineKeyboard.Select(
-				async row => new KeyboardButtonRow { buttons = await row.Select(MakeKeyboardButton).WhenAllSequential() }).WhenAllSequential()
+			flags = ikm.ForceReply ? TL.ReplyInlineMarkup.Flags.force_reply : 0,
+			rows = [.. ikm.InlineKeyboard.Select(row => new KeyboardInlineButtonRow { buttons = [.. row.Select(MakeKeyboardButton)] })]
 		} is { rows.Length: not 0 } rim ? rim : null,
 		_ => null,
 	};
 
-	private static KeyboardButtonBase MakeKeyboardButton(KeyboardButton btn)
+	private static TL.KeyboardButton MakeKeyboardButton(KeyboardButton btn)
 	{
 		var style = btn.KeyboardButtonStyle();
-		return btn switch
+		TL.ButtonType type = btn switch
 		{
-			{ RequestUsers: { } rus } => new InputKeyboardButtonRequestPeer
+			{ RequestUsers: { } rus } => new InputButtonTypeRequestPeer
 			{
-				text = btn.Text,
 				button_id = rus.RequestId,
 				max_quantity = rus.MaxQuantity ?? 1,
 				peer_type = new RequestPeerTypeUser
@@ -49,38 +49,29 @@ public partial class Bot
 					premium = rus.UserIsPremium == true,
 					flags = (rus.UserIsBot == null ? 0 : RequestPeerTypeUser.Flags.has_bot) | (rus.UserIsPremium == null ? 0 : RequestPeerTypeUser.Flags.has_premium)
 				},
-				style = style,
-				flags = (style == null ? 0 : InputKeyboardButtonRequestPeer.Flags.has_style)
-					| (rus.RequestName ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
-					| (rus.RequestUsername ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
-					| (rus.RequestPhoto ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+				flags = (rus.RequestName ? InputButtonTypeRequestPeer.Flags.name_requested : 0)
+					| (rus.RequestUsername ? InputButtonTypeRequestPeer.Flags.username_requested : 0)
+					| (rus.RequestPhoto ? InputButtonTypeRequestPeer.Flags.photo_requested : 0)
 			},
-			{ RequestChat: { } rc } => new InputKeyboardButtonRequestPeer
+			{ RequestChat: { } rc } => new InputButtonTypeRequestPeer
 			{
-				text = btn.Text,
 				button_id = rc.RequestId,
 				max_quantity = 1,
 				peer_type = MakeRequestPeerType(rc),
-				style = style,
-				flags = (style == null ? 0 : InputKeyboardButtonRequestPeer.Flags.has_style)
-					| (rc.RequestTitle ? InputKeyboardButtonRequestPeer.Flags.name_requested : 0)
-					| (rc.RequestUsername ? InputKeyboardButtonRequestPeer.Flags.username_requested : 0)
-					| (rc.RequestPhoto ? InputKeyboardButtonRequestPeer.Flags.photo_requested : 0)
+				flags = (rc.RequestTitle ? InputButtonTypeRequestPeer.Flags.name_requested : 0)
+					| (rc.RequestUsername ? InputButtonTypeRequestPeer.Flags.username_requested : 0)
+					| (rc.RequestPhoto ? InputButtonTypeRequestPeer.Flags.photo_requested : 0)
 			},
-			{ RequestContact: true } => new KeyboardButtonRequestPhone { text = btn.Text, style = style, flags = style == null ? 0 : KeyboardButtonRequestPhone.Flags.has_style },
-			{ RequestLocation: true } => new KeyboardButtonRequestGeoLocation { text = btn.Text, style = style, flags = style == null ? 0 : KeyboardButtonRequestGeoLocation.Flags.has_style },
-			{ RequestPoll: { } } => new KeyboardButtonRequestPoll
+			{ RequestContact: true } => new ButtonTypeRequestPhone(),
+			{ RequestLocation: true } => new ButtonTypeRequestGeoLocation(),
+			{ RequestPoll: { } } => new ButtonTypeRequestPoll
 			{
-				text = btn.Text,
 				quiz = btn.RequestPoll.Type == PollType.Quiz,
-				style = style,
-				flags = (style == null ? 0 : KeyboardButtonRequestPoll.Flags.has_style)
-					| (btn.RequestPoll.Type.HasValue ? KeyboardButtonRequestPoll.Flags.has_quiz : 0)
+				flags = (btn.RequestPoll.Type.HasValue ? ButtonTypeRequestPoll.Flags.has_quiz : 0)
 			},
-			{ WebApp: { } } => new KeyboardButtonSimpleWebView { text = btn.Text, url = btn.WebApp.Url, style = style, flags = style == null ? 0 : KeyboardButtonSimpleWebView.Flags.has_style },
-			{ RequestManagedBot: { } rmb } => new InputKeyboardButtonRequestPeer
+			{ WebApp: { } } => new ButtonTypeSimpleWebView { url = btn.WebApp.Url },
+			{ RequestManagedBot: { } rmb } => new InputButtonTypeRequestPeer
 			{
-				text = btn.Text,
 				button_id = rmb.RequestId,
 				max_quantity = 1,
 				peer_type = new RequestPeerTypeCreateBot
@@ -90,10 +81,16 @@ public partial class Bot
 					flags = RequestPeerTypeCreateBot.Flags.bot_managed
 						| (rmb.SuggestedName != null ? RequestPeerTypeCreateBot.Flags.has_suggested_name : 0)
 						| (rmb.SuggestedUsername != null ? RequestPeerTypeCreateBot.Flags.has_suggested_username : 0),
-				},
-				style = style, flags = style == null ? 0 : InputKeyboardButtonRequestPeer.Flags.has_style
+				}
 			},
-			_ => new TL.KeyboardButton { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style }
+			_ => throw new NotImplementedException($"Unsupported button type: {btn?.GetType().Name}"),
+		};
+		return new TL.KeyboardButton
+		{
+			flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style,
+			text = btn.Text,
+			style = style,
+			type = type,
 		};
 	}
 
@@ -128,47 +125,80 @@ public partial class Bot
 		}
 	}
 
-	private async Task<KeyboardButtonBase> MakeKeyboardButton(InlineKeyboardButton btn)
+	private TL.KeyboardInlineButton MakeKeyboardButton(InlineKeyboardButton btn)
 	{
 		var style = btn.KeyboardButtonStyle();
-		return btn switch
+		TL.InlineButtonType type = btn switch
 		{
 			{ Url: { } } => btn.Url.StartsWith("tg://user?id=", StringComparison.OrdinalIgnoreCase) && long.TryParse(btn.Url[13..], out var userId)
-				? new InputKeyboardButtonUserProfile { text = btn.Text, user_id = InputUser(userId), style = style, flags = style == null ? 0 : InputKeyboardButtonUserProfile.Flags.has_style }
-				: new KeyboardButtonUrl { text = btn.Text, url = btn.Url, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
-			{ CallbackData: { } } => new KeyboardButtonCallback { text = btn.Text, data = Encoding.UTF8.GetBytes(btn.CallbackData), style = style, flags = style == null ? 0 : KeyboardButtonCallback.Flags.has_style },
-			{ CallbackGame: { } } => new KeyboardButtonGame { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
-			{ Pay: true } => new KeyboardButtonBuy { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
-			{ SwitchInlineQuery: { } } => new KeyboardButtonSwitchInline { text = btn.Text, query = btn.SwitchInlineQuery, style = style, flags = style == null ? 0 : KeyboardButtonSwitchInline.Flags.has_style },
-			{ SwitchInlineQueryCurrentChat: { } } => new KeyboardButtonSwitchInline
+				? new InputInlineButtonTypeUserProfile { user_id = InputUser(userId) }
+				: new InlineButtonTypeUrl { url = btn.Url },
+			{ CallbackData: { } } => new InlineButtonTypeCallback { data = Encoding.UTF8.GetBytes(btn.CallbackData) },
+			{ CallbackGame: { } } => new InlineButtonTypeGame { },
+			{ Pay: true } => new InlineButtonTypeBuy { },
+			{ SwitchInlineQuery: { } } => new InlineButtonTypeSwitchInline { query = btn.SwitchInlineQuery },
+			{ SwitchInlineQueryCurrentChat: { } } => new InlineButtonTypeSwitchInline
 			{
-				text = btn.Text,
 				query = btn.SwitchInlineQueryCurrentChat,
-				style = style,
-				flags = KeyboardButtonSwitchInline.Flags.same_peer | (style == null ? 0 : KeyboardButtonSwitchInline.Flags.has_style)
+				flags = InlineButtonTypeSwitchInline.Flags.same_peer
 			},
-			{ SwitchInlineQueryChosenChat: { } siqcc } => new KeyboardButtonSwitchInline
+			{ SwitchInlineQueryChosenChat: { } siqcc } => new InlineButtonTypeSwitchInline
 			{
-				text = btn.Text,
 				query = siqcc.Query,
 				peer_types = siqcc.InlineQueryPeerTypes(),
-				style = style,
-				flags = KeyboardButtonSwitchInline.Flags.has_peer_types | (style == null ? 0 : KeyboardButtonSwitchInline.Flags.has_style)
+				flags = InlineButtonTypeSwitchInline.Flags.has_peer_types
 			},
-			{ CopyText: { } } => new KeyboardButtonCopy { text = btn.Text, copy_text = btn.CopyText.Text, style = style, flags = style == null ? 0 : KeyboardButtonCopy.Flags.has_style },
-			{ LoginUrl: { } lu } => new InputKeyboardButtonUrlAuth
+			{ CopyText: { } } => new InlineButtonTypeCopy { copy_text = btn.CopyText.Text },
+			{ LoginUrl: { } lu } => new InputInlineButtonTypeUrlAuth
 			{
-				text = btn.Text,
 				url = lu.Url,
 				fwd_text = lu.ForwardText,
-				bot = lu.BotUsername != null ? await InputUser(lu.BotUsername) : Client.User,
-				style = style,
-				flags = (style == null ? 0 : InputKeyboardButtonUrlAuth.Flags.has_style)
-					| (lu.ForwardText != null ? InputKeyboardButtonUrlAuth.Flags.has_fwd_text : 0)
-					| (lu.RequestWriteAccess ? InputKeyboardButtonUrlAuth.Flags.request_write_access : 0),
+				bot = lu.BotUsername != null ? InputUser(lu.BotUsername) : Client.User,
+				flags = (lu.ForwardText != null ? InputInlineButtonTypeUrlAuth.Flags.has_fwd_text : 0)
+					| (lu.RequestWriteAccess ? InputInlineButtonTypeUrlAuth.Flags.request_write_access : 0),
 			},
-			{ WebApp: { } } => new KeyboardButtonWebView { text = btn.Text, url = btn.WebApp.Url, style = style, flags = style == null ? 0 : KeyboardButtonWebView.Flags.has_style },
-			_ => new TL.KeyboardButton { text = btn.Text, style = style, flags = style == null ? 0 : TL.KeyboardButton.Flags.has_style },
+			{ WebApp: { } } => new InlineButtonTypeWebView { url = btn.WebApp.Url },
+			{ Disabled: { } } => new InlineButtonTypeDisabled { },
+			_ => throw new NotImplementedException($"Unsupported button type: {btn?.GetType().Name}"),
+		};
+		return new TL.KeyboardInlineButton
+		{
+			flags = style == null ? 0 : TL.KeyboardInlineButton.Flags.has_style,
+			text = btn.Text,
+			style = style,
+			type = type,
 		};
 	}
+
+	private TL.InlineButtonType MakeButtonType(RichMessageButton btn) => btn switch
+	{
+		{ Url: { } } => btn.Url.StartsWith("tg://user?id=", StringComparison.OrdinalIgnoreCase) && long.TryParse(btn.Url[13..], out var userId)
+			? new InputInlineButtonTypeUserProfile { user_id = InputUser(userId) }
+			: new InlineButtonTypeUrl { url = btn.Url },
+		{ CallbackData: { } } => new InlineButtonTypeCallback { data = Encoding.UTF8.GetBytes(btn.CallbackData) },
+		{ SwitchInlineQuery: { } } => new InlineButtonTypeSwitchInline { query = btn.SwitchInlineQuery },
+		{ SwitchInlineQueryCurrentChat: { } } => new InlineButtonTypeSwitchInline
+		{
+			query = btn.SwitchInlineQueryCurrentChat,
+			flags = InlineButtonTypeSwitchInline.Flags.same_peer
+		},
+		{ SwitchInlineQueryChosenChat: { } siqcc } => new InlineButtonTypeSwitchInline
+		{
+			query = siqcc.Query,
+			peer_types = siqcc.InlineQueryPeerTypes(),
+			flags = InlineButtonTypeSwitchInline.Flags.has_peer_types
+		},
+		{ CopyText: { } } => new InlineButtonTypeCopy { copy_text = btn.CopyText.Text },
+		{ LoginUrl: { } lu } => new InputInlineButtonTypeUrlAuth
+		{
+			url = lu.Url,
+			fwd_text = lu.ForwardText,
+			bot = lu.BotUsername != null ? InputUser(lu.BotUsername) : Client.User,
+			flags = (lu.ForwardText != null ? InputInlineButtonTypeUrlAuth.Flags.has_fwd_text : 0)
+				| (lu.RequestWriteAccess ? InputInlineButtonTypeUrlAuth.Flags.request_write_access : 0),
+		},
+		{ WebApp: { } } => new InlineButtonTypeWebView { url = btn.WebApp.Url },
+		{ Disabled: { } } => new InlineButtonTypeDisabled { },
+		_ => throw new NotImplementedException($"Unsupported button type: {btn?.GetType().Name}"),
+	};
 }

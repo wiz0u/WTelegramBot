@@ -269,19 +269,20 @@ public partial class Bot
 	
 	Task<UpdatesBase> Messages_SendMessage(string? bConnId, InputPeer peer, string? message, long random_id,
 		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, InputRichMessageBase? rich_message, long effect, SuggestedPostParameters? suggested_post,
-		long? receiverUserId, string? callbackQueryId, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
+		EphemeralMessageParameters? ephemeralMessageParameters, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media, bool no_webpage)
 	{
 		IMethod<UpdatesBase> query;
-		if (receiverUserId.HasValue)
+		if (ephemeralMessageParameters != null)
 			query = new TL.Methods.Ephemeral_SendMessage
 			{
-				flags = (TL.Methods.Ephemeral_SendMessage.Flags)((callbackQueryId != null ? 0x1 : 0) | (entities != null ? 0x2 : 0) 
-					| (reply_markup != null ? 0x8 : 0) | (rich_message != null ? 0x10 : 0) | (reply_to != null ? 0x20 : 0)),
-				//	| (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)
+				flags = (TL.Methods.Ephemeral_SendMessage.Flags)((ephemeralMessageParameters.CallbackQueryId != null ? 0x1 : 0) | (entities != null ? 0x2 : 0) 
+					| (reply_markup != null ? 0x8 : 0) | (rich_message != null ? 0x10 : 0) | (reply_to != null ? 0x20 : 0) | (invert_media ? 0x40 : 0)
+					| (peer != null ? 0x100 : 0) | (ephemeralMessageParameters.ReplaceCallbackQueryMessage ? 0x200 : 0) | (noforwards ? 0x400 : 0)),
+				//	| (no_webpage ? 0x2 : 0) | (silent ? 0x20 : 0) | (effect > 0 ? 0x40000 : 0)
 				//	| (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0) | ),
 				peer = peer,
-				receiver_id = InputUser(receiverUserId.Value),
-				query_id = callbackQueryId.LongOrDefault(),
+				receiver_id = InputUser(ephemeralMessageParameters.ReceiverUserId),
+				query_id = ephemeralMessageParameters.CallbackQueryId.LongOrDefault(),
 				message = message,
 				entities = entities,
 				reply_markup = reply_markup,
@@ -310,19 +311,20 @@ public partial class Bot
 
 	Task<UpdatesBase> Messages_SendMedia(string? bConnId, InputPeer peer, TL.InputMedia media, string? message, long random_id,
 		InputReplyTo? reply_to, TL.ReplyMarkup? reply_markup, TL.MessageEntity[]? entities, long effect, SuggestedPostParameters? suggested_post,
-		long? receiverUserId, string? callbackQueryId, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media)
+		EphemeralMessageParameters? ephemeralMessageParameters, bool silent, bool noforwards, bool allow_paid_floodskip, bool invert_media)
 	{
 		IMethod<UpdatesBase> query;
-		if (receiverUserId.HasValue)
+		if (ephemeralMessageParameters != null)
 			query = new TL.Methods.Ephemeral_SendMessage
 			{
-				flags = (TL.Methods.Ephemeral_SendMessage.Flags)((callbackQueryId != null ? 0x1 : 0) | (entities != null ? 0x2 : 0) | (media != null ? 0x4 : 0)
-					| (reply_markup != null ? 0x8 : 0) | (reply_to != null ? 0x20 : 0)),
+				flags = (TL.Methods.Ephemeral_SendMessage.Flags)((ephemeralMessageParameters.CallbackQueryId != null ? 0x1 : 0) | (entities != null ? 0x2 : 0) | (media != null ? 0x4 : 0)
+					| (reply_markup != null ? 0x8 : 0) | (reply_to != null ? 0x20 : 0) | (invert_media ? 0x40 : 0)
+					| (peer != null ? 0x100 : 0) | (ephemeralMessageParameters.ReplaceCallbackQueryMessage ? 0x200 : 0) | (noforwards ? 0x400 : 0)),
 				//	| (silent ? 0x20 : 0) | (noforwards ? 0x4000 : 0) | (invert_media ? 0x10000 : 0) | (effect > 0 ? 0x40000 : 0)
 				//	| (allow_paid_floodskip ? 0x80000 : 0) | (suggested_post != null ? 0x400000 : 0)),
 				peer = peer,
-				receiver_id = InputUser(receiverUserId.Value),
-				query_id = callbackQueryId.LongOrDefault(),
+				receiver_id = InputUser(ephemeralMessageParameters.ReceiverUserId),
+				query_id = ephemeralMessageParameters.CallbackQueryId.LongOrDefault(),
 				message = message,
 				entities = entities,
 				media = media,
