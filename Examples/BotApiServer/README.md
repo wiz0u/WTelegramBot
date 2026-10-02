@@ -16,11 +16,12 @@ Like the official Bot API server, it supports:
 	- application/json
 	- application/x-www-form-urlencoded
 	- multipart/form-data _(including file attachments)_
+- Supports WebHook with retry mechanism (Certificate, IpAddress, MaxConnections not used)
 
 ## Caveats
 
-- It does not support webhooks yet
 - It is a simple example implementation, not designed for high performance, and maybe not recommended for production use
+- If BotApiServer is stopped & restarted, bot clients using webhook must register again with SetWebhook
 
 ## Usage
 

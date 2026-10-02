@@ -1,3 +1,4 @@
+[![Latest API Layer](https://img.shields.io/badge/Latest_API_Layer-on_Patreon-darkgreen)](https://www.patreon.com/wizou)
 [![Bot API 10.3](https://img.shields.io/badge/Bot_API-10.3-blueviolet)](https://core.telegram.org/bots/api)
 [![NuGet version](https://img.shields.io/nuget/v/WTelegramBot?color=00508F)](https://www.nuget.org/packages/WTelegramBot/)
 [![NuGet prerelease](https://img.shields.io/nuget/vpre/WTelegramBot?color=C09030&label=dev+nuget)](https://www.nuget.org/packages/WTelegramBot/absoluteLatest)

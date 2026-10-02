@@ -292,6 +292,10 @@ public partial class Bot : IDisposable
 					if (task != null) await task.ConfigureAwait(true);
 					else System.Diagnostics.Trace.WriteLine(ex); // fallback logging if OnError is unset
 				}
+				finally
+				{
+					_ = Task.Run(() => SaveState());
+				}
 				return;
 			}
 		}

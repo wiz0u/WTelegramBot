@@ -1,3 +1,4 @@
+using BotApiServer;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -114,9 +115,9 @@ static bool IsInlineRequest(string json) => json.IndexOf("\"inline_message_id\""
 static async Task<object> HandleRequest(WTelegramBotClient bot, string method, string json, CancellationToken ct) => method.ToLowerInvariant() switch
 {
 	"getupdates" => await bot.SendRequest(Parse<GetUpdatesRequest>(json), ct),
-	"setwebhook" => await bot.SendRequest(Parse<SetWebhookRequest>(json), ct),
-	"deletewebhook" => await bot.SendRequest(Parse<DeleteWebhookRequest>(json), ct),
-	"getwebhookinfo" => await bot.SendRequest(Parse<GetWebhookInfoRequest>(json), ct),
+	"setwebhook" => await Webhook.SetWebhook(bot, Parse<SetWebhookRequest>(json), ct),
+	"deletewebhook" => await Webhook.DeleteWebhook(bot, Parse<DeleteWebhookRequest>(json), ct),
+	"getwebhookinfo" => await Webhook.GetWebhookInfo(bot, Parse<GetWebhookInfoRequest>(json), ct),
 	"getme" => await bot.SendRequest(Parse<GetMeRequest>(json), ct),
 	"logout" => await bot.SendRequest(Parse<LogOutRequest>(json), ct),
 	"close" => await bot.SendRequest(Parse<CloseRequest>(json), ct),
